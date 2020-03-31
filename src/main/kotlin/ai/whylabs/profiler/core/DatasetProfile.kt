@@ -1,0 +1,19 @@
+package ai.whylabs.profiler.core
+
+import com.google.gson.Gson
+import java.util.concurrent.ConcurrentHashMap
+
+class DatasetProfile(val name: String?) {
+    val columns: MutableMap<String, ColumnProfile> = ConcurrentHashMap()
+
+    fun track(column: String, data: Any?) {
+        columns.compute(column) { _, c -> c?.apply { track(data) } ?: ColumnProfile(column).apply { track(data) } }
+    }
+
+    fun track(columns: Map<String, Any?>) {
+        columns.forEach { (column, value) -> track(column, value)}
+    }
+
+    fun toJsonString() {
+    }
+}
