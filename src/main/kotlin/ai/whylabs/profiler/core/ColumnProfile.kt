@@ -1,12 +1,11 @@
 package ai.whylabs.profiler.core
 
 import com.google.gson.GsonBuilder
-import org.apache.datasketches.ArrayOfStringsSerDe
 import org.apache.datasketches.cpc.CpcSketch
+import org.apache.datasketches.frequencies.ErrorType
+import org.apache.datasketches.frequencies.ItemsSketch
 import org.apache.datasketches.quantiles.DoublesSketch
-import org.apache.datasketches.quantiles.ItemsSketch
 import org.apache.datasketches.quantiles.UpdateDoublesSketch
-import java.util.*
 
 
 enum class ColumnDataType {
@@ -60,11 +59,10 @@ internal data class SerializableColumnProfile(
 
 
 class ColumnProfile(val name: String) {
-    private var totalCnt = 0L;
+    private var totalCnt = 0L
     private val typeCounts: LongArray = LongArray(ColumnDataType.values().size)
     private val cpcSketch: CpcSketch = CpcSketch()
-    private val stringSketch: ItemsSketch<String> =
-        ItemsSketch.getInstance(Comparator.naturalOrder())
+    private val stringSketch: ItemsSketch<String> = ItemsSketch(128)
     private val numbersSketch: UpdateDoublesSketch = DoublesSketch.builder()
         .setK(256).build()
 
@@ -75,7 +73,7 @@ class ColumnProfile(val name: String) {
 
     fun track(data: Any?) {
         longSummary
-        val coercedData = coerceType(data);
+        val coercedData = coerceType(data)
         when (coercedData) {
             is Number -> track(coercedData)
             is String -> track(coercedData)
@@ -83,7 +81,7 @@ class ColumnProfile(val name: String) {
             null -> trackNull()
         }
         addTypeCount(detectType(coercedData))
-        totalCnt++;
+        totalCnt++
     }
 
     private fun track(value: Number) {
@@ -148,7 +146,7 @@ class ColumnProfile(val name: String) {
     }
 
     private fun addTypeCount(columnDataType: ColumnDataType) {
-        this.typeCounts[columnDataType.ordinal]++;
+        this.typeCounts[columnDataType.ordinal]++
     }
 
     fun toJsonString(): String {
@@ -159,22 +157,52 @@ class ColumnProfile(val name: String) {
             )
             .create()
 
-        val stringSketchArray = stringSketch.toByteArray(ArrayOfStringsSerDe())
-        val serializedData = SerializableColumnProfile(
+        val statistics = InterpretableColumnStatistics(
             totalCount = totalCnt,
-            typeCounts = typeCounts,
+            typeCounts = emptyMap(),
             longSummary = longSummary,
             doubleSummary = doubleSummary,
-            trueCount = trueCnt,
-            nullCount = nullCnt,
-            cpcSketchBytes = cpcSketch.toByteArray(),
-            stringSketchBytes = stringSketchArray
+            uniqueCountSummary = UniqueCountSummary.fromCpcSketch(cpcSketch),
+            quantilesSummary = QuantilesSummary.fromUpdateDoublesSketch(numbersSketch),
+            uniqueStringsSummary = UniqueStringsSummary.fromStringSketch(stringSketch)
         )
 
-        println("CpcSketch Estimate: ${cpcSketch.estimate}")
-        println("CPC Sketch: ${cpcSketch}")
-        println("String sketch: $stringSketch")
-        println("Number sketch: ${numbersSketch.toString(true, false)}")
-        return gsonPretty.toJson(serializedData)
+        return gsonPretty.toJson(statistics)
     }
 }
+
+data class UniqueCountSummary(val estimate: Double, val upperbound: Double, val lowerBound: Double) {
+    companion object {
+        fun fromCpcSketch(cpcSketch: CpcSketch): UniqueCountSummary {
+            return UniqueCountSummary(cpcSketch.estimate, cpcSketch.getUpperBound(2), cpcSketch.getLowerBound(2))
+        }
+    }
+}
+
+data class QuantilesSummary(val quantiles: List<Double>) {
+    companion object {
+        fun fromUpdateDoublesSketch(sketch: UpdateDoublesSketch): QuantilesSummary {
+            return QuantilesSummary(sketch.getQuantiles(100)?.toList().orEmpty())
+
+        }
+    }
+}
+
+data class UniqueStringsSummary(val items: List<String>) {
+    companion object {
+        fun fromStringSketch(sketch: ItemsSketch<String>): UniqueStringsSummary {
+            val items = sketch.getFrequentItems(ErrorType.NO_FALSE_NEGATIVES).map { row -> row.item }.toList()
+            return UniqueStringsSummary(items)
+        }
+    }
+}
+
+data class InterpretableColumnStatistics(
+    val totalCount: Long,
+    val typeCounts: Map<ColumnDataType, Long>,
+    val longSummary: LongSummary?,
+    val doubleSummary: DoubleSummary?,
+    val uniqueCountSummary: UniqueCountSummary,
+    val quantilesSummary: QuantilesSummary,
+    val uniqueStringsSummary: UniqueStringsSummary
+)
