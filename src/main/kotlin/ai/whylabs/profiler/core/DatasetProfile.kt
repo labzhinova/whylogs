@@ -1,6 +1,6 @@
 package ai.whylabs.profiler.core
 
-import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import java.util.concurrent.ConcurrentHashMap
 
 class DatasetProfile(val name: String?) {
@@ -11,9 +11,17 @@ class DatasetProfile(val name: String?) {
     }
 
     fun track(columns: Map<String, Any?>) {
-        columns.forEach { (column, value) -> track(column, value)}
+        columns.forEach { (column, value) -> track(column, value) }
     }
 
-    fun toJsonString() {
+    fun toJsonString(): String {
+        val gsonPretty = GsonBuilder()
+            .setPrettyPrinting()
+            .registerTypeAdapter(
+                ByteArray::class.java, ByteArrayToBase64TypeAdapter()
+            )
+            .create()
+
+        return gsonPretty.toJson(this)
     }
 }

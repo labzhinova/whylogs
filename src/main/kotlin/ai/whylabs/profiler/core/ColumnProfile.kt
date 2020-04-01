@@ -1,6 +1,5 @@
 package ai.whylabs.profiler.core
 
-import com.google.gson.GsonBuilder
 import org.apache.datasketches.cpc.CpcSketch
 import org.apache.datasketches.frequencies.ErrorType
 import org.apache.datasketches.frequencies.ItemsSketch
@@ -57,6 +56,9 @@ internal data class SerializableColumnProfile(
     val stringSketchBytes: ByteArray?
 )
 
+val FractionalPattern = Regex("^[-+]?( )?\\d+([,.]\\d+)$")
+val IntegralPattern = Regex("^[-+]?( )?\\d+$")
+val Boolean = Regex("^(?i)(true|false)$")
 
 class ColumnProfile(val name: String) {
     private var totalCnt = 0L
@@ -150,15 +152,8 @@ class ColumnProfile(val name: String) {
         this.typeCounts[columnDataType.ordinal]++
     }
 
-    fun toJsonString(): String {
-        val gsonPretty = GsonBuilder()
-            .setPrettyPrinting()
-            .registerTypeAdapter(
-                ByteArray::class.java, ByteArrayToBase64TypeAdapter()
-            )
-            .create()
-
-        val statistics = InterpretableColumnStatistics(
+    fun toInterpretableStatistics(): InterpretableColumnStatistics {
+        return InterpretableColumnStatistics(
             totalCount = totalCnt,
             typeCounts = emptyMap(),
             longSummary = longSummary,
@@ -167,8 +162,6 @@ class ColumnProfile(val name: String) {
             quantilesSummary = QuantilesSummary.fromUpdateDoublesSketch(numbersSketch),
             uniqueStringsSummary = UniqueStringsSummary.fromStringSketch(stringSketch)
         )
-
-        return gsonPretty.toJson(statistics)
     }
 }
 
