@@ -75,10 +75,8 @@ class ColumnProfile(val name: String) {
         longSummary
         val coercedData = coerceType(data)
         when (coercedData) {
-            is Number -> track(coercedData)
-            is String -> track(coercedData)
-            is Boolean -> track(coercedData)
             null -> trackNull()
+            else -> track(coercedData)
         }
         addTypeCount(detectType(coercedData))
         totalCnt++
