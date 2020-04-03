@@ -74,9 +74,12 @@ class ColumnProfile(val name: String) {
     fun track(data: Any?) {
         longSummary
         val coercedData = coerceType(data)
+        // match object based on class here
         when (coercedData) {
+            is Number -> track(coercedData)
+            is String -> track(coercedData)
+            is Boolean -> track(coercedData)
             null -> trackNull()
-            else -> track(coercedData)
         }
         addTypeCount(detectType(coercedData))
         totalCnt++
