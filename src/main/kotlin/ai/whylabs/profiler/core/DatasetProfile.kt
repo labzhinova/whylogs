@@ -1,19 +1,37 @@
 package ai.whylabs.profiler.core
 
-import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import java.util.concurrent.ConcurrentHashMap
 
-class DatasetProfile(val name: String?) {
-    val columns: MutableMap<String, ColumnProfile> = ConcurrentHashMap()
+data class InterpretableDatasetProfile(val name: String?, val columns: Map<String, InterpretableColumnStatistics>)
 
-    fun track(column: String, data: Any?) {
-        columns.compute(column) { _, c -> c?.apply { track(data) } ?: ColumnProfile(column).apply { track(data) } }
+class DatasetProfile(val name: String?) {
+    private val columns: MutableMap<String, ColumnProfile> = ConcurrentHashMap()
+
+    fun track(colName: String, data: Any?) {
+        columns.compute(colName) { _, col ->
+            (col?.apply { track(data) }) ?: ColumnProfile(colName).apply { track(data) }
+        }
     }
 
     fun track(columns: Map<String, Any?>) {
-        columns.forEach { (column, value) -> track(column, value)}
+        columns.forEach { (column, value) -> track(column, value) }
     }
 
-    fun toJsonString() {
+    fun toJsonString(): String {
+        val intpColStats = columns.mapValues { (_, column) -> column.toInterpretableStatistics() }
+
+        return Gson.toJson(InterpretableDatasetProfile(name, intpColStats))
+    }
+
+    companion object {
+        private val Gson = GsonBuilder()
+            .setPrettyPrinting()
+            .serializeSpecialFloatingPointValues()
+            .registerTypeAdapter(
+                ByteArray::class.java, ByteArrayToBase64TypeAdapter()
+            )
+            .create()
+
     }
 }

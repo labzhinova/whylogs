@@ -1,11 +1,11 @@
 package ai.whylabs.profiler.core
 
-import com.google.gson.GsonBuilder
 import org.apache.datasketches.cpc.CpcSketch
 import org.apache.datasketches.frequencies.ErrorType
 import org.apache.datasketches.frequencies.ItemsSketch
 import org.apache.datasketches.quantiles.DoublesSketch
 import org.apache.datasketches.quantiles.UpdateDoublesSketch
+import java.util.EnumMap
 
 
 enum class ColumnDataType {
@@ -35,7 +35,7 @@ class DoubleSummary {
     private var max = Double.MIN_VALUE
     private var min = Double.MAX_VALUE
     private var sum = 0.0
-    private var count = 0.0
+    private var count = 0L
 
     fun update(value: Double) {
         if (value > max) max = value
@@ -57,10 +57,13 @@ internal data class SerializableColumnProfile(
     val stringSketchBytes: ByteArray?
 )
 
+val FractionalPattern = Regex("^[-+]?( )?\\d+([,.]\\d+)$")
+val IntegralPattern = Regex("^[-+]?( )?\\d+$")
+val Boolean = Regex("^(?i)(true|false)$")
 
 class ColumnProfile(val name: String) {
     private var totalCnt = 0L
-    private val typeCounts: LongArray = LongArray(ColumnDataType.values().size)
+    private val typeCounts = EnumMap<ColumnDataType, Long>(ColumnDataType::class.java)
     private val cpcSketch: CpcSketch = CpcSketch()
     private val stringSketch: ItemsSketch<String> = ItemsSketch(128)
     private val numbersSketch: UpdateDoublesSketch = DoublesSketch.builder()
@@ -146,29 +149,20 @@ class ColumnProfile(val name: String) {
         }
     }
 
-    private fun addTypeCount(columnDataType: ColumnDataType) {
-        this.typeCounts[columnDataType.ordinal]++
+    private fun addTypeCount(dataType: ColumnDataType) {
+        this.typeCounts.compute(dataType) { _: ColumnDataType, value: Long? -> value?.inc() ?: 1 }
     }
 
-    fun toJsonString(): String {
-        val gsonPretty = GsonBuilder()
-            .setPrettyPrinting()
-            .registerTypeAdapter(
-                ByteArray::class.java, ByteArrayToBase64TypeAdapter()
-            )
-            .create()
-
-        val statistics = InterpretableColumnStatistics(
+    fun toInterpretableStatistics(): InterpretableColumnStatistics {
+        return InterpretableColumnStatistics(
             totalCount = totalCnt,
-            typeCounts = emptyMap(),
+            typeCounts = typeCounts,
             longSummary = longSummary,
             doubleSummary = doubleSummary,
             uniqueCountSummary = UniqueCountSummary.fromCpcSketch(cpcSketch),
             quantilesSummary = QuantilesSummary.fromUpdateDoublesSketch(numbersSketch),
-            uniqueStringsSummary = UniqueStringsSummary.fromStringSketch(stringSketch)
+            frequentStringsSummary = if (cpcSketch.estimate < 100) FrequentStringsSummary.fromStringSketch(stringSketch) else FrequentStringsSummary.emptySummary()
         )
-
-        return gsonPretty.toJson(statistics)
     }
 }
 
@@ -189,11 +183,16 @@ data class QuantilesSummary(val quantiles: List<Double>) {
     }
 }
 
-data class UniqueStringsSummary(val items: List<String>) {
+data class FrequentStringsSummary(val items: List<String>) {
     companion object {
-        fun fromStringSketch(sketch: ItemsSketch<String>): UniqueStringsSummary {
+        fun fromStringSketch(sketch: ItemsSketch<String>): FrequentStringsSummary {
             val items = sketch.getFrequentItems(ErrorType.NO_FALSE_NEGATIVES).map { row -> row.item }.toList()
-            return UniqueStringsSummary(items)
+            return FrequentStringsSummary(items)
+        }
+
+        private val empty = FrequentStringsSummary(emptyList())
+        fun emptySummary(): FrequentStringsSummary {
+            return empty
         }
     }
 }
@@ -205,5 +204,5 @@ data class InterpretableColumnStatistics(
     val doubleSummary: DoubleSummary?,
     val uniqueCountSummary: UniqueCountSummary,
     val quantilesSummary: QuantilesSummary,
-    val uniqueStringsSummary: UniqueStringsSummary
+    val frequentStringsSummary: FrequentStringsSummary
 )
