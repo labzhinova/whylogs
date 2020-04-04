@@ -22,7 +22,6 @@ class ProfilerDemo : CliktCommand() {
 
     override fun run() {
         println("Loading data from: s3://$Databucket/$dataset")
-        val initialFreeMemory = Runtime.getRuntime().freeMemory()
         val datasetProfile = DatasetProfile(dataset)
         val s3Object = S3.getObject(Databucket, dataset)
         val executionTimeInMs = measureTimeMillis {
@@ -34,11 +33,6 @@ class ProfilerDemo : CliktCommand() {
             }
             println(datasetProfile.toJsonString())
         }
-        // force GC
-        Runtime.getRuntime().gc()
-
-        val usedMemory = initialFreeMemory - Runtime.getRuntime().freeMemory()
-        println("Used memory (bytes): ${NumberFormatter.format(usedMemory)}")
         println("Execution time (seconds): ${NumberFormatter.format(executionTimeInMs / 1000.0)}")
     }
 
