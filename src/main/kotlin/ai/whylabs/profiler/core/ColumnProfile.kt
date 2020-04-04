@@ -162,7 +162,7 @@ class ColumnProfile(val name: String) {
     }
 
     companion object {
-        val FractionalPattern = Regex("^[-+]?( )?\\d+([,.]\\d+)$")
+        val FractionalPattern = Regex("^[-+]?( )?\\d+([.]\\d+)$")
         val IntegralPattern = Regex("^[-+]?( )?\\d+$")
         val Boolean = Regex("^(?i)(true|false)$")
     }
