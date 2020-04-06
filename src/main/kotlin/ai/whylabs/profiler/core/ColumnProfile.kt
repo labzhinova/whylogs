@@ -57,10 +57,6 @@ internal data class SerializableColumnProfile(
     val stringSketchBytes: ByteArray?
 )
 
-val FractionalPattern = Regex("^[-+]?( )?\\d+([,.]\\d+)$")
-val IntegralPattern = Regex("^[-+]?( )?\\d+$")
-val Boolean = Regex("^(?i)(true|false)$")
-
 class ColumnProfile(val name: String) {
     private var totalCnt = 0L
     private val typeCounts = EnumMap<ColumnDataType, Long>(ColumnDataType::class.java)
@@ -122,8 +118,8 @@ class ColumnProfile(val name: String) {
         return when (data) {
             is String -> {
                 when {
-                    FractionalPattern.containsMatchIn(data) -> data.toLong()
-                    IntegralPattern.containsMatchIn(data) -> data.toDouble()
+                    IntegralPattern.containsMatchIn(data) -> data.toLong()
+                    FractionalPattern.containsMatchIn(data) -> data.toDouble()
                     Boolean.containsMatchIn(data) -> data.toBoolean()
                     else -> data
                 }
@@ -163,6 +159,12 @@ class ColumnProfile(val name: String) {
             quantilesSummary = QuantilesSummary.fromUpdateDoublesSketch(numbersSketch),
             frequentStringsSummary = if (cpcSketch.estimate < 100) FrequentStringsSummary.fromStringSketch(stringSketch) else FrequentStringsSummary.emptySummary()
         )
+    }
+
+    companion object {
+        val FractionalPattern = Regex("^[-+]?( )?\\d+([.]\\d+)$")
+        val IntegralPattern = Regex("^[-+]?( )?\\d+$")
+        val Boolean = Regex("^(?i)(true|false)$")
     }
 }
 
