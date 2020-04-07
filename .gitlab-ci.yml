@@ -1,0 +1,21 @@
+image: "gradle:alpine"
+
+stages:
+  - build
+  - test
+
+# This folder is cached between builds
+variables:
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+
+before_script:
+  - export GRADLE_USER_HOME=`pwd`/.gradle
+
+# TODO: set a share cache path
+build:
+  stage: build
+  script: ./gradlew --build-cache assemble
+
+test:
+  stage: test
+  script: ./gradlew check
