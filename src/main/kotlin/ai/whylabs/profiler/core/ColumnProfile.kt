@@ -21,7 +21,7 @@ class LongSummary {
     private var max = Long.MIN_VALUE
     private var min = Long.MAX_VALUE
     private var sum = 0L
-    private var count = 0L
+    var count = 0L
 
     fun update(value: Long) {
         if (value > max) max = value
@@ -35,7 +35,7 @@ class DoubleSummary {
     private var max = Double.MIN_VALUE
     private var min = Double.MAX_VALUE
     private var sum = 0.0
-    private var count = 0L
+    var count = 0L
 
     fun update(value: Double) {
         if (value > max) max = value
@@ -153,8 +153,10 @@ class ColumnProfile(val name: String) {
         return InterpretableColumnStatistics(
             totalCount = totalCnt,
             typeCounts = typeCounts,
-            longSummary = longSummary,
-            doubleSummary = doubleSummary,
+            nullCount = nullCnt,
+            trueCount = if (trueCnt == 0L) null else trueCnt,
+            longSummary = if (longSummary.count == 0L) null else longSummary,
+            doubleSummary = if (doubleSummary.count == 0L) null else doubleSummary,
             uniqueCountSummary = UniqueCountSummary.fromCpcSketch(cpcSketch),
             quantilesSummary = QuantilesSummary.fromUpdateDoublesSketch(numbersSketch),
             frequentStringsSummary = if (cpcSketch.estimate < 100) FrequentStringsSummary.fromStringSketch(stringSketch) else FrequentStringsSummary.emptySummary()
@@ -202,6 +204,8 @@ data class FrequentStringsSummary(val items: List<String>) {
 data class InterpretableColumnStatistics(
     val totalCount: Long,
     val typeCounts: Map<ColumnDataType, Long>,
+    val nullCount: Long,
+    val trueCount: Long?,
     val longSummary: LongSummary?,
     val doubleSummary: DoubleSummary?,
     val uniqueCountSummary: UniqueCountSummary,
