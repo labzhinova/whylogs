@@ -1,11 +1,16 @@
 package ai.whylabs.profiler.core
 
 import com.google.gson.GsonBuilder
+import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
-data class InterpretableDatasetProfile(val name: String?, val columns: Map<String, InterpretableColumnStatistics>)
+data class InterpretableDatasetProfile(
+    val name: String?,
+    val timestamp: Instant,
+    val columns: Map<String, InterpretableColumnStatistics>
+)
 
-class DatasetProfile(val name: String?) {
+class DatasetProfile(val name: String?, val timestamp: Instant) {
     private val columns: MutableMap<String, ColumnProfile> = ConcurrentHashMap()
 
     fun track(colName: String, data: Any?) {
@@ -21,7 +26,7 @@ class DatasetProfile(val name: String?) {
     fun toJsonString(): String {
         val intpColStats = columns.mapValues { (_, column) -> column.toInterpretableStatistics() }
 
-        return Gson.toJson(InterpretableDatasetProfile(name, intpColStats))
+        return Gson.toJson(InterpretableDatasetProfile(name, timestamp, intpColStats))
     }
 
     companion object {
@@ -30,6 +35,9 @@ class DatasetProfile(val name: String?) {
             .serializeSpecialFloatingPointValues()
             .registerTypeAdapter(
                 ByteArray::class.java, ByteArrayToBase64TypeAdapter()
+            )
+            .registerTypeAdapter(
+                Instant::class.java, InstantToLongTypeAdapter()
             )
             .create()
 
