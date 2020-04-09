@@ -10,6 +10,8 @@ import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import java.io.InputStreamReader
 import java.text.NumberFormat
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.Locale
 import kotlin.system.measureTimeMillis
 
@@ -22,11 +24,11 @@ class ProfilerDemo : CliktCommand() {
 
     override fun run() {
         println("Loading data from: s3://$Databucket/$dataset")
-        val datasetProfile = DatasetProfile(dataset)
+        val datasetProfile = DatasetProfile(dataset, Instant.now().truncatedTo(ChronoUnit.HOURS))
         val s3Object = S3.getObject(Databucket, dataset)
         val executionTimeInMs = measureTimeMillis {
-            InputStreamReader(s3Object.objectContent).use {
-                val parser = CSVParser(it, CSVFormat.DEFAULT.withFirstRecordAsHeader())
+            InputStreamReader(s3Object.objectContent).use { reader ->
+                val parser = CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())
                 for (record in parser) {
                     datasetProfile.track(record.toMap())
                 }
