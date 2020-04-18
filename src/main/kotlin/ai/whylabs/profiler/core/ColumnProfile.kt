@@ -2,6 +2,7 @@ package ai.whylabs.profiler.core
 
 import ai.whylabs.profiler.jvm.ColumnDataType
 import ai.whylabs.profiler.jvm.summary.DoubleSummary
+import ai.whylabs.profiler.jvm.summary.HistogramSummary
 import ai.whylabs.profiler.jvm.summary.LongSummary
 import ai.whylabs.profiler.jvm.summary.QuantilesSummary
 import ai.whylabs.profiler.jvm.summary.StandardDeviationSummary
@@ -12,7 +13,6 @@ import org.apache.datasketches.frequencies.ItemsSketch
 import org.apache.datasketches.quantiles.DoublesSketch
 import org.apache.datasketches.quantiles.UpdateDoublesSketch
 import java.util.EnumMap
-import kotlin.math.roundToInt
 
 class ColumnProfile(val name: String) {
     private var totalCnt = 0L
@@ -135,22 +135,6 @@ class ColumnProfile(val name: String) {
         val FractionalPattern = Regex("^[-+]?( )?\\d+([.]\\d+)$")
         val IntegralPattern = Regex("^[-+]?( )?\\d+$")
         val Boolean = Regex("^(?i)(true|false)$")
-    }
-}
-
-data class HistogramSummary(val histogram: List<Pair<Double, Int>>) {
-    companion object {
-        fun fromUpdateDoublesSketch(sketch: UpdateDoublesSketch, stddev: Double): HistogramSummary {
-            val start = sketch.minValue - stddev
-            val end = sketch.maxValue + stddev
-            val width = (end - start) / 100
-            val splitPoints = (0 until 100).map { idx -> start + idx * width }.toDoubleArray()
-            val pmf = sketch.getPMF(splitPoints)
-            val counts = pmf.dropLast(1)
-                .map { pct -> (pct * sketch.n).roundToInt() }
-
-            return HistogramSummary(splitPoints.zip(counts).toList())
-        }
     }
 }
 

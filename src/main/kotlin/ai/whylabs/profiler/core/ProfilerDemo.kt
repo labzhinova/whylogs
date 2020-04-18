@@ -46,7 +46,7 @@ class ProfilerDemo : CliktCommand() {
 //            DatasetProfile.Gson.toJson(profiles.mapValues { e -> e.value.toInterpretableObject() }, writer)
 //        }
 
-        println(DatasetProfile.Gson.toJson(profile))
+        println(DatasetProfile.Gson.toJson(profile.toInterpretableObject()))
 
         println("Execution time (seconds): ${NumberFormatter.format(executionTimeInMs / 1000.0)}")
     }
