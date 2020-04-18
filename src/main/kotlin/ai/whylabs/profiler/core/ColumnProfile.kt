@@ -2,13 +2,13 @@ package ai.whylabs.profiler.core
 
 import ai.whylabs.profiler.jvm.ColumnDataType
 import ai.whylabs.profiler.jvm.summary.DoubleSummary
+import ai.whylabs.profiler.jvm.summary.FrequentStringsSummary
 import ai.whylabs.profiler.jvm.summary.HistogramSummary
 import ai.whylabs.profiler.jvm.summary.LongSummary
 import ai.whylabs.profiler.jvm.summary.QuantilesSummary
 import ai.whylabs.profiler.jvm.summary.StandardDeviationSummary
 import ai.whylabs.profiler.jvm.summary.UniqueCountSummary
 import org.apache.datasketches.cpc.CpcSketch
-import org.apache.datasketches.frequencies.ErrorType
 import org.apache.datasketches.frequencies.ItemsSketch
 import org.apache.datasketches.quantiles.DoublesSketch
 import org.apache.datasketches.quantiles.UpdateDoublesSketch
@@ -127,7 +127,7 @@ class ColumnProfile(val name: String) {
             } else {
                 null
             },
-            frequentStringsSummary = if (cpcSketch.estimate < 100) FrequentStringsSummary.fromStringSketch(stringSketch) else FrequentStringsSummary.emptySummary()
+            frequentStringsSummary = if (cpcSketch.estimate < 100) FrequentStringsSummary.fromStringSketch(stringSketch) else FrequentStringsSummary.empty()
         )
     }
 
@@ -135,20 +135,6 @@ class ColumnProfile(val name: String) {
         val FractionalPattern = Regex("^[-+]?( )?\\d+([.]\\d+)$")
         val IntegralPattern = Regex("^[-+]?( )?\\d+$")
         val Boolean = Regex("^(?i)(true|false)$")
-    }
-}
-
-data class FrequentStringsSummary(val items: List<String>) {
-    companion object {
-        fun fromStringSketch(sketch: ItemsSketch<String>): FrequentStringsSummary {
-            val items = sketch.getFrequentItems(ErrorType.NO_FALSE_NEGATIVES).map { row -> row.item }.toList()
-            return FrequentStringsSummary(items)
-        }
-
-        private val empty = FrequentStringsSummary(emptyList())
-        fun emptySummary(): FrequentStringsSummary {
-            return empty
-        }
     }
 }
 
