@@ -1,6 +1,7 @@
 package ai.whylabs.profiler.core
 
 import ai.whylabs.profiler.jvm.ColumnDataType
+import ai.whylabs.profiler.jvm.InterpretableColumnStatistics
 import ai.whylabs.profiler.jvm.summary.DoubleSummary
 import ai.whylabs.profiler.jvm.summary.FrequentStringsSummary
 import ai.whylabs.profiler.jvm.summary.HistogramSummary
@@ -111,24 +112,34 @@ class ColumnProfile(val name: String) {
     }
 
     fun toInterpretableStatistics(): InterpretableColumnStatistics {
-        return InterpretableColumnStatistics(
-            totalCount = totalCnt,
-            typeCounts = typeCounts,
-            nullCount = nullCnt,
-            trueCount = if (trueCnt == 0L) null else trueCnt,
-            longSummary = if (longSummary.count == 0L) null else longSummary,
-            doubleSummary = if (doubleSummary.count == 0L) null else doubleSummary,
-            uniqueCountSummary = UniqueCountSummary.fromCpcSketch(cpcSketch),
-            quantilesSummary = if (numbersSketch.n == 0L) null else QuantilesSummary.fromUpdateDoublesSketch(
-                numbersSketch
-            ),
-            histogramSummary = if (numbersSketch.n >= 0L && numbersSketch.maxValue > numbersSketch.minValue) {
-                HistogramSummary.fromUpdateDoublesSketch(numbersSketch, stddevSummary.stddev())
-            } else {
-                null
-            },
-            frequentStringsSummary = if (cpcSketch.estimate < 100) FrequentStringsSummary.fromStringSketch(stringSketch) else FrequentStringsSummary.empty()
-        )
+        return InterpretableColumnStatistics.bd()
+            .totalCount(totalCnt)
+            .typeCounts(typeCounts)
+            .nullCount(nullCnt)
+            .trueCount(if (trueCnt == 0L) null else trueCnt)
+            .longSummary(if (longSummary.count == 0L) null else longSummary)
+            .doubleSummary(if (doubleSummary.count == 0L) null else doubleSummary)
+            .uniqueCountSummary(UniqueCountSummary.fromCpcSketch(cpcSketch))
+            .quantilesSummary(
+                if (numbersSketch.n == 0L) null else QuantilesSummary.fromUpdateDoublesSketch(
+                    numbersSketch
+                )
+            )
+            .histogramSummary(
+                if (numbersSketch.n >= 0L && numbersSketch.maxValue > numbersSketch.minValue) {
+                    HistogramSummary.fromUpdateDoublesSketch(numbersSketch, stddevSummary.stddev())
+                } else {
+                    null
+                }
+            )
+            .frequentStringsSummary(
+                if (cpcSketch.estimate < 100) {
+                    FrequentStringsSummary.fromStringSketch(stringSketch)
+                } else {
+                    FrequentStringsSummary.empty()
+                }
+            )
+            .build()
     }
 
     companion object {
@@ -137,16 +148,3 @@ class ColumnProfile(val name: String) {
         val Boolean = Regex("^(?i)(true|false)$")
     }
 }
-
-data class InterpretableColumnStatistics(
-    val totalCount: Long,
-    val typeCounts: Map<ColumnDataType, Long>,
-    val nullCount: Long,
-    val trueCount: Long?,
-    val longSummary: LongSummary?,
-    val doubleSummary: DoubleSummary?,
-    val uniqueCountSummary: UniqueCountSummary,
-    val quantilesSummary: QuantilesSummary?,
-    val histogramSummary: HistogramSummary?,
-    val frequentStringsSummary: FrequentStringsSummary
-)
