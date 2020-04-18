@@ -1,11 +1,15 @@
 package ai.whylabs.profiler.core
 
+import ai.whylabs.profiler.jvm.DoubleSummary
+import ai.whylabs.profiler.jvm.LongSummary
+import ai.whylabs.profiler.jvm.StandardDeviationSummary
 import org.apache.datasketches.cpc.CpcSketch
 import org.apache.datasketches.frequencies.ErrorType
 import org.apache.datasketches.frequencies.ItemsSketch
 import org.apache.datasketches.quantiles.DoublesSketch
 import org.apache.datasketches.quantiles.UpdateDoublesSketch
 import java.util.EnumMap
+import kotlin.math.roundToInt
 
 
 enum class ColumnDataType {
@@ -17,46 +21,6 @@ enum class ColumnDataType {
     UNKNOWN,
 }
 
-class LongSummary {
-    private var max = Long.MIN_VALUE
-    private var min = Long.MAX_VALUE
-    private var sum = 0L
-    var count = 0L
-
-    fun update(value: Long) {
-        if (value > max) max = value
-        if (min < value) min = value
-        sum += value
-        count++
-    }
-}
-
-class DoubleSummary {
-    private var max = Double.MIN_VALUE
-    private var min = Double.MAX_VALUE
-    private var sum = 0.0
-    var count = 0L
-
-    fun update(value: Double) {
-        if (value > max) max = value
-        if (min < value) min = value
-        sum += value
-        count++
-    }
-
-}
-
-internal data class SerializableColumnProfile(
-    val totalCount: Long,
-    val typeCounts: LongArray,
-    val longSummary: LongSummary?,
-    val doubleSummary: DoubleSummary?,
-    val trueCount: Long?,
-    val nullCount: Long?,
-    val cpcSketchBytes: ByteArray?,
-    val stringSketchBytes: ByteArray?
-)
-
 class ColumnProfile(val name: String) {
     private var totalCnt = 0L
     private val typeCounts = EnumMap<ColumnDataType, Long>(ColumnDataType::class.java)
@@ -67,6 +31,7 @@ class ColumnProfile(val name: String) {
 
     private val longSummary = LongSummary()
     private val doubleSummary = DoubleSummary()
+    private val stddevSummary = StandardDeviationSummary()
     private var trueCnt = 0L
     private var nullCnt = 0L
 
@@ -90,11 +55,14 @@ class ColumnProfile(val name: String) {
                 doubleSummary.update(value)
                 cpcSketch.update(value)
                 numbersSketch.update(value)
+                stddevSummary.update(value)
             }
             is Long -> {
                 longSummary.update(value)
                 cpcSketch.update(value)
-                numbersSketch.update(value.toDouble())
+                val asDoubleValue = value.toDouble()
+                numbersSketch.update(asDoubleValue)
+                stddevSummary.update(asDoubleValue)
             }
         }
     }
@@ -158,7 +126,14 @@ class ColumnProfile(val name: String) {
             longSummary = if (longSummary.count == 0L) null else longSummary,
             doubleSummary = if (doubleSummary.count == 0L) null else doubleSummary,
             uniqueCountSummary = UniqueCountSummary.fromCpcSketch(cpcSketch),
-            quantilesSummary = QuantilesSummary.fromUpdateDoublesSketch(numbersSketch),
+            quantilesSummary = if (numbersSketch.n == 0L) null else QuantilesSummary.fromUpdateDoublesSketch(
+                numbersSketch
+            ),
+            histogramSummary = if (numbersSketch.n >= 0L && numbersSketch.maxValue > numbersSketch.minValue) {
+                HistogramSummary.fromUpdateDoublesSketch(numbersSketch, stddevSummary.stddev())
+            } else {
+                null
+            },
             frequentStringsSummary = if (cpcSketch.estimate < 100) FrequentStringsSummary.fromStringSketch(stringSketch) else FrequentStringsSummary.emptySummary()
         )
     }
@@ -182,7 +157,22 @@ data class QuantilesSummary(val quantiles: List<Double>) {
     companion object {
         fun fromUpdateDoublesSketch(sketch: UpdateDoublesSketch): QuantilesSummary {
             return QuantilesSummary(sketch.getQuantiles(100)?.toList().orEmpty())
+        }
+    }
+}
 
+data class HistogramSummary(val histogram: List<Pair<Double, Int>>) {
+    companion object {
+        fun fromUpdateDoublesSketch(sketch: UpdateDoublesSketch, stddev: Double): HistogramSummary {
+            val start = sketch.minValue - stddev
+            val end = sketch.maxValue + stddev
+            val width = (end - start) / 100
+            val splitPoints = (0 until 100).map { idx -> start + idx * width }.toDoubleArray()
+            val pmf = sketch.getPMF(splitPoints)
+            val counts = pmf.dropLast(1)
+                .map { pct -> (pct * sketch.n).roundToInt() }
+
+            return HistogramSummary(splitPoints.zip(counts).toList())
         }
     }
 }
@@ -209,6 +199,7 @@ data class InterpretableColumnStatistics(
     val longSummary: LongSummary?,
     val doubleSummary: DoubleSummary?,
     val uniqueCountSummary: UniqueCountSummary,
-    val quantilesSummary: QuantilesSummary,
+    val quantilesSummary: QuantilesSummary?,
+    val histogramSummary: HistogramSummary?,
     val frequentStringsSummary: FrequentStringsSummary
 )
