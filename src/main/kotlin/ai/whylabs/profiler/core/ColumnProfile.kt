@@ -1,9 +1,11 @@
 package ai.whylabs.profiler.core
 
 import ai.whylabs.profiler.jvm.ColumnDataType
-import ai.whylabs.profiler.jvm.DoubleSummary
-import ai.whylabs.profiler.jvm.LongSummary
-import ai.whylabs.profiler.jvm.StandardDeviationSummary
+import ai.whylabs.profiler.jvm.summary.DoubleSummary
+import ai.whylabs.profiler.jvm.summary.LongSummary
+import ai.whylabs.profiler.jvm.summary.QuantilesSummary
+import ai.whylabs.profiler.jvm.summary.StandardDeviationSummary
+import ai.whylabs.profiler.jvm.summary.UniqueCountSummary
 import org.apache.datasketches.cpc.CpcSketch
 import org.apache.datasketches.frequencies.ErrorType
 import org.apache.datasketches.frequencies.ItemsSketch
@@ -133,22 +135,6 @@ class ColumnProfile(val name: String) {
         val FractionalPattern = Regex("^[-+]?( )?\\d+([.]\\d+)$")
         val IntegralPattern = Regex("^[-+]?( )?\\d+$")
         val Boolean = Regex("^(?i)(true|false)$")
-    }
-}
-
-data class UniqueCountSummary(val estimate: Double, val upperbound: Double, val lowerBound: Double) {
-    companion object {
-        fun fromCpcSketch(cpcSketch: CpcSketch): UniqueCountSummary {
-            return UniqueCountSummary(cpcSketch.estimate, cpcSketch.getUpperBound(2), cpcSketch.getLowerBound(2))
-        }
-    }
-}
-
-data class QuantilesSummary(val quantiles: List<Double>) {
-    companion object {
-        fun fromUpdateDoublesSketch(sketch: UpdateDoublesSketch): QuantilesSummary {
-            return QuantilesSummary(sketch.getQuantiles(100)?.toList().orEmpty())
-        }
     }
 }
 

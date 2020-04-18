@@ -24,14 +24,14 @@ class ProfilerDemo : CliktCommand() {
 //    private val dataset: String by option(help = "Select S3 key").prompt("S3 key")
 
     override fun run() {
-        val profiles = mutableMapOf<String, DatasetProfile>()
+//        val profiles = mutableMapOf<String, DatasetProfile>()
 //        println("Loading data from: s3://$Databucket/$dataset")
 //        val s3Object = S3.getObject(Databucket, dataset)
-        val profile = DatasetProfile("data", Instant.now());
+        val profile = DatasetProfile("data", Instant.now())
         val executionTimeInMs = measureTimeMillis {
             InputStreamReader(FileInputStream("/Users/andy/Downloads/Parking_Violations_Issued_-_Fiscal_Year_2017.csv")).use { reader ->
                 val parser = CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())
-                for (record in parser) {
+                for (record in parser.take(1000)) {
 //                    val entryDate = LocalDate.parse(record.get("Issue Date"), DateTimeFormatter)
 //                    val dateTime = entryDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant()
 //                    val profile = profiles.getOrPut(

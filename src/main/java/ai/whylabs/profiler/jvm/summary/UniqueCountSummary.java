@@ -1,4 +1,4 @@
-package ai.whylabs.profiler.jvm;
+package ai.whylabs.profiler.jvm.summary;
 
 import lombok.Value;
 import org.apache.datasketches.cpc.CpcSketch;
@@ -9,7 +9,7 @@ public class UniqueCountSummary {
     double upper;
     double lower;
 
-    static UniqueCountSummary fromCpcSketch(CpcSketch sketch) {
+    public static UniqueCountSummary fromCpcSketch(CpcSketch sketch) {
         return new UniqueCountSummary(sketch.getEstimate(), sketch.getUpperBound(2), sketch.getLowerBound(2));
     }
 
