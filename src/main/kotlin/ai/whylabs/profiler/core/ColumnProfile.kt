@@ -1,5 +1,6 @@
 package ai.whylabs.profiler.core
 
+import ai.whylabs.profiler.jvm.ColumnDataType
 import ai.whylabs.profiler.jvm.DoubleSummary
 import ai.whylabs.profiler.jvm.LongSummary
 import ai.whylabs.profiler.jvm.StandardDeviationSummary
@@ -10,16 +11,6 @@ import org.apache.datasketches.quantiles.DoublesSketch
 import org.apache.datasketches.quantiles.UpdateDoublesSketch
 import java.util.EnumMap
 import kotlin.math.roundToInt
-
-
-enum class ColumnDataType {
-    NULL,
-    FRACTIONAL,
-    INTEGRAL,
-    BOOLEAN,
-    STRING,
-    UNKNOWN,
-}
 
 class ColumnProfile(val name: String) {
     private var totalCnt = 0L
