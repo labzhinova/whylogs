@@ -24,7 +24,7 @@ public class DatasetProfile {
 
     public void track(String columnName, Object data) {
         val columnProfile = columns.compute(columnName,
-                (colName, columnProfile1) -> (columnProfile1 == null) ? new ColumnProfile(columnName) : columnProfile1);
+                (colName, existingProfile) -> (existingProfile == null) ? new ColumnProfile(columnName) : existingProfile);
         columnProfile.track(data);
     }
 
@@ -33,16 +33,21 @@ public class DatasetProfile {
     }
 
     public InterpretableDatasetProfile toInterpretableObject() {
-        val intpColumns = columns.entrySet().stream().map(entry -> new Pair(entry.getKey(), entry.getValue().toInterpretableStatistics()))
-                .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
+        val intpColumns = columns.values().stream()
+                .map(Pair::fromColumn)
+                .collect(Collectors.toMap(Pair::getName, Pair::getStatistics));
 
         return new InterpretableDatasetProfile(name, timestamp, intpColumns);
     }
 
     @Value
     static class Pair {
-        String key;
-        InterpretableColumnStatistics value;
+        String name;
+        InterpretableColumnStatistics statistics;
+
+        static Pair fromColumn(ColumnProfile column) {
+            return new Pair(column.getColumnName(), column.toInterpretableStatistics());
+        }
     }
 
 
