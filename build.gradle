@@ -1,10 +1,19 @@
-apply plugin: 'java'
+plugins {
+    id 'java'
+    id "com.diffplug.gradle.spotless" version "3.28.1"
+}
 
 group 'org.whylabs'
 version '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
+}
+
+spotless {
+    java {
+        googleJavaFormat()
+    }
 }
 
 dependencies {
