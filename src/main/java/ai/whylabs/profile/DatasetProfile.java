@@ -2,18 +2,25 @@ package ai.whylabs.profile;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import java.time.Instant;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 import lombok.val;
 
-import java.time.Instant;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class DatasetProfile {
+
+    public static Gson Gson =
+            new GsonBuilder()
+                    .setPrettyPrinting()
+                    .serializeSpecialFloatingPointValues()
+                    .registerTypeAdapter(byte[].class, new Utils.ByteArrayToBase64TypeAdapter())
+                    .registerTypeAdapter(Instant.class, new Utils.InstantToLongTypeAdapter())
+                    .create();
     String name;
     Instant timestamp;
     Map<String, ColumnProfile> columns;
@@ -23,8 +30,12 @@ public class DatasetProfile {
     }
 
     public void track(String columnName, Object data) {
-        val columnProfile = columns.compute(columnName,
-                (colName, existingProfile) -> (existingProfile == null) ? new ColumnProfile(columnName) : existingProfile);
+        val columnProfile =
+                columns.compute(
+                        columnName,
+                        (colName, existingProfile) ->
+                                (existingProfile == null) ? new ColumnProfile(columnName)
+                                        : existingProfile);
         columnProfile.track(data);
     }
 
@@ -33,15 +44,17 @@ public class DatasetProfile {
     }
 
     public InterpretableDatasetProfile toInterpretableObject() {
-        val intpColumns = columns.values().stream()
-                .map(Pair::fromColumn)
-                .collect(Collectors.toMap(Pair::getName, Pair::getStatistics));
+        val intpColumns =
+                columns.values().stream()
+                        .map(Pair::fromColumn)
+                        .collect(Collectors.toMap(Pair::getName, Pair::getStatistics));
 
         return new InterpretableDatasetProfile(name, timestamp, intpColumns);
     }
 
     @Value
     static class Pair {
+
         String name;
         InterpretableColumnStatistics statistics;
 
@@ -49,17 +62,4 @@ public class DatasetProfile {
             return new Pair(column.getColumnName(), column.toInterpretableStatistics());
         }
     }
-
-
-    public static Gson Gson = new GsonBuilder()
-            .setPrettyPrinting()
-            .serializeSpecialFloatingPointValues()
-            .registerTypeAdapter(
-                    byte[].class, new Utils.ByteArrayToBase64TypeAdapter()
-            )
-            .registerTypeAdapter(
-                    Instant.class, new Utils.InstantToLongTypeAdapter()
-            )
-            .create();
-
 }

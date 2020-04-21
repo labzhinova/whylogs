@@ -1,14 +1,15 @@
 package ai.whylabs.profile.serializers;
 
+import static org.testng.Assert.assertEquals;
+
 import com.esotericsoftware.kryo.Kryo;
 import lombok.val;
 import org.apache.datasketches.frequencies.ItemsSketch;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertEquals;
-
 @SuppressWarnings({"rawtypes"})
 public class ItemsSketchSerializerTest extends KryoBaseTest<ItemsSketch> {
+
     static Kryo kryo = new Kryo();
 
     static {

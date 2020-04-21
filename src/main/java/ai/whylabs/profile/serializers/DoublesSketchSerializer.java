@@ -9,14 +9,15 @@ import org.apache.datasketches.quantiles.DoublesSketch;
 import org.apache.datasketches.quantiles.UpdateDoublesSketch;
 
 public class DoublesSketchSerializer extends Serializer<DoublesSketch> {
-    @Override
-    public void write(Kryo kryo, Output output, DoublesSketch sketch) {
-        kryo.writeObject(output, sketch.toByteArray());
-    }
 
-    @Override
-    public DoublesSketch read(Kryo kryo, Input input, Class<DoublesSketch> type) {
-        byte[] bytes = kryo.readObject(input, byte[].class);
-        return UpdateDoublesSketch.wrap(Memory.wrap(bytes));
-    }
+  @Override
+  public void write(Kryo kryo, Output output, DoublesSketch sketch) {
+    kryo.writeObject(output, sketch.toByteArray());
+  }
+
+  @Override
+  public DoublesSketch read(Kryo kryo, Input input, Class<DoublesSketch> type) {
+    byte[] bytes = kryo.readObject(input, byte[].class);
+    return UpdateDoublesSketch.wrap(Memory.wrap(bytes));
+  }
 }

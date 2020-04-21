@@ -8,30 +8,31 @@ import com.esotericsoftware.kryo.io.Output;
 import org.apache.datasketches.cpc.CpcSketch;
 
 public class ColumnProfileSerializer extends Serializer<ColumnProfile> {
-    @Override
-    public void write(Kryo kryo, Output output, ColumnProfile columnProfile) {
-        kryo.register(CpcSketch.class, new CpcSketchSerializer());
 
-        kryo.writeObject(output, columnProfile.getColumnName());
+  @Override
+  public void write(Kryo kryo, Output output, ColumnProfile columnProfile) {
+    kryo.register(CpcSketch.class, new CpcSketchSerializer());
 
-        // Counting
-        kryo.writeObject(output, columnProfile.getNullCount());
-        kryo.writeObject(output, columnProfile.getTrueCount());
-        kryo.writeObject(output, columnProfile.getTypeCounts());
+    kryo.writeObject(output, columnProfile.getColumnName());
 
-        // Numerical summaries
-        kryo.writeObject(output, columnProfile.getDoubleSummary());
-        kryo.writeObject(output, columnProfile.getLongSummary());
-        kryo.writeObject(output, columnProfile.getStddevSummary());
+    // Counting
+    kryo.writeObject(output, columnProfile.getNullCount());
+    kryo.writeObject(output, columnProfile.getTrueCount());
+    kryo.writeObject(output, columnProfile.getTypeCounts());
 
-        // Sketches
-        kryo.writeObject(output, columnProfile.getCpcSketch());
-        kryo.writeObject(output, columnProfile.getStringsSketch());
-        kryo.writeObject(output, columnProfile.getNumbersSketch());
-    }
+    // Numerical summaries
+    kryo.writeObject(output, columnProfile.getDoubleSummary());
+    kryo.writeObject(output, columnProfile.getLongSummary());
+    kryo.writeObject(output, columnProfile.getStddevSummary());
 
-    @Override
-    public ColumnProfile read(Kryo kryo, Input input, Class<ColumnProfile> type) {
-        return null;
-    }
+    // Sketches
+    kryo.writeObject(output, columnProfile.getCpcSketch());
+    kryo.writeObject(output, columnProfile.getStringsSketch());
+    kryo.writeObject(output, columnProfile.getNumbersSketch());
+  }
+
+  @Override
+  public ColumnProfile read(Kryo kryo, Input input, Class<ColumnProfile> type) {
+    return null;
+  }
 }

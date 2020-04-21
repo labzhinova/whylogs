@@ -1,55 +1,54 @@
 package ai.whylabs.profile.serializers;
 
+import static org.junit.Assert.assertNull;
+
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.ByteBufferInput;
 import com.esotericsoftware.kryo.io.ByteBufferOutput;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import lombok.SneakyThrows;
 import lombok.val;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-
-import static org.junit.Assert.assertNull;
-
 public abstract class KryoBaseTest<TYPE> {
-    private final Class<TYPE> clazz;
-    private final Kryo kryo;
 
-    public KryoBaseTest(Serializer<TYPE> serializer, Class<TYPE> clazz) {
-        this.kryo = new Kryo();
-        this.kryo.register(clazz, serializer);
-        this.clazz = clazz;
-    }
+  private final Class<TYPE> clazz;
+  private final Kryo kryo;
 
-    public abstract TYPE createObject();
+  public KryoBaseTest(Serializer<TYPE> serializer, Class<TYPE> clazz) {
+    this.kryo = new Kryo();
+    this.kryo.register(clazz, serializer);
+    this.clazz = clazz;
+  }
 
-    public abstract void verify(TYPE original, TYPE deserializedObject);
+  public abstract TYPE createObject();
 
-    @SneakyThrows
-    public void runFullSerialization() {
-        val original = createObject();
-        TYPE deserializedObject = doRoundTrip(original);
+  public abstract void verify(TYPE original, TYPE deserializedObject);
 
-        verify(original, deserializedObject);
-    }
+  @SneakyThrows
+  public void runFullSerialization() {
+    val original = createObject();
+    TYPE deserializedObject = doRoundTrip(original);
 
-    @SneakyThrows
-    public void runWithNull() {
-        TYPE deserializedObject = doRoundTrip(null);
+    verify(original, deserializedObject);
+  }
 
-        assertNull(deserializedObject);
-    }
+  @SneakyThrows
+  public void runWithNull() {
+    TYPE deserializedObject = doRoundTrip(null);
 
-    private TYPE doRoundTrip(TYPE original) throws IOException {
-        val bos = new ByteArrayOutputStream();
-        val bbo = new ByteBufferOutput(bos);
-        kryo.writeObjectOrNull(bbo, original, clazz);
-        bbo.close();
-        bos.close();
+    assertNull(deserializedObject);
+  }
 
-        val bbi = new ByteBufferInput(bos.toByteArray());
-        return kryo.readObjectOrNull(bbi, clazz);
-    }
+  private TYPE doRoundTrip(TYPE original) throws IOException {
+    val bos = new ByteArrayOutputStream();
+    val bbo = new ByteBufferOutput(bos);
+    kryo.writeObjectOrNull(bbo, original, clazz);
+    bbo.close();
+    bos.close();
 
+    val bbi = new ByteBufferInput(bos.toByteArray());
+    return kryo.readObjectOrNull(bbi, clazz);
+  }
 }

@@ -6,14 +6,14 @@ import ai.whylabs.profile.summary.HistogramSummary;
 import ai.whylabs.profile.summary.LongSummary;
 import ai.whylabs.profile.summary.QuantilesSummary;
 import ai.whylabs.profile.summary.UniqueCountSummary;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
-
-import java.util.Map;
 
 @Builder
 @Value
 public class InterpretableColumnStatistics {
+
     Long totalCount;
     Map<ColumnDataType, Long> typeCounts;
     Long nullCount;

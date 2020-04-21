@@ -7,6 +7,7 @@ import com.esotericsoftware.kryo.io.Output;
 import org.apache.datasketches.cpc.CpcSketch;
 
 public class CpcSketchSerializer extends Serializer<CpcSketch> {
+
     @Override
     public void write(Kryo kryo, Output output, CpcSketch sketch) {
         kryo.writeObject(output, sketch.toByteArray());
