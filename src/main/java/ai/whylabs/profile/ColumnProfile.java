@@ -9,6 +9,7 @@ import ai.whylabs.profile.summary.StandardDeviationSummary;
 import ai.whylabs.profile.summary.UniqueCountSummary;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.val;
 import org.apache.datasketches.cpc.CpcSketch;
 import org.apache.datasketches.frequencies.ItemsSketch;
@@ -20,6 +21,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Getter
 public class ColumnProfile {
     private static final Pattern FRACTIONAL = Pattern.compile("^[-+]?( )?\\d+([.]\\d+)$");
     private static final Pattern INTEGRAL = Pattern.compile("^[-+]?( )?\\d+$");

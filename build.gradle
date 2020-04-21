@@ -12,10 +12,33 @@ dependencies {
     implementation "com.google.code.gson:gson:2.8.6"
     implementation "org.apache.commons:commons-csv:1.8"
     implementation "com.amazonaws:aws-java-sdk-s3:1.11.758"
+    implementation "com.esotericsoftware.kryo:kryo:2.24.0"
 
     compileOnly 'org.projectlombok:lombok:1.18.12'
     annotationProcessor 'org.projectlombok:lombok:1.18.12'
 
     testCompileOnly 'org.projectlombok:lombok:1.18.12'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.12'
+
+    testCompile 'org.testng:testng:6.8'
+}
+
+test { //this is the gradle task to be executed
+    useTestNG()
+
+    // show standard out and standard error of the test JVM(s) on the console
+    testLogging.showStandardStreams = true
+
+    // listen to events in the test execution lifecycle
+    beforeTest { descriptor ->
+        logger.lifecycle("Running test: " + descriptor)
+    }
+
+    // Fail the 'test' task on the first test failure
+    failFast = true
+
+    // listen to standard out and standard error of the test JVM(s)
+    onOutput { descriptor, event ->
+        logger.lifecycle("Test: " + descriptor + " produced standard out/err: " + event.message )
+    }
 }
