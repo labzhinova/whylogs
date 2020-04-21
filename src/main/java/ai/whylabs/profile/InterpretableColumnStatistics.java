@@ -1,7 +1,7 @@
 package ai.whylabs.profile;
 
-import ai.whylabs.profile.stastistics.DoubleSummary;
-import ai.whylabs.profile.stastistics.LongSummary;
+import ai.whylabs.profile.statistics.trackers.DoubleTracker;
+import ai.whylabs.profile.statistics.trackers.LongTracker;
 import ai.whylabs.profile.summary.FrequentStringsSummary;
 import ai.whylabs.profile.summary.HistogramSummary;
 import ai.whylabs.profile.summary.QuantilesSummary;
@@ -18,8 +18,8 @@ public class InterpretableColumnStatistics {
     Map<ColumnDataType, Long> typeCounts;
     Long nullCount;
     Long trueCount;
-    LongSummary longSummary;
-    DoubleSummary doubleSummary;
+    LongTracker longTracker;
+    DoubleTracker doubleTracker;
     UniqueCountSummary uniqueCountSummary;
     QuantilesSummary quantilesSummary;
     HistogramSummary histogramSummary;

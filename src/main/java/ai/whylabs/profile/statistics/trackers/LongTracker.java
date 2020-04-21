@@ -1,29 +1,28 @@
-package ai.whylabs.profile.stastistics;
+package ai.whylabs.profile.statistics.trackers;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 @EqualsAndHashCode
-@AllArgsConstructor(access = AccessLevel.PACKAGE)
-public class DoubleSummary implements KryoSerializable {
+@AllArgsConstructor
+public class LongTracker implements KryoSerializable {
 
-  private double min;
-  private double max;
-  private double sum;
+  private long min;
+  private long max;
+  private long sum;
   @Getter
   public long count;
 
-  public DoubleSummary() {
-    this(Double.MIN_VALUE, Double.MAX_VALUE, 0.0, 0L);
+  public LongTracker() {
+    this(Long.MAX_VALUE, Long.MIN_VALUE, 0L, 0L);
   }
 
-  public void update(double value) {
+  public void update(long value) {
     if (value > max) {
       max = value;
     }
@@ -38,19 +37,19 @@ public class DoubleSummary implements KryoSerializable {
   public void write(Kryo kryo, Output output) {
     output.writeLong(count);
     if (count > 0) {
-      output.writeDouble(max);
-      output.writeDouble(min);
-      output.writeDouble(sum);
+      output.writeLong(min);
+      output.writeLong(max);
+      output.writeLong(sum);
     }
   }
 
   @Override
   public void read(Kryo kryo, Input input) {
     this.count = input.readLong();
-    if (count > 0) {
-      this.max = input.readDouble();
-      this.min = input.readDouble();
-      this.sum = input.readDouble();
+    if (this.count > 0) {
+      this.min = input.readLong();
+      this.max = input.readLong();
+      this.sum = input.readLong();
     }
   }
 }

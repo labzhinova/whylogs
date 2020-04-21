@@ -1,8 +1,8 @@
 package ai.whylabs.profile;
 
-import ai.whylabs.profile.stastistics.DoubleSummary;
-import ai.whylabs.profile.stastistics.LongSummary;
-import ai.whylabs.profile.stastistics.StandardDeviationSummary;
+import ai.whylabs.profile.statistics.trackers.DoubleTracker;
+import ai.whylabs.profile.statistics.trackers.LongTracker;
+import ai.whylabs.profile.statistics.trackers.StandardDeviationTracker;
 import ai.whylabs.profile.summary.FrequentStringsSummary;
 import ai.whylabs.profile.summary.HistogramSummary;
 import ai.whylabs.profile.summary.QuantilesSummary;
@@ -33,9 +33,9 @@ public class ColumnProfile {
   final ItemsSketch<String> stringsSketch;
   final UpdateDoublesSketch numbersSketch;
 
-  final LongSummary longSummary;
-  final DoubleSummary doubleSummary;
-  final StandardDeviationSummary stddevSummary;
+  final LongTracker longTracker;
+  final DoubleTracker doubleTracker;
+  final StandardDeviationTracker stddevSummary;
 
   long totalCount;
   long trueCount;
@@ -48,9 +48,9 @@ public class ColumnProfile {
         new CpcSketch(),
         new ItemsSketch<>(128),
         DoublesSketch.builder().setK(256).build(),
-        new LongSummary(),
-        new DoubleSummary(),
-        new StandardDeviationSummary(),
+        new LongTracker(),
+        new DoubleTracker(),
+        new StandardDeviationTracker(),
         0L,
         0L,
         0L);
@@ -142,15 +142,15 @@ public class ColumnProfile {
   }
 
   private void track(Double value) {
-    doubleSummary.update(value);
+    doubleTracker.update(value);
     cpcSketch.update(value);
     numbersSketch.update(value);
     stddevSummary.update(value);
   }
 
   private void track(Long value) {
-    doubleSummary.update(value);
-    longSummary.update(value);
+    doubleTracker.update(value);
+    longTracker.update(value);
     cpcSketch.update(value);
     numbersSketch.update(value.doubleValue());
     stddevSummary.update(value);
@@ -167,8 +167,8 @@ public class ColumnProfile {
         .typeCounts(typeCounts)
         .nullCount(nullCount)
         .trueCount((trueCount == 0L) ? null : trueCount)
-        .longSummary((longSummary.count == 0L) ? null : longSummary)
-        .doubleSummary((doubleSummary.count == 0L) ? null : doubleSummary)
+        .longTracker((longTracker.count == 0L) ? null : longTracker)
+        .doubleTracker((doubleTracker.count == 0L) ? null : doubleTracker)
         .uniqueCountSummary(UniqueCountSummary.fromCpcSketch(cpcSketch))
         .quantilesSummary(
             (numbersSketch.getN() == 0L)

@@ -1,4 +1,4 @@
-package ai.whylabs.profile.stastistics;
+package ai.whylabs.profile.statistics.trackers;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
@@ -10,14 +10,14 @@ import lombok.val;
 
 @EqualsAndHashCode
 @AllArgsConstructor
-public class StandardDeviationSummary implements KryoSerializable {
+public class StandardDeviationTracker implements KryoSerializable {
 
   private double sum;
   private double m2;
   private double mean;
   private long n;
 
-  public StandardDeviationSummary() {
+  public StandardDeviationTracker() {
     this(0.0, 0.0, 0.0, 0L);
   }
 
