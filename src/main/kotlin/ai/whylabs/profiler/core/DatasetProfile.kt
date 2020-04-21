@@ -1,5 +1,6 @@
 package ai.whylabs.profiler.core
 
+import ai.whylabs.profiler.jvm.ColumnProfile
 import ai.whylabs.profiler.jvm.InterpretableColumnStatistics
 import ai.whylabs.profiler.jvm.Utils
 import com.google.gson.Gson
