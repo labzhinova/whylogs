@@ -6,10 +6,10 @@ import lombok.val;
 import org.apache.datasketches.quantiles.DoublesSketch;
 import org.testng.annotations.Test;
 
-public class DoublesSketchSerializerTest extends KryoBaseTest<DoublesSketch> {
+public class HeapUpdateDoublesSketchSerializerTest extends KryoBaseTest<DoublesSketch> {
 
-  public DoublesSketchSerializerTest() {
-    super(new DoublesSketchSerializer(), DoublesSketch.class);
+  public HeapUpdateDoublesSketchSerializerTest() {
+    super(new HeapUpdateDoublesSketchSerializer(), DoublesSketch.class);
   }
 
   @Override

@@ -4,12 +4,15 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.val;
 
+@Getter
 @EqualsAndHashCode
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class StandardDeviationTracker implements KryoSerializable {
 
   private double sum;
@@ -29,7 +32,7 @@ public class StandardDeviationTracker implements KryoSerializable {
     m2 += delta * (value - mean);
   }
 
-  public double stddev() {
+  public double value() {
     if (n < 2) {
       return Double.NaN;
     }

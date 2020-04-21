@@ -4,22 +4,23 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
+@Getter
 @EqualsAndHashCode
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class LongTracker implements KryoSerializable {
 
   private long min;
   private long max;
   private long sum;
-  @Getter
-  public long count;
+  private long count;
 
   public LongTracker() {
-    this(Long.MAX_VALUE, Long.MIN_VALUE, 0L, 0L);
+    reset();
   }
 
   public void update(long value) {
@@ -31,6 +32,13 @@ public class LongTracker implements KryoSerializable {
     }
     count++;
     sum += value;
+  }
+
+  public void reset() {
+    min = Long.MAX_VALUE;
+    max = Long.MIN_VALUE;
+    sum = 0;
+    count = 0;
   }
 
   @Override

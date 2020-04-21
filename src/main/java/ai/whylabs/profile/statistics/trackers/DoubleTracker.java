@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
+@Getter
 @EqualsAndHashCode
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class DoubleTracker implements KryoSerializable {
@@ -16,11 +17,19 @@ public class DoubleTracker implements KryoSerializable {
   private double min;
   private double max;
   private double sum;
-  @Getter
-  public long count;
+  private long count;
 
   public DoubleTracker() {
     this(Double.MIN_VALUE, Double.MAX_VALUE, 0.0, 0L);
+  }
+
+  public void addLongs(LongTracker longs) {
+    if (longs != null && longs.getCount() != 0) {
+      this.min = longs.getMin();
+      this.max = longs.getMax();
+      this.sum = longs.getSum();
+      this.count = longs.getCount();
+    }
   }
 
   public void update(double value) {

@@ -1,8 +1,6 @@
 package ai.whylabs.profile;
 
-import ai.whylabs.profile.statistics.trackers.DoubleTracker;
-import ai.whylabs.profile.statistics.trackers.LongTracker;
-import ai.whylabs.profile.statistics.trackers.StandardDeviationTracker;
+import ai.whylabs.profile.statistics.NumberTracker;
 import ai.whylabs.profile.summary.FrequentStringsSummary;
 import ai.whylabs.profile.summary.HistogramSummary;
 import ai.whylabs.profile.summary.QuantilesSummary;
@@ -14,10 +12,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.val;
-import org.apache.datasketches.cpc.CpcSketch;
 import org.apache.datasketches.frequencies.ItemsSketch;
-import org.apache.datasketches.quantiles.DoublesSketch;
-import org.apache.datasketches.quantiles.UpdateDoublesSketch;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
@@ -29,13 +24,8 @@ public class ColumnProfile {
 
   final String columnName;
   final Map<ColumnDataType, Long> typeCounts;
-  final CpcSketch cpcSketch;
   final ItemsSketch<String> stringsSketch;
-  final UpdateDoublesSketch numbersSketch;
-
-  final LongTracker longTracker;
-  final DoubleTracker doubleTracker;
-  final StandardDeviationTracker stddevSummary;
+  final NumberTracker numberTracker;
 
   long totalCount;
   long trueCount;
@@ -45,12 +35,8 @@ public class ColumnProfile {
     this(
         columnName,
         new EnumMap<>(ColumnDataType.class),
-        new CpcSketch(),
         new ItemsSketch<>(128),
-        DoublesSketch.builder().setK(256).build(),
-        new LongTracker(),
-        new DoubleTracker(),
-        new StandardDeviationTracker(),
+        new NumberTracker(),
         0L,
         0L,
         0L);
@@ -112,10 +98,8 @@ public class ColumnProfile {
     val normalizedData = normalizeType(value);
     if (normalizedData == null) {
       trackNull();
-    } else if (normalizedData instanceof Long) {
-      track((Long) normalizedData);
-    } else if (normalizedData instanceof Double) {
-      track((Double) normalizedData);
+    } else if (normalizedData instanceof Number) {
+      numberTracker.track((Number) normalizedData);
     } else if (normalizedData instanceof Boolean) {
       track((Boolean) normalizedData);
     } else if (normalizedData instanceof String) {
@@ -141,34 +125,21 @@ public class ColumnProfile {
     }
   }
 
-  private void track(Double value) {
-    doubleTracker.update(value);
-    cpcSketch.update(value);
-    numbersSketch.update(value);
-    stddevSummary.update(value);
-  }
-
-  private void track(Long value) {
-    doubleTracker.update(value);
-    longTracker.update(value);
-    cpcSketch.update(value);
-    numbersSketch.update(value.doubleValue());
-    stddevSummary.update(value);
-  }
-
   private void track(String text) {
-    cpcSketch.update(text);
     stringsSketch.update(text);
   }
 
   public InterpretableColumnStatistics toInterpretableStatistics() {
+    val numbersSketch = numberTracker.getNumbersSketch();
+    val cpcSketch = numberTracker.getCpcSketch();
     return InterpretableColumnStatistics.builder()
         .totalCount(totalCount)
         .typeCounts(typeCounts)
         .nullCount(nullCount)
         .trueCount((trueCount == 0L) ? null : trueCount)
-        .longTracker((longTracker.count == 0L) ? null : longTracker)
-        .doubleTracker((doubleTracker.count == 0L) ? null : doubleTracker)
+        .longTracker((numberTracker.getLongs().getCount() == 0L) ? null : numberTracker.getLongs())
+        .doubleTracker(
+            (numberTracker.getDoubles().getCount() == 0L) ? null : numberTracker.getDoubles())
         .uniqueCountSummary(UniqueCountSummary.fromCpcSketch(cpcSketch))
         .quantilesSummary(
             (numbersSketch.getN() == 0L)
@@ -176,7 +147,8 @@ public class ColumnProfile {
                 : QuantilesSummary.fromUpdateDoublesSketch(numbersSketch))
         .histogramSummary(
             (numbersSketch.getN() > 0L && numbersSketch.getMaxValue() > numbersSketch.getMinValue())
-                ? HistogramSummary.fromUpdateDoublesSketch(numbersSketch, stddevSummary.stddev())
+                ? HistogramSummary
+                .fromUpdateDoublesSketch(numbersSketch, numberTracker.getStddev().value())
                 : null)
         .frequentStringsSummary(
             cpcSketch.getEstimate() < 100
