@@ -1,4 +1,4 @@
-package ai.whylabs.profile.summary;
+package ai.whylabs.profile.stastistics;
 
 import static org.testng.Assert.assertEquals;
 
@@ -7,27 +7,27 @@ import com.esotericsoftware.kryo.Kryo;
 import lombok.val;
 import org.testng.annotations.Test;
 
-public class DoubleSummaryTest {
+public class LongSummaryTest {
 
   @Test
   public void test_RoundtripSerialization() {
     val kryo = new Kryo();
-    kryo.register(DoubleSummary.class);
+    kryo.register(LongSummary.class);
 
-    val original = new DoubleSummary(0.0, 99.0, 99.0, 2L);
+    val original = new LongSummary(0, 99, 99, 2);
 
-    val roundTripObject = KryoUtils.doRoundTrip(kryo, original, DoubleSummary.class);
+    val roundTripObject = KryoUtils.doRoundTrip(kryo, original, LongSummary.class);
     assertEquals(original, roundTripObject);
   }
 
   @Test
   public void test_RoundtripSerialization_ZeroCount() {
     val kryo = new Kryo();
-    kryo.register(DoubleSummary.class);
+    kryo.register(LongSummary.class);
 
-    val original = new DoubleSummary();
+    val original = new LongSummary();
 
-    val roundTripObject = KryoUtils.doRoundTrip(kryo, original, DoubleSummary.class);
+    val roundTripObject = KryoUtils.doRoundTrip(kryo, original, LongSummary.class);
     assertEquals(original, roundTripObject);
   }
 }

@@ -1,4 +1,4 @@
-package ai.whylabs.profile.summary;
+package ai.whylabs.profile.stastistics;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;

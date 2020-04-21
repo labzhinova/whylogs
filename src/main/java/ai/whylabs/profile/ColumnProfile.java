@@ -1,11 +1,11 @@
 package ai.whylabs.profile;
 
-import ai.whylabs.profile.summary.DoubleSummary;
+import ai.whylabs.profile.stastistics.DoubleSummary;
+import ai.whylabs.profile.stastistics.LongSummary;
+import ai.whylabs.profile.stastistics.StandardDeviationSummary;
 import ai.whylabs.profile.summary.FrequentStringsSummary;
 import ai.whylabs.profile.summary.HistogramSummary;
-import ai.whylabs.profile.summary.LongSummary;
 import ai.whylabs.profile.summary.QuantilesSummary;
-import ai.whylabs.profile.summary.StandardDeviationSummary;
 import ai.whylabs.profile.summary.UniqueCountSummary;
 import java.util.EnumMap;
 import java.util.Map;

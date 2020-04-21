@@ -1,4 +1,4 @@
-package ai.whylabs.profile.summary;
+package ai.whylabs.profile.stastistics;
 
 import static org.testng.Assert.assertEquals;
 
