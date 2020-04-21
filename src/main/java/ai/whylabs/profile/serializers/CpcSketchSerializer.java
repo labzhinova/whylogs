@@ -8,14 +8,19 @@ import org.apache.datasketches.cpc.CpcSketch;
 
 public class CpcSketchSerializer extends Serializer<CpcSketch> {
 
-    @Override
-    public void write(Kryo kryo, Output output, CpcSketch sketch) {
-        kryo.writeObject(output, sketch.toByteArray());
-    }
+  private final RegistrationHelper helper = new RegistrationHelper();
 
-    @Override
-    public CpcSketch read(Kryo kryo, Input input, Class<CpcSketch> type) {
-        byte[] bytes = kryo.readObject(input, byte[].class);
-        return CpcSketch.heapify(bytes);
-    }
+  @Override
+  public void write(Kryo kryo, Output output, CpcSketch sketch) {
+    helper.checkByteArray(kryo);
+    kryo.writeObject(output, sketch.toByteArray());
+  }
+
+  @Override
+  public CpcSketch read(Kryo kryo, Input input, Class<? extends CpcSketch> type) {
+    helper.checkByteArray(kryo);
+
+    byte[] bytes = kryo.readObject(input, byte[].class);
+    return CpcSketch.heapify(bytes);
+  }
 }

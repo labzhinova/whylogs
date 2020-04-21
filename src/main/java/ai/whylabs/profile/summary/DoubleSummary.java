@@ -1,19 +1,26 @@
 package ai.whylabs.profile.summary;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoSerializable;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
-@AllArgsConstructor
-public class DoubleSummary {
+@EqualsAndHashCode
+@AllArgsConstructor(access = AccessLevel.PACKAGE)
+public class DoubleSummary implements KryoSerializable {
 
-  private double max;
   private double min;
+  private double max;
   private double sum;
   @Getter
   public long count;
 
   public DoubleSummary() {
-    this(Double.MIN_VALUE, Double.MIN_VALUE, 0.0, 0L);
+    this(Double.MIN_VALUE, Double.MAX_VALUE, 0.0, 0L);
   }
 
   public void update(double value) {
@@ -25,5 +32,21 @@ public class DoubleSummary {
     }
     count++;
     sum += value;
+  }
+
+  @Override
+  public void write(Kryo kryo, Output output) {
+    output.writeDouble(max);
+    output.writeDouble(min);
+    output.writeDouble(sum);
+    output.writeLong(count);
+  }
+
+  @Override
+  public void read(Kryo kryo, Input input) {
+    this.max = input.readDouble();
+    this.min = input.readDouble();
+    this.sum = input.readDouble();
+    this.count = input.readLong();
   }
 }

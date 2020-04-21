@@ -21,7 +21,8 @@ dependencies {
     implementation "com.google.code.gson:gson:2.8.6"
     implementation "org.apache.commons:commons-csv:1.8"
     implementation "com.amazonaws:aws-java-sdk-s3:1.11.758"
-    implementation "com.esotericsoftware.kryo:kryo:2.24.0"
+    // https://mvnrepository.com/artifact/com.esotericsoftware/kryo
+    implementation group: 'com.esotericsoftware', name: 'kryo', version: '5.0.0-RC5'
 
     compileOnly 'org.projectlombok:lombok:1.18.12'
     annotationProcessor 'org.projectlombok:lombok:1.18.12'
@@ -48,6 +49,6 @@ test { //this is the gradle task to be executed
 
     // listen to standard out and standard error of the test JVM(s)
     onOutput { descriptor, event ->
-        logger.lifecycle("Test: " + descriptor + " produced standard out/err: " + event.message )
+        logger.lifecycle("Test: " + descriptor + " produced standard out/err: " + event.message)
     }
 }
