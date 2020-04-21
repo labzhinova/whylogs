@@ -1,12 +1,12 @@
-package ai.whylabs.profiler.jvm;
+package ai.whylabs.profile;
 
-import ai.whylabs.profiler.jvm.summary.DoubleSummary;
-import ai.whylabs.profiler.jvm.summary.FrequentStringsSummary;
-import ai.whylabs.profiler.jvm.summary.HistogramSummary;
-import ai.whylabs.profiler.jvm.summary.LongSummary;
-import ai.whylabs.profiler.jvm.summary.QuantilesSummary;
-import ai.whylabs.profiler.jvm.summary.StandardDeviationSummary;
-import ai.whylabs.profiler.jvm.summary.UniqueCountSummary;
+import ai.whylabs.profile.summary.DoubleSummary;
+import ai.whylabs.profile.summary.FrequentStringsSummary;
+import ai.whylabs.profile.summary.HistogramSummary;
+import ai.whylabs.profile.summary.LongSummary;
+import ai.whylabs.profile.summary.QuantilesSummary;
+import ai.whylabs.profile.summary.StandardDeviationSummary;
+import ai.whylabs.profile.summary.UniqueCountSummary;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.val;

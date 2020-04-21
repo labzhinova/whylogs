@@ -1,4 +1,4 @@
-package ai.whylabs.profiler.jvm.summary;
+package ai.whylabs.profile.summary;
 
 import lombok.AllArgsConstructor;
 import lombok.val;

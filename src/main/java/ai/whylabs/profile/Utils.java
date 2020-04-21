@@ -1,4 +1,4 @@
-package ai.whylabs.profiler.jvm;
+package ai.whylabs.profile;
 
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
