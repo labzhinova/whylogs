@@ -1,19 +1,12 @@
 package ai.whylabs.profiler.core
 
 import ai.whylabs.profiler.jvm.ColumnProfile
-import ai.whylabs.profiler.jvm.InterpretableColumnStatistics
+import ai.whylabs.profiler.jvm.InterpretableDatasetProfile
 import ai.whylabs.profiler.jvm.Utils
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
-
-// a data class that can be rendered by Gson
-data class InterpretableDatasetProfile(
-    val name: String?,
-    val timestamp: Instant,
-    val columns: Map<String, InterpretableColumnStatistics>
-)
 
 class DatasetProfile(val name: String?, val timestamp: Instant) {
     private val columns: MutableMap<String, ColumnProfile> = ConcurrentHashMap()
