@@ -36,17 +36,21 @@ public class DoubleSummary implements KryoSerializable {
 
   @Override
   public void write(Kryo kryo, Output output) {
-    output.writeDouble(max);
-    output.writeDouble(min);
-    output.writeDouble(sum);
     output.writeLong(count);
+    if (count > 0) {
+      output.writeDouble(max);
+      output.writeDouble(min);
+      output.writeDouble(sum);
+    }
   }
 
   @Override
   public void read(Kryo kryo, Input input) {
-    this.max = input.readDouble();
-    this.min = input.readDouble();
-    this.sum = input.readDouble();
     this.count = input.readLong();
+    if (count > 0) {
+      this.max = input.readDouble();
+      this.min = input.readDouble();
+      this.sum = input.readDouble();
+    }
   }
 }
