@@ -1,5 +1,6 @@
 package ai.whylabs.profiler.core
 
+import ai.whylabs.profiler.jvm.DatasetProfile
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.github.ajalt.clikt.core.CliktCommand
