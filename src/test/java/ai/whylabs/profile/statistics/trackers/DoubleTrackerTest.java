@@ -10,7 +10,20 @@ import org.testng.annotations.Test;
 public class DoubleTrackerTest {
 
   @Test
-  public void test_RoundtripSerialization() {
+  public void track_DoubleValues_ShouldReflectMinAndMax() {
+    val tracker = new DoubleTracker();
+    tracker.update(1.0);
+    tracker.update(2.0);
+    tracker.update(3.0);
+
+    assertEquals(tracker.getCount(), 3);
+    assertEquals(tracker.getMin(), 1.0);
+    assertEquals(tracker.getMax(), 3.0);
+    assertEquals(tracker.getMean(), 2.0);
+  }
+
+  @Test
+  public void kryo_RoundTripSerializationWithValues_ShouldWork() {
     val kryo = new Kryo();
     kryo.register(DoubleTracker.class);
 
@@ -21,7 +34,7 @@ public class DoubleTrackerTest {
   }
 
   @Test
-  public void test_RoundtripSerialization_ZeroCount() {
+  public void kryo_RoundTripSerializationWithEmptyTracker_ShouldWork() {
     val kryo = new Kryo();
     kryo.register(DoubleTracker.class);
 

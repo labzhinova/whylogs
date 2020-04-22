@@ -20,7 +20,7 @@ public class DoubleTracker implements KryoSerializable {
   private long count;
 
   public DoubleTracker() {
-    this(Double.MIN_VALUE, Double.MAX_VALUE, 0.0, 0L);
+    this(Double.MAX_VALUE, Double.MIN_VALUE, 0.0, 0L);
   }
 
   public void addLongs(LongTracker longs) {
@@ -29,6 +29,14 @@ public class DoubleTracker implements KryoSerializable {
       this.max = longs.getMax();
       this.sum = longs.getSum();
       this.count = longs.getCount();
+    }
+  }
+
+  public double getMean() {
+    if (count == 0) {
+      return Double.NaN;
+    } else {
+      return sum / count;
     }
   }
 
