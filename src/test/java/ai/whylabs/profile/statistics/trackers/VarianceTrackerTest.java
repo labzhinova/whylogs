@@ -7,27 +7,27 @@ import com.esotericsoftware.kryo.Kryo;
 import lombok.val;
 import org.testng.annotations.Test;
 
-public class StandardDeviationTrackerTest {
+public class VarianceTrackerTest {
 
   @Test
   public void test_RoundtripSerialization() {
     val kryo = new Kryo();
-    kryo.register(StandardDeviationTracker.class);
+    kryo.register(VarianceTracker.class);
 
-    val original = new StandardDeviationTracker(5.0, 1.0, 2.0, 2);
+    val original = new VarianceTracker(5.0, 1.0, 2.0, 2);
 
-    val roundTripObject = KryoUtils.doRoundTrip(kryo, original, StandardDeviationTracker.class);
+    val roundTripObject = KryoUtils.doRoundTrip(kryo, original, VarianceTracker.class);
     assertEquals(original, roundTripObject);
   }
 
   @Test
   public void test_RoundtripSerialization_ZeroCount() {
     val kryo = new Kryo();
-    kryo.register(StandardDeviationTracker.class);
+    kryo.register(VarianceTracker.class);
 
-    val original = new StandardDeviationTracker();
+    val original = new VarianceTracker();
 
-    val roundTripObject = KryoUtils.doRoundTrip(kryo, original, StandardDeviationTracker.class);
+    val roundTripObject = KryoUtils.doRoundTrip(kryo, original, VarianceTracker.class);
     assertEquals(original, roundTripObject);
   }
 }

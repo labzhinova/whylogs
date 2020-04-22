@@ -6,7 +6,7 @@ import ai.whylabs.profile.serializers.helpers.ClassRegistrationHelper;
 import ai.whylabs.profile.serializers.helpers.SerializerRegistrationHelper;
 import ai.whylabs.profile.statistics.trackers.DoubleTracker;
 import ai.whylabs.profile.statistics.trackers.LongTracker;
-import ai.whylabs.profile.statistics.trackers.StandardDeviationTracker;
+import ai.whylabs.profile.statistics.trackers.VarianceTracker;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
@@ -23,7 +23,7 @@ public class NumberTracker implements KryoSerializable {
   private final SerializerRegistrationHelper serializerHelper;
 
   // our own trackers
-  private StandardDeviationTracker stddev;
+  private VarianceTracker stddev;
   private DoubleTracker doubles;
   private LongTracker longs;
 
@@ -33,14 +33,14 @@ public class NumberTracker implements KryoSerializable {
 
   public NumberTracker() {
     this.classHelper = new ClassRegistrationHelper(
-        StandardDeviationTracker.class,
+        VarianceTracker.class,
         DoubleTracker.class,
         LongTracker.class);
     this.serializerHelper = new SerializerRegistrationHelper(
         new CpcSketchSerializer(),
         new HeapUpdateDoublesSketchSerializer());
 
-    this.stddev = new StandardDeviationTracker();
+    this.stddev = new VarianceTracker();
     this.doubles = new DoubleTracker();
     this.longs = new LongTracker();
 
@@ -83,7 +83,7 @@ public class NumberTracker implements KryoSerializable {
     this.classHelper.checkAndRegister(kryo);
     this.serializerHelper.checkAndRegister(kryo);
     this.stddev = kryo
-        .readObject(input, StandardDeviationTracker.class);
+        .readObject(input, VarianceTracker.class);
     this.doubles = kryo.readObject(input, DoubleTracker.class);
     this.longs = kryo.readObject(input, LongTracker.class);
     this.cpcSketch = kryo.readObject(input, CpcSketch.class);

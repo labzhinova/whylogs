@@ -13,14 +13,14 @@ import lombok.val;
 @Getter
 @EqualsAndHashCode
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-public class StandardDeviationTracker implements KryoSerializable {
+public class VarianceTracker implements KryoSerializable {
 
   private double sum;
   private double m2;
   private double mean;
   private long n;
 
-  public StandardDeviationTracker() {
+  public VarianceTracker() {
     this(0.0, 0.0, 0.0, 0L);
   }
 
