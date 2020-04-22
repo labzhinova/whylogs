@@ -3,6 +3,8 @@ package ai.whylabs.profile.statistics;
 import static org.testng.Assert.assertEquals;
 
 import ai.whylabs.profile.serializers.KryoUtils;
+import ai.whylabs.profile.statistics.schema.ColumnDataType;
+import ai.whylabs.profile.statistics.schema.SchemaTracker;
 import com.esotericsoftware.kryo.Kryo;
 import lombok.val;
 import org.testng.annotations.Test;

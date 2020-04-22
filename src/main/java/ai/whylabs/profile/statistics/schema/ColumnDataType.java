@@ -1,4 +1,4 @@
-package ai.whylabs.profile.statistics;
+package ai.whylabs.profile.statistics.schema;
 
 public enum ColumnDataType {
   NULL,

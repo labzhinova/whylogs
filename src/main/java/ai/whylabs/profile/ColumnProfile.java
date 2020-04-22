@@ -1,14 +1,12 @@
 package ai.whylabs.profile;
 
-import ai.whylabs.profile.statistics.ColumnDataType;
 import ai.whylabs.profile.statistics.Counters;
 import ai.whylabs.profile.statistics.NumberTracker;
-import ai.whylabs.profile.statistics.SchemaTracker;
 import ai.whylabs.profile.statistics.StringTracker;
+import ai.whylabs.profile.statistics.schema.SchemaTracker;
 import ai.whylabs.profile.summary.NumberSummary;
+import ai.whylabs.profile.summary.SchemaSummary;
 import ai.whylabs.profile.summary.StringSummary;
-import java.util.EnumMap;
-import java.util.Map;
 import java.util.regex.Pattern;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -24,7 +22,6 @@ public class ColumnProfile {
   private static final Pattern BOOLEAN = Pattern.compile("^(?i)(true|false)$");
 
   final String columnName;
-  final Map<ColumnDataType, Long> typeCounts;
   final Counters counters;
   final SchemaTracker schemaTracker;
   final NumberTracker numberTracker;
@@ -33,7 +30,6 @@ public class ColumnProfile {
   public ColumnProfile(String columnName) {
     this(
         columnName,
-        new EnumMap<>(ColumnDataType.class),
         new Counters(),
         new SchemaTracker(),
         new NumberTracker(),
@@ -93,7 +89,7 @@ public class ColumnProfile {
   public InterpretableColumnStatistics toInterpretableStatistics() {
     return InterpretableColumnStatistics.builder()
         .counters(counters)
-        .typeCounts(typeCounts)
+        .schema(SchemaSummary.fromTracker(schemaTracker))
         .numberSummary(NumberSummary.fromNumberTracker(numberTracker))
         .stringSummary(StringSummary.fromTracker(stringTracker))
         .build();
