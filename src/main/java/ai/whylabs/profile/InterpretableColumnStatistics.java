@@ -1,5 +1,6 @@
 package ai.whylabs.profile;
 
+import ai.whylabs.profile.statistics.ColumnDataType;
 import ai.whylabs.profile.statistics.Counters;
 import ai.whylabs.profile.summary.NumberSummary;
 import ai.whylabs.profile.summary.StringSummary;

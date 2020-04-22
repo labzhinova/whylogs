@@ -1,6 +1,5 @@
 package ai.whylabs.profile.statistics;
 
-import ai.whylabs.profile.ColumnDataType;
 import ai.whylabs.profile.serializers.helpers.ClassRegistrationHelper;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;

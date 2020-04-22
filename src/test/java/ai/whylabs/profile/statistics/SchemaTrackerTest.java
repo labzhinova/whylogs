@@ -2,7 +2,6 @@ package ai.whylabs.profile.statistics;
 
 import static org.testng.Assert.assertEquals;
 
-import ai.whylabs.profile.ColumnDataType;
 import ai.whylabs.profile.serializers.KryoUtils;
 import com.esotericsoftware.kryo.Kryo;
 import lombok.val;
