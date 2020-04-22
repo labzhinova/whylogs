@@ -83,9 +83,15 @@ public class ColumnProfile {
     }
 
     val normalizedData = normalizeType(value);
+    schemaTracker.track(normalizedData);
+
     if (normalizedData instanceof Number) {
       if (numberTracker != null) {
         numberTracker.track((Number) normalizedData);
+      }
+      if (stringTracker != null) {
+        // in case of numbers, we also track them as string here
+        stringTracker.update((String) value);
       }
     } else if (normalizedData instanceof Boolean) {
       if ((Boolean) normalizedData) {
@@ -96,8 +102,6 @@ public class ColumnProfile {
         stringTracker.update((String) normalizedData);
       }
     }
-
-    schemaTracker.track(normalizedData);
   }
 
   public void compact() {
