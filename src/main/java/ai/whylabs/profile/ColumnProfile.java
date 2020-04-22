@@ -1,8 +1,9 @@
 package ai.whylabs.profile;
 
 import ai.whylabs.profile.statistics.NumberTracker;
-import ai.whylabs.profile.summary.FrequentStringsSummary;
+import ai.whylabs.profile.statistics.StringTracker;
 import ai.whylabs.profile.summary.NumberSummary;
+import ai.whylabs.profile.summary.StringSummary;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -10,7 +11,6 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.val;
-import org.apache.datasketches.frequencies.ItemsSketch;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
@@ -22,8 +22,8 @@ public class ColumnProfile {
 
   final String columnName;
   final Map<ColumnDataType, Long> typeCounts;
-  final ItemsSketch<String> stringsSketch;
   final NumberTracker numberTracker;
+  final StringTracker stringTracker;
 
   long totalCount;
   long trueCount;
@@ -33,8 +33,8 @@ public class ColumnProfile {
     this(
         columnName,
         new EnumMap<>(ColumnDataType.class),
-        new ItemsSketch<>(128),
         new NumberTracker(),
+        new StringTracker(),
         0L,
         0L,
         0L);
@@ -95,13 +95,13 @@ public class ColumnProfile {
   public void track(Object value) {
     val normalizedData = normalizeType(value);
     if (normalizedData == null) {
-      trackNull();
+      nullCount++;
     } else if (normalizedData instanceof Number) {
       numberTracker.track((Number) normalizedData);
     } else if (normalizedData instanceof Boolean) {
       track((Boolean) normalizedData);
     } else if (normalizedData instanceof String) {
-      track((String) normalizedData);
+      stringTracker.update((String) normalizedData);
     }
 
     addTypeCount(toEnumType(normalizedData));
@@ -113,32 +113,20 @@ public class ColumnProfile {
         dataType, (type, existingValue) -> existingValue == null ? 1L : existingValue + 1);
   }
 
-  private void trackNull() {
-    nullCount++;
-  }
-
   private void track(Boolean flag) {
     if (flag) {
       trueCount++;
     }
   }
 
-  private void track(String text) {
-    stringsSketch.update(text);
-  }
-
   public InterpretableColumnStatistics toInterpretableStatistics() {
-    val cpcSketch = numberTracker.getCpcSketch();
     return InterpretableColumnStatistics.builder()
         .totalCount(totalCount)
         .typeCounts(typeCounts)
         .nullCount(nullCount)
         .trueCount((trueCount == 0L) ? null : trueCount)
         .numberSummary(NumberSummary.fromNumberTracker(numberTracker))
-        .frequentStringsSummary(
-            cpcSketch.getEstimate() < 100
-                ? FrequentStringsSummary.fromStringSketch(stringsSketch)
-                : FrequentStringsSummary.empty())
+        .stringSummary(StringSummary.fromTracker(stringTracker))
         .build();
   }
 }

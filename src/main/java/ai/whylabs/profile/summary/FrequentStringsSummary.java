@@ -18,6 +18,10 @@ public class FrequentStringsSummary {
 
   public static FrequentStringsSummary fromStringSketch(ItemsSketch<String> sketch) {
     val frequentItems = sketch.getFrequentItems(ErrorType.NO_FALSE_NEGATIVES);
+
+    if (frequentItems.length == 0) {
+      return null;
+    }
     List<String> result =
         Stream.of(frequentItems).map(ItemsSketch.Row::getItem).collect(Collectors.toList());
 
