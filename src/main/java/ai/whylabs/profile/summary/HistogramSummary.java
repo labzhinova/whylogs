@@ -21,7 +21,7 @@ public class HistogramSummary {
     // try to be smart here. We don't really have a "histogram"
     // if there are too few data points or there's no band
     if (n < 2 || start == end) {
-      return new HistogramSummary(start, end, 0, new long[]{n});
+      return new HistogramSummary(start, end, 0, new long[] {n});
     }
 
     int numberOfBuckets = (int) Math.min(Math.ceil(n / 4.0), 100);

@@ -41,6 +41,5 @@ public class HeapUpdateDoublesSketchSerializer extends ClassTaggedSerializer<Upd
     } catch (ClassNotFoundException e) {
       return Collections.emptyList();
     }
-
   }
 }
