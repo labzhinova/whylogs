@@ -1,5 +1,6 @@
 package ai.whylabs.profile;
 
+import ai.whylabs.profile.statistics.Counters;
 import ai.whylabs.profile.statistics.NumberTracker;
 import ai.whylabs.profile.statistics.StringTracker;
 import ai.whylabs.profile.summary.NumberSummary;
@@ -22,22 +23,17 @@ public class ColumnProfile {
 
   final String columnName;
   final Map<ColumnDataType, Long> typeCounts;
+  final Counters counters;
   final NumberTracker numberTracker;
   final StringTracker stringTracker;
-
-  long totalCount;
-  long trueCount;
-  long nullCount;
 
   public ColumnProfile(String columnName) {
     this(
         columnName,
         new EnumMap<>(ColumnDataType.class),
+        new Counters(),
         new NumberTracker(),
-        new StringTracker(),
-        0L,
-        0L,
-        0L);
+        new StringTracker());
   }
 
   private static Object normalizeType(Object data) {
@@ -93,19 +89,25 @@ public class ColumnProfile {
   }
 
   public void track(Object value) {
+    counters.incrementCount();
+
+    if (value == null) {
+      counters.incrementNull();
+      return;
+    }
+
     val normalizedData = normalizeType(value);
-    if (normalizedData == null) {
-      nullCount++;
-    } else if (normalizedData instanceof Number) {
+    if (normalizedData instanceof Number) {
       numberTracker.track((Number) normalizedData);
     } else if (normalizedData instanceof Boolean) {
-      track((Boolean) normalizedData);
+      if ((Boolean) normalizedData) {
+        counters.incrementTrue();
+      }
     } else if (normalizedData instanceof String) {
       stringTracker.update((String) normalizedData);
     }
 
     addTypeCount(toEnumType(normalizedData));
-    totalCount++;
   }
 
   private void addTypeCount(ColumnDataType dataType) {
@@ -113,18 +115,10 @@ public class ColumnProfile {
         dataType, (type, existingValue) -> existingValue == null ? 1L : existingValue + 1);
   }
 
-  private void track(Boolean flag) {
-    if (flag) {
-      trueCount++;
-    }
-  }
-
   public InterpretableColumnStatistics toInterpretableStatistics() {
     return InterpretableColumnStatistics.builder()
-        .totalCount(totalCount)
+        .counters(counters)
         .typeCounts(typeCounts)
-        .nullCount(nullCount)
-        .trueCount((trueCount == 0L) ? null : trueCount)
         .numberSummary(NumberSummary.fromNumberTracker(numberTracker))
         .stringSummary(StringSummary.fromTracker(stringTracker))
         .build();
