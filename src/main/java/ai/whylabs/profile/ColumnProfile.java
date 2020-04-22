@@ -2,9 +2,7 @@ package ai.whylabs.profile;
 
 import ai.whylabs.profile.statistics.NumberTracker;
 import ai.whylabs.profile.summary.FrequentStringsSummary;
-import ai.whylabs.profile.summary.HistogramSummary;
-import ai.whylabs.profile.summary.QuantilesSummary;
-import ai.whylabs.profile.summary.UniqueCountSummary;
+import ai.whylabs.profile.summary.NumberSummary;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -112,7 +110,8 @@ public class ColumnProfile {
 
   private void addTypeCount(ColumnDataType dataType) {
     this.typeCounts.compute(
-        dataType, (type, existingValue) -> existingValue == null ? 1L : existingValue++);
+        dataType,
+        (type, existingValue) -> existingValue == null ? 1L : existingValue + 1);
   }
 
   private void trackNull() {
@@ -130,26 +129,13 @@ public class ColumnProfile {
   }
 
   public InterpretableColumnStatistics toInterpretableStatistics() {
-    val numbersSketch = numberTracker.getNumbersSketch();
     val cpcSketch = numberTracker.getCpcSketch();
     return InterpretableColumnStatistics.builder()
         .totalCount(totalCount)
         .typeCounts(typeCounts)
         .nullCount(nullCount)
         .trueCount((trueCount == 0L) ? null : trueCount)
-        .longTracker((numberTracker.getLongs().getCount() == 0L) ? null : numberTracker.getLongs())
-        .doubleTracker(
-            (numberTracker.getDoubles().getCount() == 0L) ? null : numberTracker.getDoubles())
-        .uniqueCountSummary(UniqueCountSummary.fromCpcSketch(cpcSketch))
-        .quantilesSummary(
-            (numbersSketch.getN() == 0L)
-                ? null
-                : QuantilesSummary.fromUpdateDoublesSketch(numbersSketch))
-        .histogramSummary(
-            (numbersSketch.getN() > 0L && numbersSketch.getMaxValue() > numbersSketch.getMinValue())
-                ? HistogramSummary
-                .fromUpdateDoublesSketch(numbersSketch, numberTracker.getStddev().value())
-                : null)
+        .numberSummary(NumberSummary.fromNumberTracker(numberTracker))
         .frequentStringsSummary(
             cpcSketch.getEstimate() < 100
                 ? FrequentStringsSummary.fromStringSketch(stringsSketch)

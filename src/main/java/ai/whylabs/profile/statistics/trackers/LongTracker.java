@@ -23,6 +23,14 @@ public class LongTracker implements KryoSerializable {
     reset();
   }
 
+  public Double getMean() {
+    if (count == 0) {
+      return null;
+    } else {
+      return sum * 1.0 / count;
+    }
+  }
+
   public void update(long value) {
     if (value > max) {
       max = value;

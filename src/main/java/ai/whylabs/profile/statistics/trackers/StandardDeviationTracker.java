@@ -32,9 +32,9 @@ public class StandardDeviationTracker implements KryoSerializable {
     m2 += delta * (value - mean);
   }
 
-  public double value() {
+  public Double value() {
     if (n < 2) {
-      return Double.NaN;
+      return null;
     }
     return Math.sqrt(m2 / (n - 1.0));
   }
