@@ -2,6 +2,7 @@ package ai.whylabs.profile.summary;
 
 import ai.whylabs.profile.statistics.StringTracker;
 import lombok.Value;
+import lombok.val;
 
 @Value
 public class StringSummary {
@@ -18,8 +19,7 @@ public class StringSummary {
       return null;
     }
 
-    UniqueCountSummary uniqueness = UniqueCountSummary
-        .fromCpcSketch(tracker.getCpcSketch());
+    val uniqueness = UniqueCountSummary.fromSketch(tracker.getThetaSketch());
 
     // TODO: make this value configurable
     FrequentStringsSummary frequentStrings = null;

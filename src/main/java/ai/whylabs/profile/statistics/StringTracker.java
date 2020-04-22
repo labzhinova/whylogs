@@ -1,15 +1,15 @@
 package ai.whylabs.profile.statistics;
 
-import ai.whylabs.profile.serializers.CpcSketchSerializer;
 import ai.whylabs.profile.serializers.ItemsSketchSerializer;
+import ai.whylabs.profile.serializers.UpdateSketchSerializer;
 import ai.whylabs.profile.serializers.helpers.SerializerRegistrationHelper;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import lombok.Getter;
-import org.apache.datasketches.cpc.CpcSketch;
 import org.apache.datasketches.frequencies.ItemsSketch;
+import org.apache.datasketches.theta.UpdateSketch;
 
 @Getter
 public final class StringTracker implements KryoSerializable {
@@ -20,16 +20,16 @@ public final class StringTracker implements KryoSerializable {
 
   // sketches
   private final ItemsSketch<String> stringsSketch;
-  private final CpcSketch cpcSketch;
+  private final UpdateSketch thetaSketch;
 
   public StringTracker() {
     this.serializerHelper = new SerializerRegistrationHelper(
-        new CpcSketchSerializer(),
+        new UpdateSketchSerializer(),
         new ItemsSketchSerializer());
 
     this.count = 0L;
     this.stringsSketch = new ItemsSketch<>(32); // TODO: make this value configurable
-    this.cpcSketch = new CpcSketch();
+    this.thetaSketch = UpdateSketch.builder().build();
   }
 
   public void update(String value) {
@@ -38,7 +38,7 @@ public final class StringTracker implements KryoSerializable {
     }
 
     count++;
-    cpcSketch.update(value);
+    thetaSketch.update(value);
     stringsSketch.update(value);
   }
 
@@ -51,7 +51,7 @@ public final class StringTracker implements KryoSerializable {
 
     serializerHelper.checkAndRegister(kryo);
     kryo.writeObject(output, stringsSketch);
-    kryo.writeObject(output, cpcSketch);
+    kryo.writeObject(output, thetaSketch);
   }
 
   @Override

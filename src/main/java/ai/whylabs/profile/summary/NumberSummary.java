@@ -39,7 +39,7 @@ public class NumberSummary {
     }
 
     val histogram = HistogramSummary.fromUpdateDoublesSketch(numberTracker.getNumbersSketch());
-    val uniqueCount = UniqueCountSummary.fromCpcSketch(numberTracker.getCpcSketch());
+    val uniqueCount = UniqueCountSummary.fromSketch(numberTracker.getThetaSketch());
 
     return new NumberSummary(count, stddev, min, max, mean, histogram, uniqueCount);
   }
