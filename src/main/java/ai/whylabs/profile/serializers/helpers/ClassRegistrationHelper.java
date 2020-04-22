@@ -19,7 +19,6 @@ public class ClassRegistrationHelper {
     this.classes = Arrays.asList(classes);
   }
 
-
   public void checkAndRegister(Kryo kryo) {
     if (!isRegistered) {
       classes.forEach(kryo::register);

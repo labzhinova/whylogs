@@ -61,7 +61,6 @@ public class NumberTrackerTest {
     assertEquals(Math.round(numberTracker.getNumbersSketch().getMinValue()), 10);
   }
 
-
   @Test
   public void kryo_RoundtripSerialization_ShouldSucceed() {
     val kryo = new Kryo();

@@ -10,10 +10,10 @@ import lombok.Value;
 @Value
 public class InterpretableColumnStatistics {
 
-    Long totalCount;
-    Map<ColumnDataType, Long> typeCounts;
-    NumberSummary numberSummary;
-    Long nullCount;
-    Long trueCount;
-    FrequentStringsSummary frequentStringsSummary;
+  Long totalCount;
+  Map<ColumnDataType, Long> typeCounts;
+  NumberSummary numberSummary;
+  Long nullCount;
+  Long trueCount;
+  FrequentStringsSummary frequentStringsSummary;
 }

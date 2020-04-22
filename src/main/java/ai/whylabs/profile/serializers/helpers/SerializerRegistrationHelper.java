@@ -11,8 +11,7 @@ public class SerializerRegistrationHelper {
 
   private volatile boolean isRegistered;
 
-  public SerializerRegistrationHelper(
-      ClassTaggedSerializer<?>... serializers) {
+  public SerializerRegistrationHelper(ClassTaggedSerializer<?>... serializers) {
     this.serializers = Arrays.asList(serializers);
   }
 
@@ -20,7 +19,12 @@ public class SerializerRegistrationHelper {
     if (!isRegistered) {
       for (ClassTaggedSerializer<?> serializer : serializers) {
         kryo.register(serializer.getClassTag(), serializer);
+
+        for (Class<?> additionalClazz : serializer.getAdditionalClassTags()) {
+          kryo.register(additionalClazz, serializer);
+        }
       }
+
       isRegistered = true;
     }
   }

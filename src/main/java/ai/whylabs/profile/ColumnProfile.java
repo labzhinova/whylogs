@@ -110,8 +110,7 @@ public class ColumnProfile {
 
   private void addTypeCount(ColumnDataType dataType) {
     this.typeCounts.compute(
-        dataType,
-        (type, existingValue) -> existingValue == null ? 1L : existingValue + 1);
+        dataType, (type, existingValue) -> existingValue == null ? 1L : existingValue + 1);
   }
 
   private void trackNull() {

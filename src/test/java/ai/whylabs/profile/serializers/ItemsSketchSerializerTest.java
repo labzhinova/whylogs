@@ -10,37 +10,37 @@ import org.testng.annotations.Test;
 @SuppressWarnings({"rawtypes"})
 public class ItemsSketchSerializerTest extends KryoBaseTest<ItemsSketch> {
 
-    static Kryo kryo = new Kryo();
+  static Kryo kryo = new Kryo();
 
-    static {
-        kryo.register(ItemsSketch.class, new ItemsSketchSerializer());
-    }
+  static {
+    kryo.register(ItemsSketch.class, new ItemsSketchSerializer());
+  }
 
-    public ItemsSketchSerializerTest() {
-        super(new ItemsSketchSerializer(), ItemsSketch.class);
-    }
+  public ItemsSketchSerializerTest() {
+    super(new ItemsSketchSerializer(), ItemsSketch.class);
+  }
 
-    @Override
-    public ItemsSketch createObject() {
-        val sketch = new ItemsSketch<>(128);
-        sketch.update("foo");
-        sketch.update("bar");
+  @Override
+  public ItemsSketch createObject() {
+    val sketch = new ItemsSketch<>(128);
+    sketch.update("foo");
+    sketch.update("bar");
 
-        return sketch;
-    }
+    return sketch;
+  }
 
-    @Override
-    public void verify(ItemsSketch original, ItemsSketch result) {
-        assertEquals(result.getNumActiveItems(), 2);
-    }
+  @Override
+  public void verify(ItemsSketch original, ItemsSketch result) {
+    assertEquals(result.getNumActiveItems(), 2);
+  }
 
-    @Test
-    public void testRoundtrip() {
-        this.runFullSerialization();
-    }
+  @Test
+  public void testRoundtrip() {
+    this.runFullSerialization();
+  }
 
-    @Test
-    public void testNull() {
-        this.runWithNull();
-    }
+  @Test
+  public void testNull() {
+    this.runWithNull();
+  }
 }

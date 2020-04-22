@@ -13,8 +13,7 @@ public class HistogramSummary {
   double width;
   long[] counts;
 
-  public static HistogramSummary fromUpdateDoublesSketch(
-      UpdateDoublesSketch sketch) {
+  public static HistogramSummary fromUpdateDoublesSketch(UpdateDoublesSketch sketch) {
     val n = sketch.getN();
     double start = sketch.getMinValue();
     double end = sketch.getMaxValue();

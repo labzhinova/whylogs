@@ -20,8 +20,8 @@ public class ItemsSketchSerializer extends ClassTaggedSerializer<ItemsSketch<Str
   }
 
   @Override
-  public ItemsSketch<String> read(Kryo kryo, Input input,
-      Class<? extends ItemsSketch<String>> type) {
+  public ItemsSketch<String> read(
+      Kryo kryo, Input input, Class<? extends ItemsSketch<String>> type) {
     helper.checkAndRegister(kryo);
 
     byte[] bytes = kryo.readObject(input, byte[].class);

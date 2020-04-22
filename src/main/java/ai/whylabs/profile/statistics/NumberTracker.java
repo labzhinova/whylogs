@@ -32,13 +32,11 @@ public class NumberTracker implements KryoSerializable {
   private UpdateDoublesSketch numbersSketch; // histogram
 
   public NumberTracker() {
-    this.classHelper = new ClassRegistrationHelper(
-        VarianceTracker.class,
-        DoubleTracker.class,
-        LongTracker.class);
-    this.serializerHelper = new SerializerRegistrationHelper(
-        new CpcSketchSerializer(),
-        new HeapUpdateDoublesSketchSerializer());
+    this.classHelper =
+        new ClassRegistrationHelper(VarianceTracker.class, DoubleTracker.class, LongTracker.class);
+    this.serializerHelper =
+        new SerializerRegistrationHelper(
+            new CpcSketchSerializer(), new HeapUpdateDoublesSketchSerializer());
 
     this.stddev = new VarianceTracker();
     this.doubles = new DoubleTracker();
@@ -63,7 +61,6 @@ public class NumberTracker implements KryoSerializable {
       longs.reset();
       doubles.update(dValue);
     }
-
   }
 
   @Override
@@ -82,8 +79,8 @@ public class NumberTracker implements KryoSerializable {
   public void read(Kryo kryo, Input input) {
     this.classHelper.checkAndRegister(kryo);
     this.serializerHelper.checkAndRegister(kryo);
-    this.stddev = kryo
-        .readObject(input, VarianceTracker.class);
+
+    this.stddev = kryo.readObject(input, VarianceTracker.class);
     this.doubles = kryo.readObject(input, DoubleTracker.class);
     this.longs = kryo.readObject(input, LongTracker.class);
     this.cpcSketch = kryo.readObject(input, CpcSketch.class);

@@ -24,5 +24,4 @@ public class KryoUtils {
     val bbi = new ByteBufferInput(bos.toByteArray());
     return kryo.readObjectOrNull(bbi, clazz);
   }
-
 }
