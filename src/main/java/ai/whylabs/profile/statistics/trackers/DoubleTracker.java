@@ -32,9 +32,9 @@ public class DoubleTracker implements KryoSerializable {
     }
   }
 
-  public double getMean() {
+  public Double getMean() {
     if (count == 0) {
-      return Double.NaN;
+      return null;
     } else {
       return sum / count;
     }
