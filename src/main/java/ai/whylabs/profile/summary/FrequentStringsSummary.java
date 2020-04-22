@@ -12,9 +12,17 @@ import org.apache.datasketches.frequencies.ItemsSketch;
 @Value
 public class FrequentStringsSummary {
 
+  @Value
+  public static class ItemFrequency {
+
+    String value;
+    double estimate;
+  }
+
   private static final FrequentStringsSummary EMPTY_SUMMARY =
       new FrequentStringsSummary(Collections.emptyList());
-  List<String> items;
+
+  List<ItemFrequency> items;
 
   public static FrequentStringsSummary fromStringSketch(ItemsSketch<String> sketch) {
     val frequentItems = sketch.getFrequentItems(ErrorType.NO_FALSE_NEGATIVES);
@@ -22,13 +30,10 @@ public class FrequentStringsSummary {
     if (frequentItems.length == 0) {
       return null;
     }
-    List<String> result =
-        Stream.of(frequentItems).map(ItemsSketch.Row::getItem).collect(Collectors.toList());
+    val result = Stream.of(frequentItems)
+        .map(row -> new ItemFrequency(row.getItem(), row.getEstimate()))
+        .collect(Collectors.toList());
 
     return new FrequentStringsSummary(Collections.unmodifiableList(result));
-  }
-
-  public static FrequentStringsSummary empty() {
-    return EMPTY_SUMMARY;
   }
 }
