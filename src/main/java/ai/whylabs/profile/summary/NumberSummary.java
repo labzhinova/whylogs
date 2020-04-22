@@ -16,6 +16,10 @@ public class NumberSummary {
   UniqueCountSummary uniqueCount;
 
   public static NumberSummary fromNumberTracker(NumberTracker numberTracker) {
+    if (numberTracker == null) {
+      return null;
+    }
+
     long count = numberTracker.getStddev().getN();
 
     if (count == 0) {

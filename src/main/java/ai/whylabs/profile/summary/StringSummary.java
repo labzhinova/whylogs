@@ -10,6 +10,10 @@ public class StringSummary {
   UniqueCountSummary uniqueness;
 
   public static StringSummary fromTracker(StringTracker tracker) {
+    if (tracker == null) {
+      return null;
+    }
+
     if (tracker.getCount() == 0) {
       return null;
     }

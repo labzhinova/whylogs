@@ -4,14 +4,11 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 @Getter
 @EqualsAndHashCode
-@AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class DoubleTracker implements KryoSerializable {
 
   private double min;
@@ -20,7 +17,10 @@ public class DoubleTracker implements KryoSerializable {
   private long count;
 
   public DoubleTracker() {
-    this(Double.MAX_VALUE, Double.MIN_VALUE, 0.0, 0L);
+    this.min = Double.MAX_VALUE;
+    this.max = -Double.MAX_VALUE;
+    this.sum = 0;
+    this.count = 0;
   }
 
   public void addLongs(LongTracker longs) {

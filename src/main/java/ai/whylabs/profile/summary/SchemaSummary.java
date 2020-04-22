@@ -10,8 +10,9 @@ import lombok.Value;
 public class SchemaSummary {
   Map<ColumnDataType, Long> typeCounts;
   InferredType inferredType;
+  InferredType determinedType;
 
-  public static SchemaSummary fromTracker(SchemaTracker tracker) {
-    return new SchemaSummary(tracker.getTypeCounts(), tracker.getInferredType());
+  public static SchemaSummary fromTracker(SchemaTracker tracker, InferredType determinedType) {
+    return new SchemaSummary(tracker.getTypeCounts(), tracker.getDeterminedType(), determinedType);
   }
 }
