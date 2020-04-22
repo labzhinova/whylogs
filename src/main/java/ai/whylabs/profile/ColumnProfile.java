@@ -2,6 +2,7 @@ package ai.whylabs.profile;
 
 import ai.whylabs.profile.statistics.Counters;
 import ai.whylabs.profile.statistics.NumberTracker;
+import ai.whylabs.profile.statistics.SchemaTracker;
 import ai.whylabs.profile.statistics.StringTracker;
 import ai.whylabs.profile.summary.NumberSummary;
 import ai.whylabs.profile.summary.StringSummary;
@@ -24,6 +25,7 @@ public class ColumnProfile {
   final String columnName;
   final Map<ColumnDataType, Long> typeCounts;
   final Counters counters;
+  final SchemaTracker schemaTracker;
   final NumberTracker numberTracker;
   final StringTracker stringTracker;
 
@@ -32,6 +34,7 @@ public class ColumnProfile {
         columnName,
         new EnumMap<>(ColumnDataType.class),
         new Counters(),
+        new SchemaTracker(),
         new NumberTracker(),
         new StringTracker());
   }
@@ -64,30 +67,6 @@ public class ColumnProfile {
     return data;
   }
 
-  private static ColumnDataType toEnumType(Object data) {
-    if (data == null) {
-      return ColumnDataType.NULL;
-    }
-
-    if (data instanceof String) {
-      return ColumnDataType.STRING;
-    }
-
-    if (data instanceof Long) {
-      return ColumnDataType.INTEGRAL;
-    }
-
-    if (data instanceof Double) {
-      return ColumnDataType.FRACTIONAL;
-    }
-
-    if (data instanceof Boolean) {
-      return ColumnDataType.BOOLEAN;
-    }
-
-    return ColumnDataType.UNKNOWN;
-  }
-
   public void track(Object value) {
     counters.incrementCount();
 
@@ -107,12 +86,7 @@ public class ColumnProfile {
       stringTracker.update((String) normalizedData);
     }
 
-    addTypeCount(toEnumType(normalizedData));
-  }
-
-  private void addTypeCount(ColumnDataType dataType) {
-    this.typeCounts.compute(
-        dataType, (type, existingValue) -> existingValue == null ? 1L : existingValue + 1);
+    schemaTracker.track(normalizedData);
   }
 
   public InterpretableColumnStatistics toInterpretableStatistics() {

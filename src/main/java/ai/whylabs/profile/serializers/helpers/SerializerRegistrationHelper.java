@@ -4,11 +4,14 @@ import ai.whylabs.profile.serializers.ClassTaggedSerializer;
 import com.esotericsoftware.kryo.Kryo;
 import java.util.Arrays;
 import java.util.List;
+import lombok.EqualsAndHashCode;
 
+@EqualsAndHashCode
 public class SerializerRegistrationHelper {
 
   private final List<ClassTaggedSerializer<?>> serializers;
 
+  @EqualsAndHashCode.Exclude
   private volatile boolean isRegistered;
 
   public SerializerRegistrationHelper(ClassTaggedSerializer<?>... serializers) {

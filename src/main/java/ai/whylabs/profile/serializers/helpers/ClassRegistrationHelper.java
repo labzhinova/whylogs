@@ -4,11 +4,14 @@ import com.esotericsoftware.kryo.Kryo;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import lombok.EqualsAndHashCode;
 
+@EqualsAndHashCode
 public class ClassRegistrationHelper {
 
   private final List<Class<?>> classes;
 
+  @EqualsAndHashCode.Exclude
   private volatile boolean isRegistered;
 
   public ClassRegistrationHelper(Class<?> clazz) {
