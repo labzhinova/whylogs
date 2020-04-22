@@ -13,6 +13,7 @@ import org.apache.datasketches.frequencies.ItemsSketch;
 
 @Getter
 public final class StringTracker implements KryoSerializable {
+
   private final SerializerRegistrationHelper serializerHelper;
 
   private long count;
@@ -21,17 +22,14 @@ public final class StringTracker implements KryoSerializable {
   private final ItemsSketch<String> stringsSketch;
   private final CpcSketch cpcSketch;
 
-  private double lastUniqueEst;
-
   public StringTracker() {
     this.serializerHelper = new SerializerRegistrationHelper(
         new CpcSketchSerializer(),
         new ItemsSketchSerializer());
 
     this.count = 0L;
-    this.stringsSketch = new ItemsSketch<>(128); // TODO: make this value configurable
+    this.stringsSketch = new ItemsSketch<>(32); // TODO: make this value configurable
     this.cpcSketch = new CpcSketch();
-    this.lastUniqueEst = 0.0;
   }
 
   public void update(String value) {
@@ -41,14 +39,7 @@ public final class StringTracker implements KryoSerializable {
 
     count++;
     cpcSketch.update(value);
-
-    if (lastUniqueEst > 100) {
-      // stop
-      stringsSketch.reset();
-    } else {
-      lastUniqueEst = cpcSketch.getEstimate();
-      stringsSketch.update(value);
-    }
+    stringsSketch.update(value);
   }
 
   @Override
