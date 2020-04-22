@@ -84,7 +84,6 @@ public class NumberTrackerTest {
 
     val original = new NumberTracker();
 
-    val roundTripObject = KryoUtils.doRoundTrip(kryo, original, NumberTracker.class);
     assertEquals(original.getLongs().getCount(), 0);
     assertEquals(original.getDoubles().getCount(), 0);
     assertEquals(original.getStddev().getN(), 0);
