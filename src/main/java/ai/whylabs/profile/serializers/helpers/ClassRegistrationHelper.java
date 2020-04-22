@@ -1,0 +1,28 @@
+package ai.whylabs.profile.serializers.helpers;
+
+import com.esotericsoftware.kryo.Kryo;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+public class ClassRegistrationHelper {
+
+  private final List<Class<?>> classes;
+
+  private volatile boolean isRegistered;
+
+  public ClassRegistrationHelper(Class<?> clazz) {
+    this.classes = Collections.singletonList(clazz);
+  }
+
+  public ClassRegistrationHelper(Class<?>... classes) {
+    this.classes = Arrays.asList(classes);
+  }
+
+  public void checkAndRegister(Kryo kryo) {
+    if (!isRegistered) {
+      classes.forEach(kryo::register);
+      isRegistered = true;
+    }
+  }
+}
