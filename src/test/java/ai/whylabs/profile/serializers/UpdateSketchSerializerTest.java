@@ -2,6 +2,7 @@ package ai.whylabs.profile.serializers;
 
 import static org.testng.Assert.assertEquals;
 
+import ai.whylabs.profile.serializers.kryo.UpdateSketchSerializer;
 import lombok.val;
 import org.apache.datasketches.theta.UpdateSketch;
 import org.testng.annotations.Test;

@@ -1,9 +1,9 @@
 package ai.whylabs.profile.statistics;
 
-import ai.whylabs.profile.serializers.HeapUpdateDoublesSketchSerializer;
-import ai.whylabs.profile.serializers.UpdateSketchSerializer;
-import ai.whylabs.profile.serializers.helpers.ClassRegistrationHelper;
-import ai.whylabs.profile.serializers.helpers.SerializerRegistrationHelper;
+import ai.whylabs.profile.serializers.kryo.HeapUpdateDoublesSketchSerializer;
+import ai.whylabs.profile.serializers.kryo.UpdateSketchSerializer;
+import ai.whylabs.profile.serializers.kryo.helpers.ClassRegistrationHelper;
+import ai.whylabs.profile.serializers.kryo.helpers.SerializerRegistrationHelper;
 import ai.whylabs.profile.statistics.trackers.DoubleTracker;
 import ai.whylabs.profile.statistics.trackers.LongTracker;
 import ai.whylabs.profile.statistics.trackers.VarianceTracker;

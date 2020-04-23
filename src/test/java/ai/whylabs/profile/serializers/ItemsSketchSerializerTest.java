@@ -2,6 +2,7 @@ package ai.whylabs.profile.serializers;
 
 import static org.testng.Assert.assertEquals;
 
+import ai.whylabs.profile.serializers.kryo.ItemsSketchSerializer;
 import com.esotericsoftware.kryo.Kryo;
 import lombok.val;
 import org.apache.datasketches.frequencies.ItemsSketch;

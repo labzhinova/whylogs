@@ -1,6 +1,6 @@
 package ai.whylabs.profile.statistics.schema;
 
-import ai.whylabs.profile.serializers.helpers.ClassRegistrationHelper;
+import ai.whylabs.profile.serializers.kryo.helpers.ClassRegistrationHelper;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;

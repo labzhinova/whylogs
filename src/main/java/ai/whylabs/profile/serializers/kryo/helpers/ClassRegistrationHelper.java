@@ -1,4 +1,4 @@
-package ai.whylabs.profile.serializers.helpers;
+package ai.whylabs.profile.serializers.kryo.helpers;
 
 import com.esotericsoftware.kryo.Kryo;
 import java.util.Arrays;

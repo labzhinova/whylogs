@@ -1,8 +1,8 @@
 package ai.whylabs.profile.statistics;
 
-import ai.whylabs.profile.serializers.ItemsSketchSerializer;
-import ai.whylabs.profile.serializers.UpdateSketchSerializer;
-import ai.whylabs.profile.serializers.helpers.SerializerRegistrationHelper;
+import ai.whylabs.profile.serializers.kryo.ItemsSketchSerializer;
+import ai.whylabs.profile.serializers.kryo.UpdateSketchSerializer;
+import ai.whylabs.profile.serializers.kryo.helpers.SerializerRegistrationHelper;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
