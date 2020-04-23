@@ -22,23 +22,14 @@ public class SchemaTracker implements KryoSerializable {
   private Map<ColumnDataType, Long> typeCounts;
 
   @EqualsAndHashCode.Exclude
-  private long currentCount;
-  @EqualsAndHashCode.Exclude
-  private long lastAttemptCount;
-  @EqualsAndHashCode.Exclude
   private InferredType determinedType;
 
   public SchemaTracker() {
     this.classHelper = new ClassRegistrationHelper(HashMap.class, ColumnDataType.class);
     this.typeCounts = new HashMap<>();
-
-    this.currentCount = 0;
-    this.lastAttemptCount = 0;
   }
 
   public void track(Object normalizedData) {
-    currentCount++;
-
     val dataType = toEnumType(normalizedData);
     this.typeCounts.compute(
         dataType,
@@ -53,8 +44,6 @@ public class SchemaTracker implements KryoSerializable {
 
     val inferredType = this.getDeterminedType();
     if (inferredType.getRatio() < 0.8) {
-      // not enough certainty. we'll check next time
-      lastAttemptCount = currentCount;
       return null;
     }
 
