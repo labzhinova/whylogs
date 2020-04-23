@@ -26,13 +26,6 @@ spotless {
     java {
         googleJavaFormat()
     }
-    format("misc") {
-        target("**/*.gradle", "**/*.md", "**/.gitignore")
-
-        trimTrailingWhitespace()
-        indentWithSpaces() // or spaces. Takes an integer argument if you don't like 4
-        endWithNewline()
-    }
 }
 
 
