@@ -1,10 +1,5 @@
 package ai.whylabs.profile.statistics.schema;
 
-import ai.whylabs.profile.serializers.kryo.helpers.ClassRegistrationHelper;
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.KryoSerializable;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -14,16 +9,13 @@ import lombok.Getter;
 import lombok.val;
 
 @EqualsAndHashCode
-public class SchemaTracker implements KryoSerializable {
-
-  private final transient ClassRegistrationHelper classHelper;
+public class SchemaTracker {
 
   @Getter private Map<ColumnDataType, Long> typeCounts;
 
   @EqualsAndHashCode.Exclude private InferredType determinedType;
 
   public SchemaTracker() {
-    this.classHelper = new ClassRegistrationHelper(HashMap.class, ColumnDataType.class);
     this.typeCounts = new HashMap<>();
   }
 
@@ -127,20 +119,5 @@ public class SchemaTracker implements KryoSerializable {
     }
 
     return ColumnDataType.UNKNOWN;
-  }
-
-  @Override
-  public void write(Kryo kryo, Output output) {
-    this.classHelper.checkAndRegister(kryo);
-
-    kryo.writeObject(output, typeCounts);
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public void read(Kryo kryo, Input input) {
-    this.classHelper.checkAndRegister(kryo);
-
-    this.typeCounts = (Map<ColumnDataType, Long>) kryo.readObject(input, HashMap.class);
   }
 }

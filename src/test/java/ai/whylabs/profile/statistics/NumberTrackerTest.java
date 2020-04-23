@@ -2,8 +2,6 @@ package ai.whylabs.profile.statistics;
 
 import static org.testng.Assert.assertEquals;
 
-import ai.whylabs.profile.serializers.KryoUtils;
-import com.esotericsoftware.kryo.Kryo;
 import lombok.val;
 import org.testng.annotations.Test;
 
@@ -59,33 +57,5 @@ public class NumberTrackerTest {
     assertEquals(Math.round(numberTracker.getNumbersSketch().getN()), 3L);
     assertEquals(Math.round(numberTracker.getNumbersSketch().getMaxValue()), 12);
     assertEquals(Math.round(numberTracker.getNumbersSketch().getMinValue()), 10);
-  }
-
-  @Test
-  public void kryo_RoundtripSerialization_ShouldSucceed() {
-    val kryo = new Kryo();
-    kryo.register(NumberTracker.class);
-
-    val original = new NumberTracker();
-    original.track(10.0);
-    original.track(11.0);
-    original.track(12.0);
-
-    val roundTripObject = KryoUtils.doRoundTrip(kryo, original, NumberTracker.class);
-    assertEquals(original.getLongs(), roundTripObject.getLongs());
-    assertEquals(original.getDoubles(), roundTripObject.getDoubles());
-    assertEquals(original.getStddev(), roundTripObject.getStddev());
-  }
-
-  @Test
-  public void kryo_RoundtripSerializationEmptyObject_ShouldSucceed() {
-    val kryo = new Kryo();
-    kryo.register(NumberTracker.class);
-
-    val original = new NumberTracker();
-
-    assertEquals(original.getLongs().getCount(), 0);
-    assertEquals(original.getDoubles().getCount(), 0);
-    assertEquals(original.getStddev().getN(), 0);
   }
 }

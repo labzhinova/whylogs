@@ -33,7 +33,6 @@ dependencies {
     implementation("org.apache.datasketches:datasketches-java:1.2.0-incubating")
     implementation("com.google.code.gson:gson:2.8.6")
     implementation("org.apache.commons:commons-csv:1.8")
-    implementation("com.esotericsoftware:kryo:5.0.0-RC5")
 
     // lombok support
     compileOnly("org.projectlombok:lombok:1.18.12")

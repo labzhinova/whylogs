@@ -1,30 +1,28 @@
 package ai.whylabs.profile.statistics;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 
-import ai.whylabs.profile.serializers.KryoUtils;
-import com.esotericsoftware.kryo.Kryo;
 import lombok.val;
 import org.testng.annotations.Test;
 
 public class CountersTest {
   @Test
   public void kryo_RoundtripSerialization_ShouldSucceed() {
-    val kryo = new Kryo();
-    kryo.register(Counters.class);
-
     val original = new Counters();
-    assertEquals(original, KryoUtils.doRoundTrip(kryo, original, Counters.class));
+    assertEquals(original.getCount(), 0);
 
     original.incrementCount();
     original.incrementCount();
 
-    assertEquals(original, KryoUtils.doRoundTrip(kryo, original, Counters.class));
+    assertEquals(original.getCount(), 2);
+    assertNull(original.getNullCount());
+    assertNull(original.getTrueCount());
 
     original.incrementNull();
-    assertEquals(original, KryoUtils.doRoundTrip(kryo, original, Counters.class));
+    assertEquals(original.getNullCount(), Long.valueOf(1));
 
     original.incrementTrue();
-    assertEquals(original, KryoUtils.doRoundTrip(kryo, original, Counters.class));
+    assertEquals(original.getTrueCount(), Long.valueOf(1));
   }
 }

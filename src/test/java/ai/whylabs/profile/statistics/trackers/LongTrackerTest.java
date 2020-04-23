@@ -2,32 +2,21 @@ package ai.whylabs.profile.statistics.trackers;
 
 import static org.testng.Assert.assertEquals;
 
-import ai.whylabs.profile.serializers.KryoUtils;
-import com.esotericsoftware.kryo.Kryo;
 import lombok.val;
 import org.testng.annotations.Test;
 
 public class LongTrackerTest {
 
   @Test
-  public void test_RoundtripSerialization() {
-    val kryo = new Kryo();
-    kryo.register(LongTracker.class);
+  public void update_BasicCase_ShouldBeCorrect() {
+    val tracker = new LongTracker();
+    tracker.update(1L);
+    tracker.update(2L);
+    tracker.update(3L);
 
-    val original = new LongTracker(0, 99, 99, 2);
-
-    val roundTripObject = KryoUtils.doRoundTrip(kryo, original, LongTracker.class);
-    assertEquals(original, roundTripObject);
-  }
-
-  @Test
-  public void test_RoundtripSerialization_ZeroCount() {
-    val kryo = new Kryo();
-    kryo.register(LongTracker.class);
-
-    val original = new LongTracker();
-
-    val roundTripObject = KryoUtils.doRoundTrip(kryo, original, LongTracker.class);
-    assertEquals(original, roundTripObject);
+    assertEquals(tracker.getCount(), 3);
+    assertEquals(tracker.getMax(), 3L);
+    assertEquals(tracker.getMin(), 1L);
+    assertEquals(tracker.getMean(), 2.0);
   }
 }
