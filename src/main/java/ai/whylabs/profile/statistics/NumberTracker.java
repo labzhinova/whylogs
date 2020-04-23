@@ -11,6 +11,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.google.gson.annotations.Expose;
 import lombok.Getter;
 import org.apache.datasketches.quantiles.DoublesSketch;
 import org.apache.datasketches.quantiles.UpdateDoublesSketch;
@@ -19,16 +20,21 @@ import org.apache.datasketches.theta.UpdateSketch;
 @Getter
 public class NumberTracker implements KryoSerializable {
 
-  private final ClassRegistrationHelper classHelper;
-  private final SerializerRegistrationHelper serializerHelper;
+  private final transient ClassRegistrationHelper classHelper;
+  private final transient SerializerRegistrationHelper serializerHelper;
 
   // our own trackers
+  @Expose
   private VarianceTracker stddev;
+  @Expose
   private DoubleTracker doubles;
+  @Expose
   private LongTracker longs;
 
   // sketches
+  @Expose
   private UpdateDoublesSketch numbersSketch; // histogram
+  @Expose
   private UpdateSketch thetaSketch;
 
   public NumberTracker() {

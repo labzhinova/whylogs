@@ -14,7 +14,7 @@ import org.apache.datasketches.theta.UpdateSketch;
 @Getter
 public final class StringTracker implements KryoSerializable {
 
-  private final SerializerRegistrationHelper serializerHelper;
+  private final transient SerializerRegistrationHelper serializerHelper;
 
   private long count;
 

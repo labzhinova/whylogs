@@ -2,6 +2,7 @@ package ai.whylabs.profile;
 
 import ai.whylabs.profile.serializers.gson.ByteArrayToBase64TypeAdapter;
 import ai.whylabs.profile.serializers.gson.InstantToLongTypeAdapter;
+import ai.whylabs.profile.serializers.gson.ItemsSketchStringTypeAdapter;
 import ai.whylabs.profile.serializers.gson.UpdateDoublesSketchTypeAdapter;
 import ai.whylabs.profile.serializers.gson.UpdateSketchTypeAdapter;
 import com.google.gson.Gson;
@@ -20,6 +21,7 @@ import org.apache.datasketches.theta.UpdateSketch;
 public class DatasetProfile {
 
   public static Gson Gson;
+  public static Gson GsonCompact;
 
   static {
     val itemsSketchStringType = new TypeToken<ItemsSketch<String>>() {
@@ -27,12 +29,24 @@ public class DatasetProfile {
     Gson = new GsonBuilder()
         .setPrettyPrinting()
         .serializeSpecialFloatingPointValues()
+        .enableComplexMapKeySerialization()
         .registerTypeAdapter(byte[].class, new ByteArrayToBase64TypeAdapter())
         .registerTypeAdapter(Instant.class, new InstantToLongTypeAdapter())
         .registerTypeAdapter(UpdateSketch.class, new UpdateSketchTypeAdapter())
         .registerTypeAdapter(UpdateDoublesSketch.class, new UpdateDoublesSketchTypeAdapter())
-        .registerTypeAdapter(itemsSketchStringType, new UpdateDoublesSketchTypeAdapter())
+        .registerTypeAdapter(itemsSketchStringType, new ItemsSketchStringTypeAdapter())
         .create();
+
+    GsonCompact = new GsonBuilder()
+        .serializeSpecialFloatingPointValues()
+        .enableComplexMapKeySerialization()
+        .registerTypeAdapter(byte[].class, new ByteArrayToBase64TypeAdapter())
+        .registerTypeAdapter(Instant.class, new InstantToLongTypeAdapter())
+        .registerTypeAdapter(UpdateSketch.class, new UpdateSketchTypeAdapter())
+        .registerTypeAdapter(UpdateDoublesSketch.class, new UpdateDoublesSketchTypeAdapter())
+        .registerTypeAdapter(itemsSketchStringType, new ItemsSketchStringTypeAdapter())
+        .create();
+
   }
 
   String name;

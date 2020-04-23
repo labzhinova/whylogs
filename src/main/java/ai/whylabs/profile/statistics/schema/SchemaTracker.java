@@ -5,6 +5,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.google.gson.annotations.Expose;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -16,11 +17,13 @@ import lombok.val;
 @EqualsAndHashCode
 public class SchemaTracker implements KryoSerializable {
 
-  private final ClassRegistrationHelper classHelper;
+  private final transient ClassRegistrationHelper classHelper;
 
+  @Expose
   @Getter
   private Map<ColumnDataType, Long> typeCounts;
 
+  @Expose
   @EqualsAndHashCode.Exclude
   private InferredType determinedType;
 
