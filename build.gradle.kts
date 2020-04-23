@@ -1,3 +1,5 @@
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
+
 plugins {
     `java-library`
     `maven-publish`
@@ -5,8 +7,16 @@ plugins {
     id("com.diffplug.gradle.spotless") version ("3.28.1")
 }
 
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("com.amazonaws:aws-java-sdk-core:1.11.766")
+    }
+}
 group = "com.whylabs"
-version = "0.1-alpha"
+version = "0.1-alpha-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -16,7 +26,7 @@ spotless {
     java {
         googleJavaFormat()
     }
-    format ("misc") {
+    format("misc") {
         target("**/*.gradle", "**/*.md", "**/.gitignore")
 
         trimTrailingWhitespace()
@@ -24,6 +34,7 @@ spotless {
         endWithNewline()
     }
 }
+
 
 dependencies {
     implementation("org.apache.datasketches:datasketches-java:1.2.0-incubating")
@@ -100,10 +111,21 @@ publishing {
     }
     repositories {
         maven {
-            // change URLs to point to your repos, e.g. http://my.org/repo
-            val releasesRepoUrl = uri("$buildDir/repos/releases")
-            val snapshotsRepoUrl = uri("$buildDir/repos/snapshots")
+            // TODO: change this URL base on the stage of publishing?
+            val s3Base = "s3://whylabs-andy-maven-us-west-2/repos"
+            val releasesRepoUrl = uri("$s3Base/releases")
+            val snapshotsRepoUrl = uri("$s3Base/snapshots")
             url = if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl
-        }
+
+            // set up AWS authentication
+            val credentials = DefaultAWSCredentialsProviderChain.getInstance().credentials
+            credentials(AwsCredentials::class) {
+                accessKey = credentials.awsAccessKeyId
+                secretKey = credentials.awsSecretKey
+                // optional
+                if (credentials is com.amazonaws.auth.AWSSessionCredentials) {
+                    sessionToken = credentials.sessionToken
+                }
+            } }
     }
 }
