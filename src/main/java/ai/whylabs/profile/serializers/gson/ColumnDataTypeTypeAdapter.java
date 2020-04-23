@@ -28,5 +28,4 @@ public class ColumnDataTypeTypeAdapter extends TypeAdapter<ColumnDataType> {
 
     return ColumnDataType.fromId(in.nextInt());
   }
-
 }

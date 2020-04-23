@@ -41,6 +41,5 @@ public class UpdateSketchSerializer extends ClassTaggedSerializer<UpdateSketch> 
     } catch (ClassNotFoundException e) {
       return Collections.emptyList();
     }
-
   }
 }

@@ -24,29 +24,29 @@ public class DatasetProfile {
   public static Gson GsonCompact;
 
   static {
-    val itemsSketchStringType = new TypeToken<ItemsSketch<String>>() {
-    }.getType();
-    Gson = new GsonBuilder()
-        .setPrettyPrinting()
-        .serializeSpecialFloatingPointValues()
-        .enableComplexMapKeySerialization()
-        .registerTypeAdapter(byte[].class, new ByteArrayToBase64TypeAdapter())
-        .registerTypeAdapter(Instant.class, new InstantToLongTypeAdapter())
-        .registerTypeAdapter(UpdateSketch.class, new UpdateSketchTypeAdapter())
-        .registerTypeAdapter(UpdateDoublesSketch.class, new UpdateDoublesSketchTypeAdapter())
-        .registerTypeAdapter(itemsSketchStringType, new ItemsSketchStringTypeAdapter())
-        .create();
+    val itemsSketchStringType = new TypeToken<ItemsSketch<String>>() {}.getType();
+    Gson =
+        new GsonBuilder()
+            .setPrettyPrinting()
+            .serializeSpecialFloatingPointValues()
+            .enableComplexMapKeySerialization()
+            .registerTypeAdapter(byte[].class, new ByteArrayToBase64TypeAdapter())
+            .registerTypeAdapter(Instant.class, new InstantToLongTypeAdapter())
+            .registerTypeAdapter(UpdateSketch.class, new UpdateSketchTypeAdapter())
+            .registerTypeAdapter(UpdateDoublesSketch.class, new UpdateDoublesSketchTypeAdapter())
+            .registerTypeAdapter(itemsSketchStringType, new ItemsSketchStringTypeAdapter())
+            .create();
 
-    GsonCompact = new GsonBuilder()
-        .serializeSpecialFloatingPointValues()
-        .enableComplexMapKeySerialization()
-        .registerTypeAdapter(byte[].class, new ByteArrayToBase64TypeAdapter())
-        .registerTypeAdapter(Instant.class, new InstantToLongTypeAdapter())
-        .registerTypeAdapter(UpdateSketch.class, new UpdateSketchTypeAdapter())
-        .registerTypeAdapter(UpdateDoublesSketch.class, new UpdateDoublesSketchTypeAdapter())
-        .registerTypeAdapter(itemsSketchStringType, new ItemsSketchStringTypeAdapter())
-        .create();
-
+    GsonCompact =
+        new GsonBuilder()
+            .serializeSpecialFloatingPointValues()
+            .enableComplexMapKeySerialization()
+            .registerTypeAdapter(byte[].class, new ByteArrayToBase64TypeAdapter())
+            .registerTypeAdapter(Instant.class, new InstantToLongTypeAdapter())
+            .registerTypeAdapter(UpdateSketch.class, new UpdateSketchTypeAdapter())
+            .registerTypeAdapter(UpdateDoublesSketch.class, new UpdateDoublesSketchTypeAdapter())
+            .registerTypeAdapter(itemsSketchStringType, new ItemsSketchStringTypeAdapter())
+            .create();
   }
 
   String name;

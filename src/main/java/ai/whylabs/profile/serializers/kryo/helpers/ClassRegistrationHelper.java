@@ -11,8 +11,7 @@ public class ClassRegistrationHelper {
 
   private final List<Class<?>> classes;
 
-  @EqualsAndHashCode.Exclude
-  private volatile boolean isRegistered;
+  @EqualsAndHashCode.Exclude private volatile boolean isRegistered;
 
   public ClassRegistrationHelper(Class<?> clazz) {
     this.classes = Collections.singletonList(clazz);

@@ -14,8 +14,7 @@ public enum ColumnDataType {
   // use an internal ID for efficient serialization
   // cannot rely on Java's internal ID since it's not consistent across JVM
   // also, devs might accidentally change the order and cause future bugs
-  @Getter
-  private final int id;
+  @Getter private final int id;
 
   ColumnDataType(int id) {
     this.id = id;

@@ -30,9 +30,10 @@ public class FrequentStringsSummary {
     if (frequentItems.length == 0) {
       return null;
     }
-    val result = Stream.of(frequentItems)
-        .map(row -> new ItemFrequency(row.getItem(), row.getEstimate()))
-        .collect(Collectors.toList());
+    val result =
+        Stream.of(frequentItems)
+            .map(row -> new ItemFrequency(row.getItem(), row.getEstimate()))
+            .collect(Collectors.toList());
 
     return new FrequentStringsSummary(Collections.unmodifiableList(result));
   }

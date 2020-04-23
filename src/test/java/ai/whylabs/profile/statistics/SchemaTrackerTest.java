@@ -41,5 +41,4 @@ public class SchemaTrackerTest {
     assertEquals(original, KryoUtils.doRoundTrip(kryo, original, SchemaTracker.class));
     assertEquals((long) original.getTypeCounts().get(ColumnDataType.UNKNOWN), 1L);
   }
-
 }

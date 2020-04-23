@@ -23,9 +23,8 @@ public final class StringTracker implements KryoSerializable {
   private final UpdateSketch thetaSketch;
 
   public StringTracker() {
-    this.serializerHelper = new SerializerRegistrationHelper(
-        new UpdateSketchSerializer(),
-        new ItemsSketchSerializer());
+    this.serializerHelper =
+        new SerializerRegistrationHelper(new UpdateSketchSerializer(), new ItemsSketchSerializer());
 
     this.count = 0L;
     this.stringsSketch = new ItemsSketch<>(32); // TODO: make this value configurable
@@ -55,7 +54,5 @@ public final class StringTracker implements KryoSerializable {
   }
 
   @Override
-  public void read(Kryo kryo, Input input) {
-
-  }
+  public void read(Kryo kryo, Input input) {}
 }

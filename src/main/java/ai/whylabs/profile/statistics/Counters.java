@@ -11,7 +11,7 @@ import lombok.experimental.FieldDefaults;
 
 @EqualsAndHashCode
 @Getter
-@FieldDefaults(level=AccessLevel.PRIVATE)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Counters implements KryoSerializable {
   long count;
 
@@ -24,7 +24,7 @@ public class Counters implements KryoSerializable {
   }
 
   public void incrementTrue() {
-    trueCount = (trueCount == null) ? 1: trueCount + 1;
+    trueCount = (trueCount == null) ? 1 : trueCount + 1;
   }
 
   public void incrementNull() {

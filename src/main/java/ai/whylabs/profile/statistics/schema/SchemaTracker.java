@@ -19,13 +19,9 @@ public class SchemaTracker implements KryoSerializable {
 
   private final transient ClassRegistrationHelper classHelper;
 
-  @Expose
-  @Getter
-  private Map<ColumnDataType, Long> typeCounts;
+  @Expose @Getter private Map<ColumnDataType, Long> typeCounts;
 
-  @Expose
-  @EqualsAndHashCode.Exclude
-  private InferredType determinedType;
+  @Expose @EqualsAndHashCode.Exclude private InferredType determinedType;
 
   public SchemaTracker() {
     this.classHelper = new ClassRegistrationHelper(HashMap.class, ColumnDataType.class);
@@ -35,9 +31,7 @@ public class SchemaTracker implements KryoSerializable {
   public void track(Object normalizedData) {
     val dataType = toEnumType(normalizedData);
     this.typeCounts.compute(
-        dataType,
-        (type, existingValue) -> existingValue == null ? 1L : existingValue + 1);
-
+        dataType, (type, existingValue) -> existingValue == null ? 1L : existingValue + 1);
   }
 
   public ColumnDataType determineType() {
@@ -64,21 +58,23 @@ public class SchemaTracker implements KryoSerializable {
     val candidate = getMostPopularType(totalCount);
 
     // integral is a subset of fractional
-    val fractionalCount = Stream.of(ColumnDataType.INTEGRAL, ColumnDataType.FRACTIONAL)
-        .mapToLong(type -> typeCounts.getOrDefault(type, 0L))
-        .sum();
+    val fractionalCount =
+        Stream.of(ColumnDataType.INTEGRAL, ColumnDataType.FRACTIONAL)
+            .mapToLong(type -> typeCounts.getOrDefault(type, 0L))
+            .sum();
 
     // Handling String case first
     // it has to have more entries than fractional values
     if (candidate.getType() == ColumnDataType.STRING && candidate.getCount() > fractionalCount) {
       // treat everything else as "String" except UNKNOWN
-      val coercedCount = Stream.of(
-          ColumnDataType.STRING,
-          ColumnDataType.INTEGRAL,
-          ColumnDataType.FRACTIONAL,
-          ColumnDataType.BOOLEAN)
-          .mapToLong(type -> typeCounts.getOrDefault(type, 0L))
-          .sum();
+      val coercedCount =
+          Stream.of(
+                  ColumnDataType.STRING,
+                  ColumnDataType.INTEGRAL,
+                  ColumnDataType.FRACTIONAL,
+                  ColumnDataType.BOOLEAN)
+              .mapToLong(type -> typeCounts.getOrDefault(type, 0L))
+              .sum();
       val actualRatio = coercedCount * 1.0 / totalCount;
 
       return new InferredType(ColumnDataType.STRING, actualRatio, coercedCount);
@@ -95,19 +91,19 @@ public class SchemaTracker implements KryoSerializable {
 
     // Otherwise, if fractional count is the majority, then likely this is a fractional type
     if (fractionalCount > 0.5) {
-      return new InferredType(candidate.getType(),
-          fractionalCount * 1.0 / totalCount,
-          fractionalCount);
+      return new InferredType(
+          candidate.getType(), fractionalCount * 1.0 / totalCount, fractionalCount);
     }
 
     return new InferredType(candidate.getType(), 1.0, totalCount);
   }
 
   private InferredType getMostPopularType(long totalCount) {
-    val mostPopularType = typeCounts.entrySet().stream()
-        .max((e1, e2) -> (int) (e1.getValue() - e2.getValue()))
-        .map(Entry::getKey)
-        .orElse(ColumnDataType.UNKNOWN);
+    val mostPopularType =
+        typeCounts.entrySet().stream()
+            .max((e1, e2) -> (int) (e1.getValue() - e2.getValue()))
+            .map(Entry::getKey)
+            .orElse(ColumnDataType.UNKNOWN);
 
     val count = typeCounts.getOrDefault(mostPopularType, 0L);
     val ratio = count * 1.0 / totalCount;

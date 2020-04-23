@@ -12,8 +12,6 @@ public class UniqueCountSummary {
 
   public static UniqueCountSummary fromSketch(UpdateSketch sketch) {
     return new UniqueCountSummary(
-        sketch.getEstimate(),
-        sketch.getUpperBound(1),
-        sketch.getLowerBound(1));
+        sketch.getEstimate(), sketch.getUpperBound(1), sketch.getLowerBound(1));
   }
 }

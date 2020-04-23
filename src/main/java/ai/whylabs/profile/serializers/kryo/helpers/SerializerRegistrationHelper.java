@@ -11,8 +11,7 @@ public class SerializerRegistrationHelper {
 
   private final List<ClassTaggedSerializer<?>> serializers;
 
-  @EqualsAndHashCode.Exclude
-  private volatile boolean isRegistered;
+  @EqualsAndHashCode.Exclude private volatile boolean isRegistered;
 
   public SerializerRegistrationHelper(ClassTaggedSerializer<?>... serializers) {
     this.serializers = Arrays.asList(serializers);

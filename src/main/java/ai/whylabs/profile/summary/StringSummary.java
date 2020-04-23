@@ -24,8 +24,7 @@ public class StringSummary {
     // TODO: make this value configurable
     FrequentStringsSummary frequentStrings = null;
     if (uniqueness.getEstimate() < 100) {
-      frequentStrings = FrequentStringsSummary
-          .fromStringSketch(tracker.getStringsSketch());
+      frequentStrings = FrequentStringsSummary.fromStringSketch(tracker.getStringsSketch());
     }
 
     return new StringSummary(frequentStrings, uniqueness);

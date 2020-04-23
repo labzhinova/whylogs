@@ -24,18 +24,13 @@ public class NumberTracker implements KryoSerializable {
   private final transient SerializerRegistrationHelper serializerHelper;
 
   // our own trackers
-  @Expose
-  private VarianceTracker stddev;
-  @Expose
-  private DoubleTracker doubles;
-  @Expose
-  private LongTracker longs;
+  @Expose private VarianceTracker stddev;
+  @Expose private DoubleTracker doubles;
+  @Expose private LongTracker longs;
 
   // sketches
-  @Expose
-  private UpdateDoublesSketch numbersSketch; // histogram
-  @Expose
-  private UpdateSketch thetaSketch;
+  @Expose private UpdateDoublesSketch numbersSketch; // histogram
+  @Expose private UpdateSketch thetaSketch;
 
   public NumberTracker() {
     this.classHelper =
