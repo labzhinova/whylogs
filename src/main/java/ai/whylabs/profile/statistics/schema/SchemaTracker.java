@@ -5,7 +5,6 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.google.gson.annotations.Expose;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -19,9 +18,9 @@ public class SchemaTracker implements KryoSerializable {
 
   private final transient ClassRegistrationHelper classHelper;
 
-  @Expose @Getter private Map<ColumnDataType, Long> typeCounts;
+  @Getter private Map<ColumnDataType, Long> typeCounts;
 
-  @Expose @EqualsAndHashCode.Exclude private InferredType determinedType;
+  @EqualsAndHashCode.Exclude private InferredType determinedType;
 
   public SchemaTracker() {
     this.classHelper = new ClassRegistrationHelper(HashMap.class, ColumnDataType.class);
