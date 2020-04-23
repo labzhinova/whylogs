@@ -1,4 +1,4 @@
-package ai.whylabs.profile.serializers;
+package ai.whylabs.profile.serializers.kryo;
 
 import com.esotericsoftware.kryo.Serializer;
 import java.util.Collections;

@@ -16,6 +16,10 @@ public class NumberSummary {
   UniqueCountSummary uniqueCount;
 
   public static NumberSummary fromNumberTracker(NumberTracker numberTracker) {
+    if (numberTracker == null) {
+      return null;
+    }
+
     long count = numberTracker.getStddev().getN();
 
     if (count == 0) {
@@ -35,7 +39,7 @@ public class NumberSummary {
     }
 
     val histogram = HistogramSummary.fromUpdateDoublesSketch(numberTracker.getNumbersSketch());
-    val uniqueCount = UniqueCountSummary.fromCpcSketch(numberTracker.getCpcSketch());
+    val uniqueCount = UniqueCountSummary.fromSketch(numberTracker.getThetaSketch());
 
     return new NumberSummary(count, stddev, min, max, mean, histogram, uniqueCount);
   }

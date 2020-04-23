@@ -20,7 +20,10 @@ public class DoubleTracker implements KryoSerializable {
   private long count;
 
   public DoubleTracker() {
-    this(Double.MAX_VALUE, Double.MIN_VALUE, 0.0, 0L);
+    this.min = Double.MAX_VALUE;
+    this.max = -Double.MAX_VALUE;
+    this.sum = 0;
+    this.count = 0;
   }
 
   public void addLongs(LongTracker longs) {

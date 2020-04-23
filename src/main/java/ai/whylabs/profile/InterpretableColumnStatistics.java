@@ -1,8 +1,9 @@
 package ai.whylabs.profile;
 
-import ai.whylabs.profile.summary.FrequentStringsSummary;
+import ai.whylabs.profile.statistics.Counters;
 import ai.whylabs.profile.summary.NumberSummary;
-import java.util.Map;
+import ai.whylabs.profile.summary.SchemaSummary;
+import ai.whylabs.profile.summary.StringSummary;
 import lombok.Builder;
 import lombok.Value;
 
@@ -10,10 +11,8 @@ import lombok.Value;
 @Value
 public class InterpretableColumnStatistics {
 
-  Long totalCount;
-  Map<ColumnDataType, Long> typeCounts;
+  Counters counters;
+  SchemaSummary schema;
   NumberSummary numberSummary;
-  Long nullCount;
-  Long trueCount;
-  FrequentStringsSummary frequentStringsSummary;
+  StringSummary stringSummary;
 }
