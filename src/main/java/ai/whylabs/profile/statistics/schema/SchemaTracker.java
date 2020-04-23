@@ -5,14 +5,13 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.val;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.val;
 
 @EqualsAndHashCode
 public class SchemaTracker implements KryoSerializable {
