@@ -9,7 +9,7 @@ import org.apache.datasketches.frequencies.ItemsSketch;
 import org.testng.annotations.Test;
 
 @SuppressWarnings({"rawtypes"})
-public class ItemsSketchSerializerTest extends KryoBaseTest<ItemsSketch> {
+public class ItemsSketchStringTypeAdapterTest extends KryoBaseTest<ItemsSketch> {
 
   static Kryo kryo = new Kryo();
 
@@ -17,7 +17,7 @@ public class ItemsSketchSerializerTest extends KryoBaseTest<ItemsSketch> {
     kryo.register(ItemsSketch.class, new ItemsSketchSerializer());
   }
 
-  public ItemsSketchSerializerTest() {
+  public ItemsSketchStringTypeAdapterTest() {
     super(new ItemsSketchSerializer(), ItemsSketch.class);
   }
 

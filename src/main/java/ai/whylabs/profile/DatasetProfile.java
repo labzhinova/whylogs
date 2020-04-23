@@ -1,23 +1,39 @@
 package ai.whylabs.profile;
 
+import ai.whylabs.profile.serializers.gson.ByteArrayToBase64TypeAdapter;
+import ai.whylabs.profile.serializers.gson.InstantToLongTypeAdapter;
+import ai.whylabs.profile.serializers.gson.UpdateDoublesSketchTypeAdapter;
+import ai.whylabs.profile.serializers.gson.UpdateSketchTypeAdapter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.Value;
 import lombok.val;
+import org.apache.datasketches.frequencies.ItemsSketch;
+import org.apache.datasketches.quantiles.UpdateDoublesSketch;
+import org.apache.datasketches.theta.UpdateSketch;
 
 public class DatasetProfile {
 
-  public static Gson Gson =
-      new GsonBuilder()
-          .setPrettyPrinting()
-          .serializeSpecialFloatingPointValues()
-          .registerTypeAdapter(byte[].class, new Utils.ByteArrayToBase64TypeAdapter())
-          .registerTypeAdapter(Instant.class, new Utils.InstantToLongTypeAdapter())
-          .create();
+  public static Gson Gson;
+
+  static {
+    val itemsSketchStringType = new TypeToken<ItemsSketch<String>>() {
+    }.getType();
+    Gson = new GsonBuilder()
+        .setPrettyPrinting()
+        .serializeSpecialFloatingPointValues()
+        .registerTypeAdapter(byte[].class, new ByteArrayToBase64TypeAdapter())
+        .registerTypeAdapter(Instant.class, new InstantToLongTypeAdapter())
+        .registerTypeAdapter(UpdateSketch.class, new UpdateSketchTypeAdapter())
+        .registerTypeAdapter(UpdateDoublesSketch.class, new UpdateDoublesSketchTypeAdapter())
+        .registerTypeAdapter(itemsSketchStringType, new UpdateDoublesSketchTypeAdapter())
+        .create();
+  }
 
   String name;
   Instant timestamp;
