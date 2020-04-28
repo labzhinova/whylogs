@@ -8,7 +8,7 @@ import lombok.val;
 public class StringSummary {
 
   FrequentStringsSummary frequent;
-  UniqueCountSummary uniqueness;
+  UniqueCountSummary uniqueCount;
 
   public static StringSummary fromTracker(StringTracker tracker) {
     if (tracker == null) {
