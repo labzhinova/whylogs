@@ -28,7 +28,7 @@ public class LendingClubDemo {
   private static final Map<Instant, DatasetProfile> profiles = new HashMap<>();
   private static final DateTimeFormatter dateTimeFormatter =
       DateTimeFormatter.ofPattern("yyy-MM-dd");
-//      DateTimeFormatter.ofPattern("MMM-yyyy").withLocale(Locale.ENGLISH);
+  //      DateTimeFormatter.ofPattern("MMM-yyyy").withLocale(Locale.ENGLISH);
   public static final String INPUT = "lendingclub_recjected_2007_to_2017.csv";
 
   public static void main(String[] args) throws Exception {
@@ -36,10 +36,7 @@ public class LendingClubDemo {
 
     String input = "/Users/andy/Downloads/reserach_data/lendingclub_rejected.json";
 
-    @Cleanup
-    val fis =
-        new FileInputStream(
-            "/Users/andy/Downloads/reserach_data/" + INPUT);
+    @Cleanup val fis = new FileInputStream("/Users/andy/Downloads/reserach_data/" + INPUT);
     @Cleanup val reader = new InputStreamReader(fis);
     CSVFormat format = CSVFormat.DEFAULT.withFirstRecordAsHeader().withNullString("");
     @Cleanup CSVParser parser = new CSVParser(reader, format);
@@ -47,13 +44,15 @@ public class LendingClubDemo {
     StreamSupport.stream(spliterator, false)
         .iterator()
         .forEachRemaining(LendingClubDemo::normalTracking);
-    try (val writer = new FileWriter(
-        input)) {
+    try (val writer = new FileWriter(input)) {
       val interpretableDatasetProfileMap =
           profiles.entrySet().stream()
               .collect(
                   Collectors.toMap(
-                      e -> e.getKey().atZone(ZoneOffset.UTC).format(DateTimeFormatter.ISO_LOCAL_DATE),
+                      e ->
+                          e.getKey()
+                              .atZone(ZoneOffset.UTC)
+                              .format(DateTimeFormatter.ISO_LOCAL_DATE),
                       e -> e.getValue().toInterpretableObject()));
       DatasetProfile.Gson.toJson(interpretableDatasetProfileMap, writer);
     }
@@ -63,7 +62,7 @@ public class LendingClubDemo {
   /** Switch to #stressTest if we want to battle test the memory usage further */
   private static void normalTracking(CSVRecord record) {
     String issueDate = record.get("Application Date");
-//    String issueDate = record.get("issue_d");
+    //    String issueDate = record.get("issue_d");
     val instant = toInstant(issueDate);
     profiles.compute(
         instant,
@@ -80,13 +79,16 @@ public class LendingClubDemo {
   private static Instant toInstant(String issueDate) {
     if (issueDate == null || issueDate.equalsIgnoreCase("nan")) {
       return Instant.ofEpochMilli(0);
-//      return YearMonth.of(2000, 1).atDay(1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
+      //      return YearMonth.of(2000,
+      // 1).atDay(1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
     }
 
-//    val ym = YearMonth.parse(issueDate, dateTimeFormatter);
-//    return ym.atDay(1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
+    //    val ym = YearMonth.parse(issueDate, dateTimeFormatter);
+    //    return ym.atDay(1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
     return LocalDate.parse(issueDate, dateTimeFormatter)
-        .atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
+        .atStartOfDay()
+        .atZone(ZoneOffset.UTC)
+        .toInstant();
   }
 
   private static void stressTest(DatasetProfile profile, CSVRecord record) {

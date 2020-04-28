@@ -8,3 +8,4 @@
  */
 
 rootProject.name = "whylogs-java"
+include("core")

@@ -16,7 +16,6 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.SignStyle;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.Spliterators;
 import java.util.stream.Collectors;
@@ -59,12 +58,16 @@ public class ProfilerDemo {
         //        .limit(10)
         .iterator()
         .forEachRemaining(ProfilerDemo::normalTracking);
-    try (val writer = new FileWriter("/Users/andy/Downloads/reserach_data/nydata_summarized.json")) {
+    try (val writer =
+        new FileWriter("/Users/andy/Downloads/reserach_data/nydata_summarized.json")) {
       val interpretableDatasetProfileMap =
           profiles.entrySet().stream()
               .collect(
                   Collectors.toMap(
-                      e -> e.getKey().atZone(ZoneOffset.UTC).format(DateTimeFormatter.ISO_LOCAL_DATE),
+                      e ->
+                          e.getKey()
+                              .atZone(ZoneOffset.UTC)
+                              .format(DateTimeFormatter.ISO_LOCAL_DATE),
                       e -> e.getValue().toInterpretableObject()));
       DatasetProfile.Gson.toJson(interpretableDatasetProfileMap, writer);
     }
@@ -78,9 +81,12 @@ public class ProfilerDemo {
             .atStartOfDay()
             .atZone(ZoneOffset.UTC)
             .toInstant();
-        profiles.compute(instant, (time, datasetProfile) -> {
+    profiles.compute(
+        instant,
+        (time, datasetProfile) -> {
           if (datasetProfile == null) {
-            datasetProfile = new DatasetProfile("Parking_Violations_Issued_-_Fiscal_Year_2017", time);
+            datasetProfile =
+                new DatasetProfile("Parking_Violations_Issued_-_Fiscal_Year_2017", time);
           }
 
           datasetProfile.track(record.toMap());
