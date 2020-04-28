@@ -10,7 +10,6 @@ buildscript {
     }
 }
 
-
 plugins {
     `java-library`
     `maven-publish`
@@ -18,7 +17,7 @@ plugins {
     id("com.github.johnrengelman.shadow") version ("5.2.0")
 }
 
-group = "com.whylabs.logging"
+group = "com.whylabs.logging.core"
 version = "0.1-alpha"
 
 spotless {
