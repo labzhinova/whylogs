@@ -1,5 +1,4 @@
-package com.whylabs.logging.core;
-
+import com.whylabs.logging.core.DatasetProfile;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.InputStreamReader;

@@ -30,7 +30,6 @@ dependencies {
     api("org.slf4j:slf4j-api:1.7.27")
     implementation("org.apache.datasketches:datasketches-java:1.2.0-incubating")
     implementation("com.google.code.gson:gson:2.8.6")
-    implementation("org.apache.commons:commons-csv:1.8")
 
     // lombok support
     compileOnly("org.projectlombok:lombok:1.18.12")
@@ -70,7 +69,6 @@ shadowJar.apply {
     exclude("META-INF/*")
     dependencies {
         exclude(dependency("org.slf4j:slf4j-api:1.7.27"))
-        exclude(dependency("org.apache.commons:commons-csv:1.8"))
     }
     relocate("org.apache.datasketches", "zzz.com.whylabs.org.apache.datasketches")
     relocate("com.google", "zzz.com.whylabs.com.google")

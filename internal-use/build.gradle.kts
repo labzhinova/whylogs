@@ -18,6 +18,7 @@ dependencies {
     implementation("org.slf4j:slf4j-api:1.7.27")
     implementation(project(":core"))
     implementation("org.apache.commons:commons-csv:1.8")
+    implementation("com.google.code.gson:gson:2.8.6")
 
     // lombok support
     compileOnly("org.projectlombok:lombok:1.18.12")

@@ -1,9 +1,8 @@
-package com.whylabs.logging.core;
-
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.YEAR;
 
+import com.whylabs.logging.core.DatasetProfile;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
