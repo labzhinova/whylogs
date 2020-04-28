@@ -2,8 +2,8 @@ package com.whylabs.logging.core.statistics;
 
 import static org.testng.Assert.assertEquals;
 
-import com.whylabs.logging.core.statistics.schema.SchemaTracker;
 import com.whylabs.logging.core.statistics.schema.ColumnDataType;
+import com.whylabs.logging.core.statistics.schema.SchemaTracker;
 import lombok.val;
 import org.testng.annotations.Test;
 

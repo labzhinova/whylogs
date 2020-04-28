@@ -1,13 +1,13 @@
 package com.whylabs.logging.core;
 
-import com.whylabs.logging.core.serializers.gson.ByteArrayToBase64TypeAdapter;
-import com.whylabs.logging.core.serializers.gson.InstantToLongTypeAdapter;
-import com.whylabs.logging.core.serializers.gson.UpdateSketchTypeAdapter;
-import com.whylabs.logging.core.serializers.gson.ItemsSketchStringTypeAdapter;
-import com.whylabs.logging.core.serializers.gson.UpdateDoublesSketchTypeAdapter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import com.whylabs.logging.core.serializers.gson.ByteArrayToBase64TypeAdapter;
+import com.whylabs.logging.core.serializers.gson.InstantToLongTypeAdapter;
+import com.whylabs.logging.core.serializers.gson.ItemsSketchStringTypeAdapter;
+import com.whylabs.logging.core.serializers.gson.UpdateDoublesSketchTypeAdapter;
+import com.whylabs.logging.core.serializers.gson.UpdateSketchTypeAdapter;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;

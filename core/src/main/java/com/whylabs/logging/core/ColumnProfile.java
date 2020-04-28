@@ -2,10 +2,10 @@ package com.whylabs.logging.core;
 
 import com.whylabs.logging.core.statistics.Counters;
 import com.whylabs.logging.core.statistics.NumberTracker;
+import com.whylabs.logging.core.statistics.StringTracker;
 import com.whylabs.logging.core.statistics.schema.ColumnDataType;
 import com.whylabs.logging.core.statistics.schema.InferredType;
 import com.whylabs.logging.core.statistics.schema.SchemaTracker;
-import com.whylabs.logging.core.statistics.StringTracker;
 import com.whylabs.logging.core.summary.NumberSummary;
 import com.whylabs.logging.core.summary.SchemaSummary;
 import com.whylabs.logging.core.summary.StringSummary;
