@@ -15,6 +15,6 @@ public class VarianceTrackerTest {
     original.update(3.0);
 
     assertEquals(original.getMean(), 2.0);
-    assertEquals(original.getN(), 3);
+    assertEquals(original.getCount(), 3);
   }
 }

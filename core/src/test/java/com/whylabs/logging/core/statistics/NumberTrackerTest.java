@@ -16,11 +16,11 @@ public class NumberTrackerTest {
 
     assertEquals(numberTracker.getLongs().getCount(), 3L);
     assertEquals(numberTracker.getDoubles().getCount(), 0L);
-    assertEquals(numberTracker.getStddev().value(), 1.0);
+    assertEquals(numberTracker.getVariance().stddev(), 0.666667, 0.04);
     assertEquals(Math.round(numberTracker.getThetaSketch().getEstimate()), 3L);
-    assertEquals(Math.round(numberTracker.getNumbersSketch().getN()), 3L);
-    assertEquals(Math.round(numberTracker.getNumbersSketch().getMaxValue()), 12);
-    assertEquals(Math.round(numberTracker.getNumbersSketch().getMinValue()), 10);
+    assertEquals(Math.round(numberTracker.getHistogram().getN()), 3L);
+    assertEquals(Math.round(numberTracker.getHistogram().getMaxValue()), 12);
+    assertEquals(Math.round(numberTracker.getHistogram().getMinValue()), 10);
   }
 
   @Test
@@ -32,11 +32,11 @@ public class NumberTrackerTest {
 
     assertEquals(numberTracker.getLongs().getCount(), 0L);
     assertEquals(numberTracker.getDoubles().getCount(), 3L);
-    assertEquals(numberTracker.getStddev().value(), 1.0);
+    assertEquals(numberTracker.getVariance().stddev(), 0.66667, 0.04);
     assertEquals(Math.round(numberTracker.getThetaSketch().getEstimate()), 3L);
-    assertEquals(Math.round(numberTracker.getNumbersSketch().getN()), 3L);
-    assertEquals(Math.round(numberTracker.getNumbersSketch().getMaxValue()), 12);
-    assertEquals(Math.round(numberTracker.getNumbersSketch().getMinValue()), 10);
+    assertEquals(Math.round(numberTracker.getHistogram().getN()), 3L);
+    assertEquals(Math.round(numberTracker.getHistogram().getMaxValue()), 12);
+    assertEquals(Math.round(numberTracker.getHistogram().getMinValue()), 10);
   }
 
   @Test
@@ -52,10 +52,10 @@ public class NumberTrackerTest {
 
     assertEquals(numberTracker.getLongs().getCount(), 0L);
     assertEquals(numberTracker.getDoubles().getCount(), 3L);
-    assertEquals(numberTracker.getStddev().value(), 1.0);
+    assertEquals(numberTracker.getVariance().stddev(), 0.66667, 0.04);
     assertEquals(Math.round(numberTracker.getThetaSketch().getEstimate()), 3L);
-    assertEquals(Math.round(numberTracker.getNumbersSketch().getN()), 3L);
-    assertEquals(Math.round(numberTracker.getNumbersSketch().getMaxValue()), 12);
-    assertEquals(Math.round(numberTracker.getNumbersSketch().getMinValue()), 10);
+    assertEquals(Math.round(numberTracker.getHistogram().getN()), 3L);
+    assertEquals(Math.round(numberTracker.getHistogram().getMaxValue()), 12);
+    assertEquals(Math.round(numberTracker.getHistogram().getMinValue()), 10);
   }
 }

@@ -47,7 +47,7 @@ public class SummaryConverters {
 
     // TODO: make this value (100) configurable
     if (uniqueCount.getEstimate() < 100) {
-      val frequentStrings = fromStringSketch(tracker.getStringsSketch());
+      val frequentStrings = fromStringSketch(tracker.getItems());
       if (frequentStrings != null) {
         builder.setFrequent(frequentStrings);
       }
@@ -71,25 +71,27 @@ public class SummaryConverters {
       return null;
     }
 
-    long count = numberTracker.getStddev().getN();
+    long count = numberTracker.getVariance().getCount();
 
     if (count == 0) {
       return null;
     }
 
-    Double stddev = numberTracker.getStddev().value();
+    Double stddev = numberTracker.getVariance().stddev();
     double mean, min, max;
-    if (numberTracker.getDoubles().getCount() > 0) {
-      mean = numberTracker.getDoubles().getMean();
-      min = numberTracker.getDoubles().getMin();
-      max = numberTracker.getDoubles().getMax();
+
+    val doubles = numberTracker.getDoubles().toProtobuf();
+    if (doubles.getCount() > 0) {
+      mean = doubles.getSum() / doubles.getCount();
+      min = doubles.getMin();
+      max = doubles.getMax();
     } else {
       mean = numberTracker.getLongs().getMean();
       min = (double) numberTracker.getLongs().getMin();
       max = (double) numberTracker.getLongs().getMax();
     }
 
-    val histogram = fromUpdateDoublesSketch(numberTracker.getNumbersSketch());
+    val histogram = fromUpdateDoublesSketch(numberTracker.getHistogram());
     val uniqueCount = fromSketch(numberTracker.getThetaSketch());
 
     return NumberSummary.newBuilder()

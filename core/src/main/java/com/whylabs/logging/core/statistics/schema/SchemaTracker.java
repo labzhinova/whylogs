@@ -2,9 +2,14 @@ package com.whylabs.logging.core.statistics.schema;
 
 import com.whylabs.logging.core.data.InferredType;
 import com.whylabs.logging.core.data.InferredType.Type;
+import com.whylabs.logging.core.format.SchemaMessage;
+import com.whylabs.logging.core.format.SchemaMessage.Builder;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -101,6 +106,35 @@ public class SchemaTracker {
     }
 
     return candidate.toBuilder().setRatio(1.0).setCount(totalCount).build();
+  }
+
+  public SchemaMessage toProtobuf() {
+    val converedTypeCounts =
+        typeCounts.entrySet().stream()
+            .collect(Collectors.toMap(e -> e.getKey().getNumber(), Entry::getValue));
+    Builder builder = SchemaMessage.newBuilder().putAllTypeCounts(converedTypeCounts);
+
+    if (determinedType != null) {
+      builder.setDeterminedType(determinedType);
+    }
+    return builder.build();
+  }
+
+  public static SchemaTracker fromProtobuf(SchemaMessage message) {
+    val tracker = new SchemaTracker();
+    tracker.determinedType = message.getDeterminedType();
+
+    Stream.of(message.getTypeCountsMap())
+        .filter(Objects::nonNull)
+        .map(Map::entrySet)
+        .flatMap(Collection::stream)
+        .forEach(
+            e -> {
+              val type = Type.forNumber(e.getKey());
+              tracker.typeCounts.put(type, e.getValue());
+            });
+
+    return tracker;
   }
 
   private InferredType getMostPopularType(long totalCount) {

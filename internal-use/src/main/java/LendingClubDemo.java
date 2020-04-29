@@ -1,15 +1,16 @@
 import com.google.protobuf.util.JsonFormat;
 import com.whylabs.logging.core.DatasetProfile;
+import com.whylabs.logging.core.data.DatasetSummaries;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.lang.management.ManagementFactory;
 import java.time.Instant;
-import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Spliterators;
@@ -28,14 +29,13 @@ public class LendingClubDemo {
 
   private static final Map<Instant, DatasetProfile> profiles = new HashMap<>();
   private static final DateTimeFormatter dateTimeFormatter =
-      DateTimeFormatter.ofPattern("yyy-MM-dd");
-  //      DateTimeFormatter.ofPattern("MMM-yyyy").withLocale(Locale.ENGLISH);
-  public static final String INPUT = "lendingclub_recjected_2007_to_2017.csv";
+//      DateTimeFormatter.ofPattern("yyy-MM-dd");
+        DateTimeFormatter.ofPattern("MMM-yyyy").withLocale(Locale.ENGLISH);
+  public static final String INPUT = "lendingclub_accepted_2007_to_2017.csv";
 
   public static void main(String[] args) throws Exception {
     printAndWait("Current process ID: " + ManagementFactory.getRuntimeMXBean().getName());
 
-    String input = "/Users/andy/Downloads/reserach_data/lendingclub_rejected.json";
 
     @Cleanup val fis = new FileInputStream("/Users/andy/Downloads/reserach_data/" + INPUT);
     @Cleanup val reader = new InputStreamReader(fis);
@@ -46,33 +46,25 @@ public class LendingClubDemo {
         .limit(100000)
         .iterator()
         .forEachRemaining(LendingClubDemo::normalTracking);
-    try (val writer = new FileWriter(input)) {
-      val summaryDatasets =
-          profiles.entrySet().stream()
-              .collect(
-                  Collectors.toMap(
-                      e ->
-                          e.getKey()
-                              .atZone(ZoneOffset.UTC)
-                              .format(DateTimeFormatter.ISO_LOCAL_DATE),
-                      e -> e.getValue().toSummary()));
-      summaryDatasets
-          .values()
-          .forEach(
-              ds -> {
-                try (val w = new OutputStreamWriter(System.out)) {
-                  JsonFormat.printer().appendTo(ds.toBuilder(), w);
-                } catch (Exception ignored) {
 
-                }
-              });
+    val profilesBuilder = DatasetSummaries.newBuilder();
+    profiles.forEach(
+        (k, profile) -> {
+          final String timestamp =
+              k.atZone(ZoneOffset.UTC).format(DateTimeFormatter.ISO_LOCAL_DATE);
+          profilesBuilder.putProfiles(timestamp, profile.toSummary());
+        });
+
+    String output = "/Users/andy/Downloads/reserach_data/lendingclub_accepted.json";
+    try (val writer = new FileWriter(output)) {
+      JsonFormat.printer().appendTo(profilesBuilder, writer);
     }
     printAndWait("Finished writing to file. Enter anything to exit");
   }
 
   /** Switch to #stressTest if we want to battle test the memory usage further */
   private static void normalTracking(CSVRecord record) {
-    String issueDate = record.get("Application Date");
+    String issueDate = record.get("issue_d");
     //    String issueDate = record.get("issue_d");
     val instant = toInstant(issueDate);
     profiles.compute(
@@ -89,17 +81,17 @@ public class LendingClubDemo {
 
   private static Instant toInstant(String issueDate) {
     if (issueDate == null || issueDate.equalsIgnoreCase("nan")) {
-      return Instant.ofEpochMilli(0);
-      //      return YearMonth.of(2000,
-      // 1).atDay(1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
+//      return Instant.ofEpochMilli(0);
+            return YearMonth.of(2000,
+       1).atDay(1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
     }
 
-    //    val ym = YearMonth.parse(issueDate, dateTimeFormatter);
-    //    return ym.atDay(1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
-    return LocalDate.parse(issueDate, dateTimeFormatter)
-        .atStartOfDay()
-        .atZone(ZoneOffset.UTC)
-        .toInstant();
+        val ym = YearMonth.parse(issueDate, dateTimeFormatter);
+        return ym.atDay(1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
+    //    return LocalDate.parse(issueDate, dateTimeFormatter)
+    //        .atStartOfDay()
+    //        .atZone(ZoneOffset.UTC)
+    //        .toInstant();
   }
 
   private static void stressTest(DatasetProfile profile, CSVRecord record) {

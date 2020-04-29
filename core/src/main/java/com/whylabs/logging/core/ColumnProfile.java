@@ -3,24 +3,27 @@ package com.whylabs.logging.core;
 import static com.whylabs.logging.core.SummaryConverters.fromSchemaTracker;
 import static java.util.stream.Collectors.toSet;
 
-import com.google.protobuf.Int64Value;
 import com.whylabs.logging.core.data.ColumnSummary;
 import com.whylabs.logging.core.data.InferredType;
 import com.whylabs.logging.core.data.InferredType.Type;
+import com.whylabs.logging.core.format.ColumnMessage;
 import com.whylabs.logging.core.statistics.Counters;
 import com.whylabs.logging.core.statistics.NumberTracker;
 import com.whylabs.logging.core.statistics.StringTracker;
 import com.whylabs.logging.core.statistics.schema.SchemaTracker;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.val;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
+@Builder(setterPrefix = "set")
 public class ColumnProfile {
 
   private static final Pattern FRACTIONAL = Pattern.compile("^[-+]?( )?\\d+([.]\\d+)$");
@@ -138,17 +141,8 @@ public class ColumnProfile {
   }
 
   public ColumnSummary toColumnSummary() {
-    val counterBuilder =
-        com.whylabs.logging.core.data.Counters.newBuilder().setCount(counters.getCount());
-    if (counters.getNullCount() != null) {
-      counterBuilder.setNullCount(Int64Value.of(counters.getNullCount()));
-    }
-
-    if (counters.getTrueCount() != null) {
-      counterBuilder.setTrueCount(Int64Value.of(counters.getTrueCount()));
-    }
     val schema = fromSchemaTracker(schemaTracker, determinedType);
-    val builder = ColumnSummary.newBuilder().setCounters(counterBuilder.build()).setSchema(schema);
+    val builder = ColumnSummary.newBuilder().setCounters(counters.toProtobuf()).setSchema(schema);
 
     if (schema.getInferredType().getType() == Type.STRING) {
       val stringSummary = SummaryConverters.fromStringTracker(stringTracker);
@@ -163,5 +157,29 @@ public class ColumnProfile {
     }
 
     return builder.build();
+  }
+
+  public ColumnMessage.Builder toProtobuf() {
+    val builder =
+        ColumnMessage.newBuilder()
+            .setName(columnName)
+            .setCounters(counters.toProtobuf())
+            .setSchema(schemaTracker.toProtobuf())
+            .setNumbers(numberTracker.toProtobuf())
+            .setStrings(stringTracker.toProtobuf());
+
+    Optional.ofNullable(determinedType).ifPresent(builder::setDeterminedType);
+
+    return builder;
+  }
+
+  public static ColumnProfile fromProtobuf(ColumnMessage message) {
+    return ColumnProfile.builder()
+        .setColumnName(message.getName())
+        .setCounters(Counters.fromProtobuf(message.getCounters()))
+        .setSchemaTracker(SchemaTracker.fromProtobuf(message.getSchema()))
+        .setNumberTracker(NumberTracker.fromProtobuf(message.getNumbers()))
+        .setDeterminedType(message.getDeterminedType())
+        .build();
   }
 }

@@ -1,29 +1,54 @@
 package com.whylabs.logging.core.statistics;
 
 import lombok.AccessLevel;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.experimental.FieldDefaults;
+import lombok.RequiredArgsConstructor;
+import lombok.val;
 
-@EqualsAndHashCode
-@Getter
-@FieldDefaults(level = AccessLevel.PRIVATE)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class Counters {
-  long count;
+  private final com.whylabs.logging.core.data.Counters.Builder proto;
 
-  // Nullable values
-  Long trueCount;
-  Long nullCount;
+  public Counters() {
+    this.proto = com.whylabs.logging.core.data.Counters.newBuilder();
+  }
 
   public void incrementCount() {
-    count++;
+    proto.setCount(proto.getCount() + 1);
   }
 
   public void incrementTrue() {
-    trueCount = (trueCount == null) ? 1 : trueCount + 1;
+    val builder = proto.getTrueCountBuilder();
+    builder.setValue(builder.getValue() + 1);
   }
 
   public void incrementNull() {
-    nullCount = (nullCount == null) ? 1 : nullCount + 1;
+    val builder = proto.getNullCountBuilder();
+    builder.setValue(builder.getValue() + 1);
+  }
+
+  public com.whylabs.logging.core.data.Counters toProtobuf() {
+    return proto.build();
+  }
+
+  public static Counters fromProtobuf(com.whylabs.logging.core.data.Counters message) {
+    return new Counters(message.toBuilder());
+  }
+
+  public long getCount() {
+    return proto.getCount();
+  }
+
+  public Long getTrueCount() {
+    if (proto.hasTrueCount()) {
+      return proto.getTrueCount().getValue();
+    }
+    return null;
+  }
+
+  public Long getNullCount() {
+    if (proto.hasNullCount()) {
+      return proto.getNullCount().getValue();
+    }
+    return null;
   }
 }

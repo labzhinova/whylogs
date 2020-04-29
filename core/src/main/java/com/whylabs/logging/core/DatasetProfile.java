@@ -2,6 +2,8 @@ package com.whylabs.logging.core;
 
 import com.whylabs.logging.core.data.ColumnSummary;
 import com.whylabs.logging.core.data.DatasetSummary;
+import com.whylabs.logging.core.format.DatasetProfileMessage;
+import com.whylabs.logging.core.format.DatasetProfileMessage.Builder;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -64,6 +66,13 @@ public class DatasetProfile {
         .setTimestamp(timestamp.toEpochMilli())
         .putAllColumns(intpColumns)
         .build();
+  }
+
+  public DatasetProfileMessage.Builder toProtobuf() {
+    final Builder builder =
+        DatasetProfileMessage.newBuilder().setName(name).setTimestamp(timestamp.toEpochMilli());
+    columns.forEach((k, v) -> builder.putColumns(k, v.toProtobuf().build()));
+    return builder;
   }
 
   @Value

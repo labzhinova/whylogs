@@ -86,3 +86,7 @@ message DatasetSummary {
   int64 timestamp = 2;
   map<string, ColumnSummary> columns = 3;
 }
+
+message DatasetSummaries {
+  map<string, DatasetSummary> profiles = 1;
+}
