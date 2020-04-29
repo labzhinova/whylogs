@@ -1,5 +1,6 @@
 package com.whylabs.logging.core;
 
+import com.whylabs.logging.core.data.ColumnSummary;
 import java.time.Instant;
 import java.util.Map;
 import lombok.Value;
@@ -9,5 +10,5 @@ public class InterpretableDatasetProfile {
 
   String name;
   Instant timestamp;
-  Map<String, InterpretableColumnStatistics> columns;
+  Map<String, ColumnSummary> columns;
 }

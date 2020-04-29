@@ -1,0 +1,161 @@
+package com.whylabs.logging.core;
+
+import com.whylabs.logging.core.data.FrequentStringsSummary;
+import com.whylabs.logging.core.data.FrequentStringsSummary.FrequentItem;
+import com.whylabs.logging.core.data.HistogramSummary;
+import com.whylabs.logging.core.data.InferredType;
+import com.whylabs.logging.core.data.NumberSummary;
+import com.whylabs.logging.core.data.SchemaSummary;
+import com.whylabs.logging.core.data.SchemaSummary.Builder;
+import com.whylabs.logging.core.data.StringSummary;
+import com.whylabs.logging.core.data.UniqueCountSummary;
+import com.whylabs.logging.core.statistics.NumberTracker;
+import com.whylabs.logging.core.statistics.StringTracker;
+import com.whylabs.logging.core.statistics.schema.SchemaTracker;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import lombok.val;
+import org.apache.datasketches.frequencies.ErrorType;
+import org.apache.datasketches.frequencies.ItemsSketch;
+import org.apache.datasketches.frequencies.ItemsSketch.Row;
+import org.apache.datasketches.quantiles.UpdateDoublesSketch;
+import org.apache.datasketches.theta.UpdateSketch;
+
+public class SummaryConverters {
+
+  public static UniqueCountSummary fromSketch(UpdateSketch sketch) {
+    return UniqueCountSummary.newBuilder()
+        .setEstimate(sketch.getEstimate())
+        .setUpper(sketch.getUpperBound(1))
+        .setLower(sketch.getLowerBound(1))
+        .build();
+  }
+
+  public static StringSummary fromStringTracker(StringTracker tracker) {
+    if (tracker == null) {
+      return null;
+    }
+
+    if (tracker.getCount() == 0) {
+      return null;
+    }
+
+    val uniqueCount = fromSketch(tracker.getThetaSketch());
+    val builder = StringSummary.newBuilder().setUniqueCount(uniqueCount);
+
+    // TODO: make this value (100) configurable
+    if (uniqueCount.getEstimate() < 100) {
+      val frequentStrings = fromStringSketch(tracker.getStringsSketch());
+      if (frequentStrings != null) {
+        builder.setFrequent(frequentStrings);
+      }
+    }
+
+    return builder.build();
+  }
+
+  public static SchemaSummary fromSchemaTracker(
+      SchemaTracker tracker, InferredType determinedType) {
+    Builder builder = SchemaSummary.newBuilder().setDeterminedType(tracker.getDeterminedType());
+
+    if (determinedType != null) {
+      builder.setInferredType(determinedType);
+    }
+    return builder.build();
+  }
+
+  public static NumberSummary fromNumberTracker(NumberTracker numberTracker) {
+    if (numberTracker == null) {
+      return null;
+    }
+
+    long count = numberTracker.getStddev().getN();
+
+    if (count == 0) {
+      return null;
+    }
+
+    Double stddev = numberTracker.getStddev().value();
+    double mean, min, max;
+    if (numberTracker.getDoubles().getCount() > 0) {
+      mean = numberTracker.getDoubles().getMean();
+      min = numberTracker.getDoubles().getMin();
+      max = numberTracker.getDoubles().getMax();
+    } else {
+      mean = numberTracker.getLongs().getMean();
+      min = (double) numberTracker.getLongs().getMin();
+      max = (double) numberTracker.getLongs().getMax();
+    }
+
+    val histogram = fromUpdateDoublesSketch(numberTracker.getNumbersSketch());
+    val uniqueCount = fromSketch(numberTracker.getThetaSketch());
+
+    return NumberSummary.newBuilder()
+        .setCount(count)
+        .setStddev(stddev)
+        .setMin(min)
+        .setMax(max)
+        .setMean(mean)
+        .setHistogram(histogram)
+        .setUniqueCount(uniqueCount)
+        .build();
+  }
+
+  public static FrequentStringsSummary fromStringSketch(ItemsSketch<String> sketch) {
+    val frequentItems = sketch.getFrequentItems(ErrorType.NO_FALSE_NEGATIVES);
+
+    if (frequentItems.length == 0) {
+      return null;
+    }
+
+    val result =
+        Stream.of(frequentItems)
+            .map(SummaryConverters::toFrequentItem)
+            .collect(Collectors.toList());
+
+    return FrequentStringsSummary.newBuilder().addAllItems(result).build();
+  }
+
+  private static FrequentItem toFrequentItem(Row<String> row) {
+    return FrequentItem.newBuilder().setItem(row.getItem()).setEstimate(row.getEstimate()).build();
+  }
+
+  public static HistogramSummary fromUpdateDoublesSketch(UpdateDoublesSketch sketch) {
+    val n = sketch.getN();
+    double start = sketch.getMinValue();
+    double end = sketch.getMaxValue();
+
+    val builder = HistogramSummary.newBuilder().setStart(start).setEnd(end);
+
+    // try to be smart here. We don't really have a "histogram"
+    // if there are too few data points or there's no band
+    if (n < 2 || start == end) {
+      val longs = new ArrayList<Long>();
+      for (int i = 0; i < n; i++) {
+        longs.add(0L);
+      }
+      return builder.setWidth(0).addAllCounts(longs).build();
+    }
+
+    int numberOfBuckets = (int) Math.min(Math.ceil(n / 4.0), 100);
+    val width = (end - start) / (numberOfBuckets * 1.0);
+    builder.setWidth(width);
+
+    // calculate histograms from PMF
+    double[] splitPoints =
+        IntStream.range(0, numberOfBuckets)
+            .boxed()
+            .map(idx -> start + idx * width)
+            .mapToDouble(Double::doubleValue)
+            .toArray();
+    double[] pmf = sketch.getPMF(splitPoints);
+    int len = pmf.length - 1;
+    for (int i = 0; i < len; i++) {
+      builder.addCounts(Math.round(pmf[i] * sketch.getN()));
+    }
+
+    return builder.build();
+  }
+}

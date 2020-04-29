@@ -67,8 +67,7 @@ public class ProfilerDemo {
                           e.getKey()
                               .atZone(ZoneOffset.UTC)
                               .format(DateTimeFormatter.ISO_LOCAL_DATE),
-                      e -> e.getValue().toInterpretableObject()));
-      DatasetProfile.Gson.toJson(interpretableDatasetProfileMap, writer);
+                      e -> e.getValue().toSummary()));
     }
     printAndWait("Finished writing to file. Enter anything to exit");
   }

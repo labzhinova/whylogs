@@ -20,6 +20,8 @@ dependencies {
     implementation("org.apache.commons:commons-csv:1.8")
     implementation("com.google.code.gson:gson:2.8.6")
 
+    implementation("com.google.protobuf:protobuf-java-util:3.11.4")
+
     // lombok support
     compileOnly("org.projectlombok:lombok:1.18.12")
     annotationProcessor("org.projectlombok:lombok:1.18.12")

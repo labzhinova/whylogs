@@ -1,7 +1,9 @@
+import com.google.protobuf.util.JsonFormat;
 import com.whylabs.logging.core.DatasetProfile;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.lang.management.ManagementFactory;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -41,10 +43,11 @@ public class LendingClubDemo {
     @Cleanup CSVParser parser = new CSVParser(reader, format);
     val spliterator = Spliterators.spliteratorUnknownSize(parser.iterator(), 0);
     StreamSupport.stream(spliterator, false)
+        .limit(100000)
         .iterator()
         .forEachRemaining(LendingClubDemo::normalTracking);
     try (val writer = new FileWriter(input)) {
-      val interpretableDatasetProfileMap =
+      val summaryDatasets =
           profiles.entrySet().stream()
               .collect(
                   Collectors.toMap(
@@ -52,8 +55,17 @@ public class LendingClubDemo {
                           e.getKey()
                               .atZone(ZoneOffset.UTC)
                               .format(DateTimeFormatter.ISO_LOCAL_DATE),
-                      e -> e.getValue().toInterpretableObject()));
-      DatasetProfile.Gson.toJson(interpretableDatasetProfileMap, writer);
+                      e -> e.getValue().toSummary()));
+      summaryDatasets
+          .values()
+          .forEach(
+              ds -> {
+                try (val w = new OutputStreamWriter(System.out)) {
+                  JsonFormat.printer().appendTo(ds.toBuilder(), w);
+                } catch (Exception ignored) {
+
+                }
+              });
     }
     printAndWait("Finished writing to file. Enter anything to exit");
   }

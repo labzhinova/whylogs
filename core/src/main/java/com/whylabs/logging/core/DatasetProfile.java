@@ -1,53 +1,15 @@
 package com.whylabs.logging.core;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
-import com.whylabs.logging.core.serializers.gson.ByteArrayToBase64TypeAdapter;
-import com.whylabs.logging.core.serializers.gson.InstantToLongTypeAdapter;
-import com.whylabs.logging.core.serializers.gson.ItemsSketchStringTypeAdapter;
-import com.whylabs.logging.core.serializers.gson.UpdateDoublesSketchTypeAdapter;
-import com.whylabs.logging.core.serializers.gson.UpdateSketchTypeAdapter;
+import com.whylabs.logging.core.data.ColumnSummary;
+import com.whylabs.logging.core.data.DatasetSummary;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.Value;
 import lombok.val;
-import org.apache.datasketches.frequencies.ItemsSketch;
-import org.apache.datasketches.quantiles.UpdateDoublesSketch;
-import org.apache.datasketches.theta.UpdateSketch;
 
 public class DatasetProfile {
-
-  public static Gson Gson;
-  public static Gson GsonCompact;
-
-  static {
-    val itemsSketchStringType = new TypeToken<ItemsSketch<String>>() {}.getType();
-    Gson =
-        new GsonBuilder()
-            .setPrettyPrinting()
-            .serializeSpecialFloatingPointValues()
-            .enableComplexMapKeySerialization()
-            .registerTypeAdapter(byte[].class, new ByteArrayToBase64TypeAdapter())
-            .registerTypeAdapter(Instant.class, new InstantToLongTypeAdapter())
-            .registerTypeAdapter(UpdateSketch.class, new UpdateSketchTypeAdapter())
-            .registerTypeAdapter(UpdateDoublesSketch.class, new UpdateDoublesSketchTypeAdapter())
-            .registerTypeAdapter(itemsSketchStringType, new ItemsSketchStringTypeAdapter())
-            .create();
-
-    GsonCompact =
-        new GsonBuilder()
-            .serializeSpecialFloatingPointValues()
-            .enableComplexMapKeySerialization()
-            .registerTypeAdapter(byte[].class, new ByteArrayToBase64TypeAdapter())
-            .registerTypeAdapter(Instant.class, new InstantToLongTypeAdapter())
-            .registerTypeAdapter(UpdateSketch.class, new UpdateSketchTypeAdapter())
-            .registerTypeAdapter(UpdateDoublesSketch.class, new UpdateDoublesSketchTypeAdapter())
-            .registerTypeAdapter(itemsSketchStringType, new ItemsSketchStringTypeAdapter())
-            .create();
-  }
 
   String name;
   Instant timestamp;
@@ -91,23 +53,27 @@ public class DatasetProfile {
     }
   }
 
-  public InterpretableDatasetProfile toInterpretableObject() {
+  public DatasetSummary toSummary() {
     val intpColumns =
         columns.values().stream()
             .map(Pair::fromColumn)
             .collect(Collectors.toMap(Pair::getName, Pair::getStatistics));
 
-    return new InterpretableDatasetProfile(name, timestamp, intpColumns);
+    return DatasetSummary.newBuilder()
+        .setName(name)
+        .setTimestamp(timestamp.toEpochMilli())
+        .putAllColumns(intpColumns)
+        .build();
   }
 
   @Value
   static class Pair {
 
     String name;
-    InterpretableColumnStatistics statistics;
+    ColumnSummary statistics;
 
     static Pair fromColumn(ColumnProfile column) {
-      return new Pair(column.getColumnName(), column.toInterpretableStatistics());
+      return new Pair(column.getColumnName(), column.toColumnSummary());
     }
   }
 }

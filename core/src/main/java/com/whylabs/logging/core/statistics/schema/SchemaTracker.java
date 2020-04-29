@@ -1,5 +1,7 @@
 package com.whylabs.logging.core.statistics.schema;
 
+import com.whylabs.logging.core.data.InferredType;
+import com.whylabs.logging.core.data.InferredType.Type;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -11,7 +13,7 @@ import lombok.val;
 @EqualsAndHashCode
 public class SchemaTracker {
 
-  @Getter private Map<ColumnDataType, Long> typeCounts;
+  @Getter private final Map<InferredType.Type, Long> typeCounts;
 
   @EqualsAndHashCode.Exclude private InferredType determinedType;
 
@@ -25,7 +27,7 @@ public class SchemaTracker {
         dataType, (type, existingValue) -> existingValue == null ? 1L : existingValue + 1);
   }
 
-  public ColumnDataType determineType() {
+  public InferredType.Type determineType() {
     if (determinedType != null) {
       return determinedType.getType();
     }
@@ -42,7 +44,11 @@ public class SchemaTracker {
   public InferredType getDeterminedType() {
     val totalCount = typeCounts.values().stream().mapToLong(Long::longValue).sum();
     if (totalCount == 0) {
-      return new InferredType(ColumnDataType.UNKNOWN, Double.NaN, 0);
+      return InferredType.newBuilder()
+          .setType(Type.UNKNOWN)
+          .setRatio(Double.NaN)
+          .setCount(0)
+          .build();
     }
 
     // first figure out the most popular type and its count
@@ -50,43 +56,51 @@ public class SchemaTracker {
 
     // integral is a subset of fractional
     val fractionalCount =
-        Stream.of(ColumnDataType.INTEGRAL, ColumnDataType.FRACTIONAL)
+        Stream.of(InferredType.Type.INTEGRAL, InferredType.Type.FRACTIONAL)
             .mapToLong(type -> typeCounts.getOrDefault(type, 0L))
             .sum();
 
     // Handling String case first
     // it has to have more entries than fractional values
-    if (candidate.getType() == ColumnDataType.STRING && candidate.getCount() > fractionalCount) {
+    if (candidate.getType() == Type.STRING && candidate.getCount() > fractionalCount) {
       // treat everything else as "String" except UNKNOWN
       val coercedCount =
-          Stream.of(
-                  ColumnDataType.STRING,
-                  ColumnDataType.INTEGRAL,
-                  ColumnDataType.FRACTIONAL,
-                  ColumnDataType.BOOLEAN)
+          Stream.of(Type.STRING, Type.INTEGRAL, Type.FRACTIONAL, Type.BOOLEAN)
               .mapToLong(type -> typeCounts.getOrDefault(type, 0L))
               .sum();
       val actualRatio = coercedCount * 1.0 / totalCount;
 
-      return new InferredType(ColumnDataType.STRING, actualRatio, coercedCount);
+      return InferredType.newBuilder()
+          .setType(Type.STRING)
+          .setCount(coercedCount)
+          .setRatio(actualRatio)
+          .build();
     }
 
     // if not string but another type with majority
     if (candidate.getRatio() > 0.5) {
       long actualCount = candidate.getCount();
-      if (candidate.getType() == ColumnDataType.FRACTIONAL) {
+      if (candidate.getType() == Type.FRACTIONAL) {
         actualCount = fractionalCount;
       }
-      return new InferredType(candidate.getType(), actualCount * 1.0 / totalCount, actualCount);
+
+      return candidate
+          .toBuilder()
+          .setRatio(actualCount * 1.0 / totalCount)
+          .setCount(actualCount)
+          .build();
     }
 
     // Otherwise, if fractional count is the majority, then likely this is a fractional type
     if (fractionalCount > 0.5) {
-      return new InferredType(
-          candidate.getType(), fractionalCount * 1.0 / totalCount, fractionalCount);
+      return candidate
+          .toBuilder()
+          .setRatio(fractionalCount * 1.0 / totalCount)
+          .setCount(fractionalCount)
+          .build();
     }
 
-    return new InferredType(candidate.getType(), 1.0, totalCount);
+    return candidate.toBuilder().setRatio(1.0).setCount(totalCount).build();
   }
 
   private InferredType getMostPopularType(long totalCount) {
@@ -94,30 +108,35 @@ public class SchemaTracker {
         typeCounts.entrySet().stream()
             .max((e1, e2) -> (int) (e1.getValue() - e2.getValue()))
             .map(Entry::getKey)
-            .orElse(ColumnDataType.UNKNOWN);
+            .orElse(InferredType.Type.UNKNOWN);
 
     val count = typeCounts.getOrDefault(mostPopularType, 0L);
     val ratio = count * 1.0 / totalCount;
-    return new InferredType(mostPopularType, ratio, count);
+
+    return InferredType.newBuilder()
+        .setType(mostPopularType)
+        .setRatio(ratio)
+        .setCount(count)
+        .build();
   }
 
-  static ColumnDataType toEnumType(Object data) {
+  static InferredType.Type toEnumType(Object data) {
     if (data instanceof String) {
-      return ColumnDataType.STRING;
+      return InferredType.Type.STRING;
     }
 
     if (data instanceof Long) {
-      return ColumnDataType.INTEGRAL;
+      return InferredType.Type.INTEGRAL;
     }
 
     if (data instanceof Double) {
-      return ColumnDataType.FRACTIONAL;
+      return InferredType.Type.FRACTIONAL;
     }
 
     if (data instanceof Boolean) {
-      return ColumnDataType.BOOLEAN;
+      return InferredType.Type.BOOLEAN;
     }
 
-    return ColumnDataType.UNKNOWN;
+    return InferredType.Type.UNKNOWN;
   }
 }

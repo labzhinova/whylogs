@@ -1,20 +1,28 @@
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import com.google.protobuf.gradle.plugins
+import com.google.protobuf.gradle.proto
+import com.google.protobuf.gradle.protobuf
+import com.google.protobuf.gradle.protoc
+import com.google.protobuf.gradle.id
 import groovy.util.Node
 import groovy.util.NodeList
+
 
 buildscript {
     dependencies {
         classpath("com.amazonaws:aws-java-sdk-core:1.11.766")
         classpath("com.github.jengelman.gradle.plugins:shadow:5.2.0")
+        classpath("com.google.protobuf:protobuf-gradle-plugin:0.8.12")
     }
 }
 
 plugins {
     `java-library`
     `maven-publish`
-    signing
+    idea
     id("com.github.johnrengelman.shadow") version ("5.2.0")
+    id("com.google.protobuf") version ("0.8.12")
 }
 
 group = "com.whylabs.logging.core"
@@ -28,8 +36,9 @@ spotless {
 
 dependencies {
     api("org.slf4j:slf4j-api:1.7.27")
+    api("com.google.protobuf:protobuf-java:3.11.4")
+
     implementation("org.apache.datasketches:datasketches-java:1.2.0-incubating")
-    implementation("com.google.code.gson:gson:2.8.6")
 
     // lombok support
     compileOnly("org.projectlombok:lombok:1.18.12")
@@ -42,9 +51,15 @@ dependencies {
 }
 
 sourceSets {
+
     main {
-        java.srcDir("src/main/java")
-        java.srcDir("src/main/resources")
+        proto {
+            srcDir("src/main/proto")
+        }
+        java {
+            srcDir("src/main/java")
+            srcDir("src/main/resources")
+        }
     }
 
     test {
@@ -59,6 +74,21 @@ tasks.test {
         testLogging.showStandardStreams = true
         failFast = true
         events("passed", "skipped", "failed")
+    }
+}
+
+protobuf {
+    protoc {
+        // The artifact spec for the Protobuf Compiler
+        artifact = "com.google.protobuf:protoc:3.6.1"
+    }
+    plugins {
+        // Optional: an artifact spec for a protoc plugin, with "grpc" as
+        // the identifier, which can be referred to in the "plugins"
+        // container of the "generateProtoTasks" closure.
+        id("grpc") {
+            artifact = "io.grpc:protoc-gen-grpc-java:1.15.1"
+        }
     }
 }
 
