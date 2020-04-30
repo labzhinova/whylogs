@@ -20,7 +20,8 @@ public class VarianceTracker {
     return proto.getMean();
   }
 
-  // Based on https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Welford's_online_algorithm
+  // Based on
+  // https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Welford's_online_algorithm
   public void update(double newValue) {
     final long count = proto.getCount() + 1;
 
@@ -35,16 +36,12 @@ public class VarianceTracker {
     proto.setSum(sum);
   }
 
-  /**
-   * @return sample standard deviation
-   */
+  /** @return sample standard deviation */
   public double stddev() {
     return Math.sqrt(this.variance());
   }
 
-  /**
-   * @return the sample variance
-   */
+  /** @return the sample variance */
   public double variance() {
     if (proto.getCount() < 2) {
       return Double.NaN;
