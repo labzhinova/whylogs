@@ -103,6 +103,13 @@ public class Profiler implements Runnable {
       @Cleanup val fis = new FileInputStream(input);
       @Cleanup val reader = new InputStreamReader(fis);
       @Cleanup CSVParser parser = new CSVParser(reader, CSV_FORMAT);
+      if (datetime != null) {
+        if (!parser.getHeaderMap().containsKey(datetime.column)) {
+          printErrorAndExit(
+              "Column does not exist in the CSV header: %s. Headers: %s",
+              datetime.column, parser.getHeaderMap());
+        }
+      }
       val spliterator = Spliterators.spliteratorUnknownSize(parser.iterator(), 0);
       val records =
           (limit > 0)
