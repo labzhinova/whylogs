@@ -1,4 +1,4 @@
-package com.whylabs.logging.core.statistics.schema;
+package com.whylabs.logging.core.statistics;
 
 import com.whylabs.logging.core.data.InferredType;
 import com.whylabs.logging.core.data.InferredType.Builder;

@@ -1,9 +1,10 @@
-package com.whylabs.logging.core.statistics.schema;
+package com.whylabs.logging.core.statistics;
 
 import static org.testng.Assert.assertEquals;
 
 import com.whylabs.logging.core.data.InferredType;
 import com.whylabs.logging.core.data.InferredType.Type;
+import com.whylabs.logging.core.statistics.SchemaTracker;
 import java.util.Collections;
 import lombok.val;
 import org.testng.annotations.Test;

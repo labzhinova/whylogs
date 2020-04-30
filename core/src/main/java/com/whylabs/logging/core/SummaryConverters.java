@@ -9,7 +9,7 @@ import com.whylabs.logging.core.data.StringsSummary;
 import com.whylabs.logging.core.data.UniqueCountSummary;
 import com.whylabs.logging.core.statistics.NumberTracker;
 import com.whylabs.logging.core.statistics.StringTracker;
-import com.whylabs.logging.core.statistics.schema.SchemaTracker;
+import com.whylabs.logging.core.statistics.SchemaTracker;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
