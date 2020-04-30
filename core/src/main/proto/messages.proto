@@ -50,7 +50,7 @@ message StringsMessage {
 
 message SchemaMessage {
   map<int32, int64> typeCounts = 1;
-  InferredType determinedType = 2;
+  InferredType inferredType = 2;
 }
 
 message ColumnMessage {
