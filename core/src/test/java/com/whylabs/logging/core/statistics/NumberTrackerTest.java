@@ -16,7 +16,7 @@ public class NumberTrackerTest {
 
     assertEquals(numberTracker.getLongs().getCount(), 3L);
     assertEquals(numberTracker.getDoubles().getCount(), 0L);
-    assertEquals(numberTracker.getVariance().stddev(), 0.666667, 0.04);
+    assertEquals(numberTracker.getVariance().stddev(), 1.0);
     assertEquals(Math.round(numberTracker.getThetaSketch().getEstimate()), 3L);
     assertEquals(Math.round(numberTracker.getHistogram().getN()), 3L);
     assertEquals(Math.round(numberTracker.getHistogram().getMaxValue()), 12);
@@ -32,7 +32,7 @@ public class NumberTrackerTest {
 
     assertEquals(numberTracker.getLongs().getCount(), 0L);
     assertEquals(numberTracker.getDoubles().getCount(), 3L);
-    assertEquals(numberTracker.getVariance().stddev(), 0.66667, 0.04);
+    assertEquals(numberTracker.getVariance().stddev(), 1.0);
     assertEquals(Math.round(numberTracker.getThetaSketch().getEstimate()), 3L);
     assertEquals(Math.round(numberTracker.getHistogram().getN()), 3L);
     assertEquals(Math.round(numberTracker.getHistogram().getMaxValue()), 12);
@@ -52,7 +52,7 @@ public class NumberTrackerTest {
 
     assertEquals(numberTracker.getLongs().getCount(), 0L);
     assertEquals(numberTracker.getDoubles().getCount(), 3L);
-    assertEquals(numberTracker.getVariance().stddev(), 0.66667, 0.04);
+    assertEquals(numberTracker.getVariance().stddev(), 1.0);
     assertEquals(Math.round(numberTracker.getThetaSketch().getEstimate()), 3L);
     assertEquals(Math.round(numberTracker.getHistogram().getN()), 3L);
     assertEquals(Math.round(numberTracker.getHistogram().getMaxValue()), 12);

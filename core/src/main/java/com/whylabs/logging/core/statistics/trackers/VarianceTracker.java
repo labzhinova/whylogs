@@ -20,24 +20,31 @@ public class VarianceTracker {
     return proto.getMean();
   }
 
-  // Based on https://algs4.cs.princeton.edu/code/edu/princeton/cs/algs4/Accumulator.java.html
+  // Based on https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Welford's_online_algorithm
   public void update(double newValue) {
     final long count = proto.getCount() + 1;
 
     double mean = proto.getMean();
     double delta = newValue - mean;
     mean += delta / count;
-    double sum = proto.getSum() + (count - 1.0) / count * delta * delta;
+    double delta2 = newValue - mean;
+    double sum = proto.getSum() + delta * delta2;
 
     proto.setCount(count);
     proto.setMean(mean);
     proto.setSum(sum);
   }
 
+  /**
+   * @return sample standard deviation
+   */
   public double stddev() {
     return Math.sqrt(this.variance());
   }
 
+  /**
+   * @return the sample variance
+   */
   public double variance() {
     if (proto.getCount() < 2) {
       return Double.NaN;
