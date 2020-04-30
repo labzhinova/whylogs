@@ -79,7 +79,8 @@ public class Profiler implements Runnable {
     @Option(
         names = {"-f", "--format"},
         description =
-            "Format of the datetime column. Must specified if the datetime column is specified",
+            "Format of the datetime column. Must specified if the datetime column is specified. "
+                + "For epoch second please use 'epoch', and 'epochMillis' for epoch milliseconds",
         required = true)
     String format;
   }
@@ -154,8 +155,9 @@ public class Profiler implements Runnable {
       val baseName = FilenameUtils.removeExtension(inputFileName);
       val now = ZonedDateTime.now();
       val today = now.format(DateTimeFormatter.ISO_LOCAL_DATE);
-      val minuteOfDay = now.get(ChronoField.SECOND_OF_DAY);
-      val outputFileName = MessageFormat.format("{0}.{1}-{2}.json", baseName, today, minuteOfDay);
+      val secondOfDay = now.get(ChronoField.SECOND_OF_DAY);
+      val outputFileName =
+          MessageFormat.format("{0}.{1}-{2,number,#}.json", baseName, today, secondOfDay);
       output = parentFolder.resolve(outputFileName).toFile();
     }
 
