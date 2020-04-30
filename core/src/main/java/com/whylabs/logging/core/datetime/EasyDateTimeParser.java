@@ -10,6 +10,7 @@ public class EasyDateTimeParser {
 
   public static final String EPOCH_SECONDS_FORMAT = "epoch";
   public static final String EPOCH_MILLIS_FORMAT = "epochMillis";
+  public static final Instant BEGINNING_OF_TIME = Instant.ofEpochMilli(0);
 
   private final DateTimeFormatter dateTimeFormatter;
   private volatile DateTimeFormatParser<?> parser;
@@ -18,7 +19,7 @@ public class EasyDateTimeParser {
     if (EPOCH_SECONDS_FORMAT.equalsIgnoreCase(format)) {
       this.dateTimeFormatter = null;
       this.parser = DateTimeFormatParser.EPOCH_SECONDS;
-    } else if (EPOCH_MILLIS_FORMAT.equalsIgnoreCase(format)){
+    } else if (EPOCH_MILLIS_FORMAT.equalsIgnoreCase(format)) {
       this.dateTimeFormatter = null;
       this.parser = DateTimeFormatParser.EPOCH_MILLISECONDS;
     } else {
@@ -27,6 +28,13 @@ public class EasyDateTimeParser {
   }
 
   public Instant parse(String input) {
+    if (input == null
+        || "nan".equalsIgnoreCase(input)
+        || "null".equalsIgnoreCase(input)
+        || "".equalsIgnoreCase(input)) {
+      return BEGINNING_OF_TIME;
+    }
+
     if (this.parser == null) {
       return this.calculateFormat(input);
     } else {

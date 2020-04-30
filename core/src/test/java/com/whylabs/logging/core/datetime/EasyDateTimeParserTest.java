@@ -16,6 +16,7 @@ public class EasyDateTimeParserTest {
   public static final ZonedDateTime ZERO_TIME =
       ZonedDateTime.of(2019, 11, 13, 7, 15, 0, 0, ZoneOffset.UTC);
   private static final Instant ZERO_INSTANT = ZERO_TIME.toInstant();
+  private static final Instant UNIX_ZERO = Instant.ofEpochMilli(0);
 
   @Test
   public void zonedDateTime_TimeZoneInFull_ReturnsTime() {
@@ -133,5 +134,33 @@ public class EasyDateTimeParserTest {
   @Test(expectedExceptions = IllegalArgumentException.class)
   public void easyParser_InvalidFormat_ThrowException() {
     new EasyDateTimeParser("invalidFormat");
+  }
+
+  @Test
+  public void esyParser_NullInput_ReturnsEpoch0() {
+    val parser = new EasyDateTimeParser("yyyy-MM-dd'T'HH");
+    val actual = parser.parse(null);
+    assertEquals(actual, UNIX_ZERO);
+  }
+
+  @Test
+  public void esyParser_EmptyInput_ReturnsEpoch0() {
+    val parser = new EasyDateTimeParser("yyyy-MM-dd'T'HH");
+    val actual = parser.parse("");
+    assertEquals(actual, UNIX_ZERO);
+  }
+
+  @Test
+  public void esyParser_NullStringInput_ReturnsEpoch0() {
+    val parser = new EasyDateTimeParser("yyyy-MM-dd'T'HH");
+    val actual = parser.parse("NULL");
+    assertEquals(actual, UNIX_ZERO);
+  }
+
+  @Test
+  public void esyParser_NaNStringInput_ReturnsEpoch0() {
+    val parser = new EasyDateTimeParser("yyyy-MM-dd'T'HH");
+    val actual = parser.parse("NaN");
+    assertEquals(actual, UNIX_ZERO);
   }
 }
