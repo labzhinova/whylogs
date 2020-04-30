@@ -27,23 +27,20 @@ public class VarianceTracker {
     double mean = proto.getMean();
     double delta = newValue - mean;
     mean += delta / count;
-    double sum = proto.getSum() + (count - 1.0) / (count * delta * delta);
+    double sum = proto.getSum() + (count - 1.0) / count * delta * delta;
 
     proto.setCount(count);
     proto.setMean(mean);
     proto.setSum(sum);
   }
 
-  public Double stddev() {
-    if (proto.getCount() < 2) {
-      return null;
-    }
-    return Math.sqrt(proto.getSum() / (proto.getCount() - 1.0));
+  public double stddev() {
+    return Math.sqrt(this.variance());
   }
 
-  public Double variance() {
+  public double variance() {
     if (proto.getCount() < 2) {
-      return null;
+      return Double.NaN;
     }
 
     return proto.getSum() / (proto.getCount() - 1.0);

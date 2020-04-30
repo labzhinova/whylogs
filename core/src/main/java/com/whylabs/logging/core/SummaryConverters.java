@@ -3,10 +3,8 @@ package com.whylabs.logging.core;
 import com.whylabs.logging.core.data.FrequentStringsSummary;
 import com.whylabs.logging.core.data.FrequentStringsSummary.FrequentItem;
 import com.whylabs.logging.core.data.HistogramSummary;
-import com.whylabs.logging.core.data.InferredType;
 import com.whylabs.logging.core.data.NumberSummary;
 import com.whylabs.logging.core.data.SchemaSummary;
-import com.whylabs.logging.core.data.SchemaSummary.Builder;
 import com.whylabs.logging.core.data.StringSummary;
 import com.whylabs.logging.core.data.UniqueCountSummary;
 import com.whylabs.logging.core.statistics.NumberTracker;
@@ -56,14 +54,13 @@ public class SummaryConverters {
     return builder.build();
   }
 
-  public static SchemaSummary fromSchemaTracker(
-      SchemaTracker tracker, InferredType determinedType) {
-    Builder builder = SchemaSummary.newBuilder().setDeterminedType(tracker.getDeterminedType());
-
-    if (determinedType != null) {
-      builder.setInferredType(determinedType);
+  public static SchemaSummary.Builder fromSchemaTracker(SchemaTracker tracker) {
+    val computedType = tracker.getOrComputeType();
+    if (computedType.getCount() == 0) {
+      return null;
     }
-    return builder.build();
+
+    return SchemaSummary.newBuilder().setInferredType(computedType);
   }
 
   public static NumberSummary fromNumberTracker(NumberTracker numberTracker) {
@@ -77,7 +74,7 @@ public class SummaryConverters {
       return null;
     }
 
-    Double stddev = numberTracker.getVariance().stddev();
+    double stddev = numberTracker.getVariance().stddev();
     double mean, min, max;
 
     val doubles = numberTracker.getDoubles().toProtobuf();

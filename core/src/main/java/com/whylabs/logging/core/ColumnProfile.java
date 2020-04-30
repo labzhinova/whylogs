@@ -11,7 +11,6 @@ import com.whylabs.logging.core.statistics.Counters;
 import com.whylabs.logging.core.statistics.NumberTracker;
 import com.whylabs.logging.core.statistics.StringTracker;
 import com.whylabs.logging.core.statistics.schema.SchemaTracker;
-import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -36,9 +35,8 @@ public class ColumnProfile {
   final String columnName;
   final Counters counters;
   final SchemaTracker schemaTracker;
-  NumberTracker numberTracker;
-  StringTracker stringTracker;
-  InferredType determinedType;
+  final NumberTracker numberTracker;
+  final StringTracker stringTracker;
 
   public ColumnProfile(String columnName) {
     this.columnName = columnName;
@@ -57,9 +55,7 @@ public class ColumnProfile {
       val strData = (String) data;
 
       // ignore pattern matching if we already determine the type
-      if (this.determinedType != null
-          && this.determinedType.getType()
-              == com.whylabs.logging.core.data.InferredType.Type.STRING) {
+      if (this.schemaTracker.getType() == InferredType.Type.STRING) {
         return data;
       }
 
@@ -98,61 +94,34 @@ public class ColumnProfile {
     schemaTracker.track(normalizedData);
 
     if (normalizedData instanceof Number) {
-      if (numberTracker != null) {
-        numberTracker.track((Number) normalizedData);
-      }
-      if (stringTracker != null) {
-        // in case of numbers, we also track them as string here
-        stringTracker.update((String) value);
-      }
+      numberTracker.track((Number) normalizedData);
+      stringTracker.update(value.toString());
+
     } else if (normalizedData instanceof Boolean) {
       if ((Boolean) normalizedData) {
         counters.incrementTrue();
       }
     } else if (normalizedData instanceof String) {
-      if (stringTracker != null) {
-        stringTracker.update((String) normalizedData);
-      }
-    }
-  }
-
-  public void compact() {
-    val determinedType = schemaTracker.determineType();
-    if (determinedType == null) {
-      // we can't do anything yet. Just back off
-      return;
-    }
-
-    switch (determinedType) {
-      case STRING:
-        this.numberTracker = null;
-        break;
-      case FRACTIONAL:
-      case INTEGRAL:
-        this.stringTracker = null;
-        break;
-      case BOOLEAN:
-        this.numberTracker = null;
-        this.stringTracker = null;
-        break;
-      default:
-        // do nothing
+      stringTracker.update((String) normalizedData);
     }
   }
 
   public ColumnSummary toColumnSummary() {
-    val schema = fromSchemaTracker(schemaTracker, determinedType);
-    val builder = ColumnSummary.newBuilder().setCounters(counters.toProtobuf()).setSchema(schema);
+    val schema = fromSchemaTracker(schemaTracker);
 
-    if (schema.getInferredType().getType() == Type.STRING) {
-      val stringSummary = SummaryConverters.fromStringTracker(stringTracker);
-      if (stringSummary != null) {
-        builder.setStringSummary(stringSummary);
-      }
-    } else if (NUMERIC_TYPES.contains(schema.getInferredType().getType())) {
-      val numberSummary = SummaryConverters.fromNumberTracker(this.numberTracker);
-      if (numberSummary != null) {
-        builder.setNumberSummary(numberSummary);
+    val builder = ColumnSummary.newBuilder().setCounters(counters.toProtobuf());
+    if (schema != null) {
+      builder.setSchema(schema);
+      if (schema.getInferredType().getType() == Type.STRING) {
+        val stringSummary = SummaryConverters.fromStringTracker(stringTracker);
+        if (stringSummary != null) {
+          builder.setStringSummary(stringSummary);
+        }
+      } else if (NUMERIC_TYPES.contains(schema.getInferredType().getType())) {
+        val numberSummary = SummaryConverters.fromNumberTracker(this.numberTracker);
+        if (numberSummary != null) {
+          builder.setNumberSummary(numberSummary);
+        }
       }
     }
 
@@ -160,17 +129,12 @@ public class ColumnProfile {
   }
 
   public ColumnMessage.Builder toProtobuf() {
-    val builder =
-        ColumnMessage.newBuilder()
-            .setName(columnName)
-            .setCounters(counters.toProtobuf())
-            .setSchema(schemaTracker.toProtobuf())
-            .setNumbers(numberTracker.toProtobuf())
-            .setStrings(stringTracker.toProtobuf());
-
-    Optional.ofNullable(determinedType).ifPresent(builder::setDeterminedType);
-
-    return builder;
+    return ColumnMessage.newBuilder()
+        .setName(columnName)
+        .setCounters(counters.toProtobuf())
+        .setSchema(schemaTracker.toProtobuf())
+        .setNumbers(numberTracker.toProtobuf())
+        .setStrings(stringTracker.toProtobuf());
   }
 
   public static ColumnProfile fromProtobuf(ColumnMessage message) {
@@ -179,7 +143,6 @@ public class ColumnProfile {
         .setCounters(Counters.fromProtobuf(message.getCounters()))
         .setSchemaTracker(SchemaTracker.fromProtobuf(message.getSchema()))
         .setNumberTracker(NumberTracker.fromProtobuf(message.getNumbers()))
-        .setDeterminedType(message.getDeterminedType())
         .build();
   }
 }

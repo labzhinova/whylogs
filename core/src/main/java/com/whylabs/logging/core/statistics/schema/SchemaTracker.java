@@ -3,57 +3,57 @@ package com.whylabs.logging.core.statistics.schema;
 import com.whylabs.logging.core.data.InferredType;
 import com.whylabs.logging.core.data.InferredType.Type;
 import com.whylabs.logging.core.format.SchemaMessage;
-import com.whylabs.logging.core.format.SchemaMessage.Builder;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.val;
 
-@EqualsAndHashCode
+@RequiredArgsConstructor
 public class SchemaTracker {
 
-  @Getter private final Map<InferredType.Type, Long> typeCounts;
+  private static final InferredType UNKNOWN_TYPE =
+      InferredType.newBuilder().setType(Type.UNKNOWN).setRatio(Double.NaN).setCount(0).build();
 
-  @EqualsAndHashCode.Exclude private InferredType determinedType;
+  private final Map<InferredType.Type, Long> typeCounts;
+  private final InferredType.Builder inferredType;
 
   public SchemaTracker() {
     this.typeCounts = new HashMap<>();
+    this.inferredType = UNKNOWN_TYPE.toBuilder();
+  }
+
+  public InferredType.Type getType() {
+    return inferredType.getType();
   }
 
   public void track(Object normalizedData) {
     val dataType = toEnumType(normalizedData);
+    if (dataType == inferredType.getType()) {
+      inferredType.setCount(inferredType.getCount() + 1);
+    }
     this.typeCounts.compute(
         dataType, (type, existingValue) -> existingValue == null ? 1L : existingValue + 1);
   }
 
-  public InferredType.Type determineType() {
-    if (determinedType != null) {
-      return determinedType.getType();
+  @NonNull
+  public InferredType getOrComputeType() {
+    if (this.inferredType.getType() != Type.UNKNOWN) {
+      return this.inferredType.build();
     }
 
-    val inferredType = this.getDeterminedType();
-    if (inferredType.getRatio() < 0.8) {
-      return null;
-    }
-
-    this.determinedType = inferredType;
-    return inferredType.getType();
+    this.computeType();
+    return this.inferredType.build();
   }
 
-  public InferredType getDeterminedType() {
+  private void computeType() {
     val totalCount = typeCounts.values().stream().mapToLong(Long::longValue).sum();
     if (totalCount == 0) {
-      return InferredType.newBuilder()
-          .setType(Type.UNKNOWN)
-          .setRatio(Double.NaN)
-          .setCount(0)
-          .build();
+      return;
     }
 
     // first figure out the most popular type and its count
@@ -75,11 +75,8 @@ public class SchemaTracker {
               .sum();
       val actualRatio = coercedCount * 1.0 / totalCount;
 
-      return InferredType.newBuilder()
-          .setType(Type.STRING)
-          .setCount(coercedCount)
-          .setRatio(actualRatio)
-          .build();
+      inferredType.setType(Type.STRING).setCount(coercedCount).setRatio(actualRatio);
+      return;
     }
 
     // if not string but another type with majority
@@ -89,52 +86,44 @@ public class SchemaTracker {
         actualCount = fractionalCount;
       }
 
-      return candidate
-          .toBuilder()
-          .setRatio(actualCount * 1.0 / totalCount)
-          .setCount(actualCount)
-          .build();
+      inferredType.mergeFrom(
+          candidate
+              .toBuilder()
+              .setRatio(actualCount * 1.0 / totalCount)
+              .setCount(actualCount)
+              .build());
+      return;
     }
 
     // Otherwise, if fractional count is the majority, then likely this is a fractional type
     if (fractionalCount > 0.5) {
-      return candidate
-          .toBuilder()
-          .setRatio(fractionalCount * 1.0 / totalCount)
-          .setCount(fractionalCount)
-          .build();
+      inferredType.mergeFrom(
+          candidate
+              .toBuilder()
+              .setRatio(fractionalCount * 1.0 / totalCount)
+              .setCount(fractionalCount)
+              .build());
+      return;
     }
 
-    return candidate.toBuilder().setRatio(1.0).setCount(totalCount).build();
+    inferredType.mergeFrom(candidate.toBuilder().setRatio(1.0).setCount(totalCount).build());
   }
 
-  public SchemaMessage toProtobuf() {
-    val converedTypeCounts =
+  public SchemaMessage.Builder toProtobuf() {
+    val protoTypeCounts =
         typeCounts.entrySet().stream()
             .collect(Collectors.toMap(e -> e.getKey().getNumber(), Entry::getValue));
-    Builder builder = SchemaMessage.newBuilder().putAllTypeCounts(converedTypeCounts);
-
-    if (determinedType != null) {
-      builder.setDeterminedType(determinedType);
-    }
-    return builder.build();
+    return SchemaMessage.newBuilder()
+        .putAllTypeCounts(protoTypeCounts)
+        .setInferredType(inferredType);
   }
 
   public static SchemaTracker fromProtobuf(SchemaMessage message) {
-    val tracker = new SchemaTracker();
-    tracker.determinedType = message.getDeterminedType();
+    val typeCounts = new HashMap<Type, Long>();
+    Optional.of(message.getTypeCountsMap())
+        .ifPresent(m -> m.forEach((k, v) -> typeCounts.put(Type.forNumber(k), v)));
 
-    Stream.of(message.getTypeCountsMap())
-        .filter(Objects::nonNull)
-        .map(Map::entrySet)
-        .flatMap(Collection::stream)
-        .forEach(
-            e -> {
-              val type = Type.forNumber(e.getKey());
-              tracker.typeCounts.put(type, e.getValue());
-            });
-
-    return tracker;
+    return new SchemaTracker(typeCounts, message.getInferredType().toBuilder());
   }
 
   private InferredType getMostPopularType(long totalCount) {

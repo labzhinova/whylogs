@@ -16,21 +16,15 @@ public class DatasetProfile {
   String name;
   Instant timestamp;
   Map<String, ColumnProfile> columns;
-  long count;
-  long lastCompactionCount;
 
   public DatasetProfile(String name, Instant timestamp) {
     this.name = name;
     this.timestamp = timestamp;
     this.columns = new HashMap<>();
-    this.count = 0L;
-    this.lastCompactionCount = 0L;
   }
 
   public void track(String columnName, Object data) {
-    count++;
     trackSingleColumn(columnName, data);
-    compact();
   }
 
   private void trackSingleColumn(String columnName, Object data) {
@@ -43,16 +37,7 @@ public class DatasetProfile {
   }
 
   public <T> void track(Map<String, T> columns) {
-    count++;
     columns.forEach(this::track);
-    compact();
-  }
-
-  private void compact() {
-    if (count - lastCompactionCount > 1000) {
-      lastCompactionCount = count;
-      columns.values().forEach(ColumnProfile::compact);
-    }
   }
 
   public DatasetSummary toSummary() {
