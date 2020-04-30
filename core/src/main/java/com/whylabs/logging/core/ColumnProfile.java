@@ -7,7 +7,7 @@ import com.whylabs.logging.core.data.ColumnSummary;
 import com.whylabs.logging.core.data.InferredType;
 import com.whylabs.logging.core.data.InferredType.Type;
 import com.whylabs.logging.core.format.ColumnMessage;
-import com.whylabs.logging.core.statistics.Counters;
+import com.whylabs.logging.core.statistics.CountersTracker;
 import com.whylabs.logging.core.statistics.NumberTracker;
 import com.whylabs.logging.core.statistics.StringTracker;
 import com.whylabs.logging.core.statistics.schema.SchemaTracker;
@@ -33,14 +33,14 @@ public class ColumnProfile {
       Stream.of(Type.FRACTIONAL, Type.INTEGRAL).collect(toSet());
 
   final String columnName;
-  final Counters counters;
+  final CountersTracker counters;
   final SchemaTracker schemaTracker;
   final NumberTracker numberTracker;
   final StringTracker stringTracker;
 
   public ColumnProfile(String columnName) {
     this.columnName = columnName;
-    this.counters = new Counters();
+    this.counters = new CountersTracker();
     this.schemaTracker = new SchemaTracker();
     this.numberTracker = new NumberTracker();
     this.stringTracker = new StringTracker();
@@ -140,7 +140,7 @@ public class ColumnProfile {
   public static ColumnProfile fromProtobuf(ColumnMessage message) {
     return ColumnProfile.builder()
         .setColumnName(message.getName())
-        .setCounters(Counters.fromProtobuf(message.getCounters()))
+        .setCounters(CountersTracker.fromProtobuf(message.getCounters()))
         .setSchemaTracker(SchemaTracker.fromProtobuf(message.getSchema()))
         .setNumberTracker(NumberTracker.fromProtobuf(message.getNumbers()))
         .build();

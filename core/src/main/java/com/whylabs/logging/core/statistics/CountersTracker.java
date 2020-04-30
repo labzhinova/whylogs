@@ -5,10 +5,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.val;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public class Counters {
+public class CountersTracker {
   private final com.whylabs.logging.core.data.Counters.Builder proto;
 
-  public Counters() {
+  public CountersTracker() {
     this.proto = com.whylabs.logging.core.data.Counters.newBuilder();
   }
 
@@ -30,8 +30,8 @@ public class Counters {
     return proto.build();
   }
 
-  public static Counters fromProtobuf(com.whylabs.logging.core.data.Counters message) {
-    return new Counters(message.toBuilder());
+  public static CountersTracker fromProtobuf(com.whylabs.logging.core.data.Counters message) {
+    return new CountersTracker(message.toBuilder());
   }
 
   public long getCount() {

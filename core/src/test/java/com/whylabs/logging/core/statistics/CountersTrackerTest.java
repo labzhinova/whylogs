@@ -6,10 +6,10 @@ import static org.testng.Assert.assertNull;
 import lombok.val;
 import org.testng.annotations.Test;
 
-public class CountersTest {
+public class CountersTrackerTest {
   @Test
   public void kryo_RoundtripSerialization_ShouldSucceed() {
-    val original = new Counters();
+    val original = new CountersTracker();
     assertEquals(original.getCount(), 0);
 
     original.incrementCount();
