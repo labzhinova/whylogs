@@ -42,7 +42,7 @@ message FrequentStringsSummary {
   repeated FrequentItem items = 1;
 }
 
-message StringSummary {
+message StringsSummary {
   UniqueCountSummary unique_count = 1;
   FrequentStringsSummary frequent = 2;
 }
@@ -76,7 +76,7 @@ message ColumnSummary {
   SchemaSummary schema = 2;
   oneof data {
     NumberSummary number_summary = 3;
-    StringSummary string_summary = 4;
+    StringsSummary string_summary = 4;
   }
 }
 

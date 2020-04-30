@@ -5,7 +5,7 @@ import com.whylabs.logging.core.data.FrequentStringsSummary.FrequentItem;
 import com.whylabs.logging.core.data.HistogramSummary;
 import com.whylabs.logging.core.data.NumberSummary;
 import com.whylabs.logging.core.data.SchemaSummary;
-import com.whylabs.logging.core.data.StringSummary;
+import com.whylabs.logging.core.data.StringsSummary;
 import com.whylabs.logging.core.data.UniqueCountSummary;
 import com.whylabs.logging.core.statistics.NumberTracker;
 import com.whylabs.logging.core.statistics.StringTracker;
@@ -31,7 +31,7 @@ public class SummaryConverters {
         .build();
   }
 
-  public static StringSummary fromStringTracker(StringTracker tracker) {
+  public static StringsSummary fromStringTracker(StringTracker tracker) {
     if (tracker == null) {
       return null;
     }
@@ -41,7 +41,7 @@ public class SummaryConverters {
     }
 
     val uniqueCount = fromSketch(tracker.getThetaSketch());
-    val builder = StringSummary.newBuilder().setUniqueCount(uniqueCount);
+    val builder = StringsSummary.newBuilder().setUniqueCount(uniqueCount);
 
     // TODO: make this value (100) configurable
     if (uniqueCount.getEstimate() < 100) {
