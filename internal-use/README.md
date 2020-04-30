@@ -14,3 +14,8 @@ Run with first 1000 entries with LendingClub data
 Run with NYC ticket dataset (note the quotes)
 ./profiler -i=Parking_Violations_Issued_-_Fiscal_Year_2017.csv -d="Issue Date" -f=MM/dd/YYYY
 ```
+
+* Running with TSV dataset
+```
+profiler-1.0/bin/profiler -i=arcos_all_washpost.tsv/arcos_all_washpost.tsv -d="TRANSACTION_DATE" -f=MMddYYY  -s="\t"
+```
