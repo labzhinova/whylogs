@@ -27,6 +27,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
@@ -63,6 +64,12 @@ public class Profiler implements Runnable {
           "limit the number of entries to process. Can be used to quickly validate the command (default: ${DEFAULT-VALUE})")
   int limit = -1;
 
+  @Option(
+      names = {"-s", "--separator"},
+      paramLabel = "SEPARATOR_CHARACTOR",
+      description = "record separator. For tab character please use '\\t'")
+  String delimiter = ",";
+
   @ArgGroup(exclusive = false)
   Dependent datetime;
 
@@ -92,6 +99,12 @@ public class Profiler implements Runnable {
   public void run() {
     validateFiles();
 
+    @SuppressWarnings("deprecation")
+    val unescapedDelimiter = StringEscapeUtils.unescapeJava(delimiter);
+    if (unescapedDelimiter.length() != 1) {
+      printErrorAndExit("Separator must be 1 character only (excluding escape characters)");
+    }
+
     if (datetime != null) {
       System.out.printf("Using date time format: %s\n", datetime.format);
       System.out.printf("Using date time column: %s\n", datetime.column);
@@ -102,7 +115,8 @@ public class Profiler implements Runnable {
       System.out.printf("Reading input from: %s\n", input);
       @Cleanup val fis = new FileInputStream(input);
       @Cleanup val reader = new InputStreamReader(fis);
-      @Cleanup CSVParser parser = new CSVParser(reader, CSV_FORMAT);
+      val csvFormat = CSV_FORMAT.withDelimiter(unescapedDelimiter.charAt(0));
+      @Cleanup CSVParser parser = new CSVParser(reader, csvFormat);
       if (datetime != null) {
         if (!parser.getHeaderMap().containsKey(datetime.column)) {
           printErrorAndExit(
@@ -153,8 +167,8 @@ public class Profiler implements Runnable {
     }
     val inputFileName = input.getName();
     val extension = FilenameUtils.getExtension(inputFileName);
-    if (!"csv".equalsIgnoreCase(extension)) {
-      System.err.printf("WARNING: Input does not have CSV extension. Got: %s", extension);
+    if (!"csv".equalsIgnoreCase(extension) && !"tsv".equalsIgnoreCase(extension)) {
+      System.err.printf("WARNING: Input does not have CSV extension. Got: %s\n", extension);
     }
 
     if (output == null) {
