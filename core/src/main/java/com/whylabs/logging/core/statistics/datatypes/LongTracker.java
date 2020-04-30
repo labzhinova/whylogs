@@ -1,4 +1,4 @@
-package com.whylabs.logging.core.statistics.trackers;
+package com.whylabs.logging.core.statistics.datatypes;
 
 import com.whylabs.logging.core.format.LongsMessage;
 import lombok.AccessLevel;

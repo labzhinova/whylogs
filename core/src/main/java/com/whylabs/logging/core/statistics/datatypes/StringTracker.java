@@ -1,4 +1,4 @@
-package com.whylabs.logging.core.statistics;
+package com.whylabs.logging.core.statistics.datatypes;
 
 import com.google.protobuf.ByteString;
 import com.whylabs.logging.core.format.StringsMessage;
