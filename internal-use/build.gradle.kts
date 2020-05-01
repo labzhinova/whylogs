@@ -26,8 +26,13 @@ application {
 
 
 dependencies {
-    implementation("org.slf4j:slf4j-api:1.7.27")
     implementation(project(":core"))
+    implementation(project(":firehose"))
+
+    implementation("org.slf4j:slf4j-api:1.7.27")
+    implementation("org.apache.logging.log4j:log4j-core:2.13.2")
+    implementation("org.apache.logging.log4j:log4j-slf4j-impl:2.13.2")
+
     implementation("org.apache.commons:commons-csv:1.8")
     implementation("commons-io:commons-io:2.6")
     implementation("org.apache.commons:commons-lang3:3.10")
