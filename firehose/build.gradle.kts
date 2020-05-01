@@ -16,8 +16,10 @@ spotless {
 
 dependencies {
     implementation("org.slf4j:slf4j-api:1.7.27")
+    implementation("com.amazonaws:aws-java-sdk-kinesis:1.11.769")
+
+    // project dependencies
     implementation(project(":core"))
-    implementation("org.apache.commons:commons-csv:1.8")
 
     // lombok support
     compileOnly("org.projectlombok:lombok:1.18.12")

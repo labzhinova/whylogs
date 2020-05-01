@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+import "google/protobuf/wrappers.proto";
+import "summaries.proto";
+
+option java_package = "com.whylabs.logging.core.format";
+option java_outer_classname = "Messages";
+option java_multiple_files = true;
+
+message DoublesMessage {
+  int64 count = 1;
+  double min = 2;
+  double max = 3;
+  double sum = 4;
+}
+
+message LongsMessage {
+  int64 count = 1;
+  int64 min = 2;
+  int64 max = 3;
+  int64 sum = 4;
+}
+
+message VarianceMessage {
+  int64 count = 1;
+  double sum = 2; // sample variance * (n-1)
+  double mean = 3;
+}
+
+message NumbersMessage {
+  VarianceMessage variance = 1;
+  oneof numbers {
+    DoublesMessage doubles = 2;
+    LongsMessage longs = 3;
+  }
+
+  // sketches
+  bytes histogram = 4;
+  bytes theta = 5;
+}
+
+message StringsMessage {
+  int64 count = 1;
+
+  // sketches
+  bytes theta = 2;
+  bytes items = 3;
+}
+
+
+message SchemaMessage {
+  map<int32, int64> typeCounts = 1;
+  InferredType inferredType = 2;
+}
+
+message ColumnMessage {
+  string name = 1;
+  Counters counters = 2;
+  SchemaMessage schema = 3;
+  NumbersMessage numbers = 4;
+  StringsMessage strings = 5;
+  InferredType determinedType = 6;
+}
+
+message DatasetProfileMessage {
+  string name = 1;
+  int64 timestamp = 2;
+  map<string, ColumnMessage> columns = 3;
+}
