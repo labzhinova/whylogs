@@ -67,3 +67,30 @@ message DatasetProfileMessage {
   int64 timestamp = 2;
   map<string, ColumnMessage> columns = 3;
 }
+
+/**
+ * The follow section is for transmission and reconstruction of the dataset
+ * in WhyLogs backend
+ */
+message ColumnsChunkSegment {
+  // UUID is required to aggregate to the original message
+  // This should map back to the original dataset
+  string marker = 1;
+  repeated ColumnMessage columns = 2;
+}
+
+message DatasetMetadataSegment {
+  string marker = 1;
+  string name = 2;
+  int64 timestamp = 3;
+  // TODO: store other configuration here
+}
+
+// A segment of a dataset profile. This can be used to composed the
+// original object back
+message MessageSegment {
+  oneof item {
+    DatasetMetadataSegment metadata = 1;
+    ColumnsChunkSegment columns = 2;
+  }
+}

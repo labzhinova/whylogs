@@ -1,12 +1,20 @@
 package com.whylabs.logging.core;
 
+import com.google.common.collect.Iterators;
 import com.whylabs.logging.core.data.ColumnSummary;
 import com.whylabs.logging.core.data.DatasetSummary;
+import com.whylabs.logging.core.format.ColumnMessage;
+import com.whylabs.logging.core.format.ColumnsChunkSegment;
+import com.whylabs.logging.core.format.DatasetMetadataSegment;
 import com.whylabs.logging.core.format.DatasetProfileMessage;
 import com.whylabs.logging.core.format.DatasetProfileMessage.Builder;
+import com.whylabs.logging.core.format.MessageSegment;
+import com.whylabs.logging.core.iterator.ColumnsChunkSegmentIterator;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.Value;
 import lombok.val;
@@ -51,6 +59,32 @@ public class DatasetProfile {
         .setTimestamp(timestamp.toEpochMilli())
         .putAllColumns(intpColumns)
         .build();
+  }
+
+  public Iterator<MessageSegment> toChunkIterator() {
+    final String marker = name + UUID.randomUUID().toString();
+
+    // first message is the metadata
+    val metadataBuilder =
+        DatasetMetadataSegment.newBuilder()
+            .setName(this.name)
+            .setTimestamp(this.timestamp.toEpochMilli())
+            .setMarker(marker);
+    val metadataSegment = MessageSegment.newBuilder().setMetadata(metadataBuilder).build();
+
+    // then we group the columns by size
+    val chunkedColumns =
+        columns.values().stream()
+            .map(ColumnProfile::toProtobuf)
+            .map(ColumnMessage.Builder::build)
+            .iterator();
+
+    val columnSegmentMessages =
+        Iterators.<ColumnsChunkSegment, MessageSegment>transform(
+            new ColumnsChunkSegmentIterator(chunkedColumns, marker),
+            msg -> MessageSegment.newBuilder().setColumns(msg).build());
+
+    return Iterators.concat(Iterators.singletonIterator(metadataSegment), columnSegmentMessages);
   }
 
   public DatasetProfileMessage.Builder toProtobuf() {
