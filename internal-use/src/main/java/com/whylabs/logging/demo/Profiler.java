@@ -4,6 +4,8 @@ import com.google.protobuf.util.JsonFormat;
 import com.whylabs.logging.core.DatasetProfile;
 import com.whylabs.logging.core.data.DatasetSummaries;
 import com.whylabs.logging.core.datetime.EasyDateTimeParser;
+import com.whylabs.logging.demo.utils.RandomWordGenerator;
+import com.whylabs.logging.firehose.FirehosePublisher;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
@@ -11,9 +13,7 @@ import java.io.InputStreamReader;
 import java.text.MessageFormat;
 import java.time.Instant;
 import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoField;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -28,6 +28,8 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
@@ -38,6 +40,7 @@ import picocli.CommandLine.Option;
     description = "Run WhyLogs profiling against custom CSV dataset",
     mixinStandardHelpOptions = true)
 public class Profiler implements Runnable {
+  private static final Logger LOG = LoggerFactory.getLogger(Profiler.class);
 
   private static final Scanner SCANNER = new Scanner(System.in);
   private static final CSVFormat CSV_FORMAT =
@@ -71,11 +74,12 @@ public class Profiler implements Runnable {
   String delimiter = ",";
 
   @ArgGroup(exclusive = false)
-  Dependent datetime;
+  DateTimeColumn datetime;
 
-  private EasyDateTimeParser dateTimeParser;
+  @ArgGroup(exclusive = false)
+  FireHoseConfiguration firehose;
 
-  static class Dependent {
+  static class DateTimeColumn {
     @Option(
         names = {"-d", "--datetime"},
         description =
@@ -92,6 +96,22 @@ public class Profiler implements Runnable {
     String format;
   }
 
+  static class FireHoseConfiguration {
+    @Option(
+        names = {"-n", "--deliverystream"},
+        description = "the delivery stream name",
+        required = true)
+    String deliveryStream;
+
+    @Option(
+        names = {"-r", "--region"},
+        description = "Region of the Firehose",
+        required = true)
+    String region;
+  }
+
+  private EasyDateTimeParser dateTimeParser;
+
   private final Map<Instant, DatasetProfile> profiles = new HashMap<>();
 
   @SneakyThrows
@@ -106,13 +126,19 @@ public class Profiler implements Runnable {
     }
 
     if (datetime != null) {
-      System.out.printf("Using date time format: %s\n", datetime.format);
-      System.out.printf("Using date time column: %s\n", datetime.column);
+      LOG.info("Using date time format: [{}] on column: [{}]", datetime.format, datetime.column);
       this.dateTimeParser = new EasyDateTimeParser(datetime.format);
     }
 
+    if (firehose != null) {
+      LOG.info(
+          "AWS Configuration: delivery stream: [{}]. region: [{}]",
+          firehose.deliveryStream,
+          firehose.region);
+    }
+
     try {
-      System.out.printf("Reading input from: %s\n", input);
+      LOG.info("Reading input from: {}", input.getAbsolutePath());
       @Cleanup val fis = new FileInputStream(input);
       @Cleanup val reader = new InputStreamReader(fis);
       val csvFormat = CSV_FORMAT.withDelimiter(unescapedDelimiter.charAt(0));
@@ -131,13 +157,14 @@ public class Profiler implements Runnable {
               : StreamSupport.stream(spliterator, false);
 
       if (limit > 0) {
-        System.out.printf("Limit stream to length: %d\n", limit);
+        LOG.info("Limit stream to length: {}", limit);
       }
 
+      // Run the tracking
       records.forEach(this::normalTracking);
 
-      System.out.println(
-          "Finished collecting statistics. Writing to output file: " + output.getAbsolutePath());
+      LOG.info(
+          "Finished collecting statistics. Writing to output file: {}", output.getAbsolutePath());
 
       val profilesBuilder = DatasetSummaries.newBuilder();
       profiles.forEach(
@@ -150,11 +177,21 @@ public class Profiler implements Runnable {
       try (val writer = new FileWriter(output)) {
         JsonFormat.printer().appendTo(profilesBuilder, writer);
       }
+
+      if (firehose != null) {
+        LOG.info(
+            "Publish to AWS Firehose. Delivery stream: [{}]. Region: [{}]",
+            firehose.deliveryStream,
+            firehose.region);
+        val publisher = new FirehosePublisher(firehose.region, firehose.deliveryStream);
+
+        profiles.values().forEach(publisher::putProfile);
+      }
       printAndWait("Finished writing to file. Enter anything to exit");
-      System.out.println("SUCCESS");
+      LOG.info("SUCCESS");
     } catch (Exception e) {
       if (!output.delete()) {
-        System.err.println("Failed to clean up output file: " + output.getAbsolutePath());
+        LOG.error("Failed to clean up output file: " + output.getAbsolutePath());
         e.printStackTrace();
       }
     }
@@ -168,17 +205,20 @@ public class Profiler implements Runnable {
     val inputFileName = input.getName();
     val extension = FilenameUtils.getExtension(inputFileName);
     if (!"csv".equalsIgnoreCase(extension) && !"tsv".equalsIgnoreCase(extension)) {
-      System.err.printf("WARNING: Input does not have CSV extension. Got: %s\n", extension);
+      LOG.info("WARNING: Input does not have CSV extension. Got: {}\n", extension);
     }
 
     if (output == null) {
       val parentFolder = input.toPath().toAbsolutePath().getParent();
       val baseName = FilenameUtils.removeExtension(inputFileName);
-      val now = ZonedDateTime.now();
-      val today = now.format(DateTimeFormatter.ISO_LOCAL_DATE);
-      val secondOfDay = now.get(ChronoField.SECOND_OF_DAY);
+      val epochMinutes = String.valueOf(Instant.now().getEpochSecond() / 60);
       val outputFileName =
-          MessageFormat.format("{0}.{1}-{2,number,#}.json", baseName, today, secondOfDay);
+          MessageFormat.format(
+              "{0}.{1}-{2}-{3}.json",
+              baseName,
+              epochMinutes,
+              RandomWordGenerator.nextWord(),
+              RandomWordGenerator.nextWord());
       output = parentFolder.resolve(outputFileName).toFile();
     }
 
@@ -193,8 +233,7 @@ public class Profiler implements Runnable {
   }
 
   private void printErrorAndExit(String message, Object... args) {
-    System.out.printf(message, args);
-    System.out.println();
+    LOG.error(message, args);
     System.exit(1);
   }
 
@@ -226,8 +265,7 @@ public class Profiler implements Runnable {
   }
 
   private static void printAndWait(String message) {
-    System.out.println(message);
-    System.out.flush();
+    LOG.info(message);
     SCANNER.nextLine();
   }
 
