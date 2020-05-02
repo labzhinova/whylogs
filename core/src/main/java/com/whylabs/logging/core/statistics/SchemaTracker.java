@@ -4,10 +4,8 @@ import com.whylabs.logging.core.data.InferredType;
 import com.whylabs.logging.core.data.InferredType.Builder;
 import com.whylabs.logging.core.data.InferredType.Type;
 import com.whylabs.logging.core.format.SchemaMessage;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.stream.Stream;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -29,14 +27,38 @@ public class SchemaTracker {
     return proto.getInferredType().getType();
   }
 
-  public void track(Object normalizedData) {
-    val dataType = toEnumType(normalizedData);
-    if (dataType == this.getType()) {
+  @SuppressWarnings("unused")
+  public void track(Object ignored) {
+    updateTypeCount(InferredType.Type.UNKNOWN);
+  }
+
+  @SuppressWarnings("unused")
+  public void track(long ignored) {
+    updateTypeCount(Type.INTEGRAL);
+  }
+
+  @SuppressWarnings("unused")
+  public void track(double ignored) {
+    updateTypeCount(Type.FRACTIONAL);
+  }
+
+  @SuppressWarnings("unused")
+  public void track(String ignored) {
+    updateTypeCount(Type.STRING);
+  }
+
+  @SuppressWarnings("unused")
+  public void track(boolean ignored) {
+    updateTypeCount(Type.BOOLEAN);
+  }
+
+  private void updateTypeCount(Type integral) {
+    if (integral == this.getType()) {
       val inferredTypeBuilder = getInferredTypeBuilder();
       inferredTypeBuilder.setCount(inferredTypeBuilder.getCount() + 1);
     }
-    val existing = getTypeCounts().getOrDefault(dataType.getNumber(), 0L);
-    this.proto.putTypeCounts(dataType.getNumber(), existing + 1);
+    val existing = getTypeCounts().getOrDefault(integral.getNumber(), 0L);
+    this.proto.putTypeCounts(integral.getNumber(), existing + 1);
   }
 
   Map<Integer, Long> getTypeCounts() {
@@ -66,6 +88,10 @@ public class SchemaTracker {
 
     // first figure out the most popular type and its count
     val candidate = getMostPopularType(totalCount);
+    if (candidate.getRatio() > 0.7) {
+      getInferredTypeBuilder().mergeFrom(candidate);
+      return;
+    }
 
     // integral is a subset of fractional
     val fractionalCount =
@@ -81,7 +107,7 @@ public class SchemaTracker {
           Stream.of(Type.STRING, Type.INTEGRAL, Type.FRACTIONAL, Type.BOOLEAN)
               .mapToLong(type -> typeCounts.getOrDefault(type.getNumber(), 0L))
               .sum();
-      val actualRatio = coercedCount * 1.0 / totalCount;
+      val actualRatio = coercedCount / (double) totalCount;
 
       getInferredTypeBuilder().setType(Type.STRING).setCount(coercedCount).setRatio(actualRatio);
       return;
@@ -98,21 +124,20 @@ public class SchemaTracker {
           .mergeFrom(
               candidate
                   .toBuilder()
-                  .setRatio(actualCount * 1.0 / totalCount)
+                  .setRatio(actualCount / (double) totalCount)
                   .setCount(actualCount)
                   .build());
       return;
     }
 
     // Otherwise, if fractional count is the majority, then likely this is a fractional type
-    if (fractionalCount > 0.5) {
+    final double fractionalRatio = fractionalCount / (double) totalCount;
+    if (fractionalRatio > 0.5) {
       getInferredTypeBuilder()
-          .mergeFrom(
-              candidate
-                  .toBuilder()
-                  .setRatio(fractionalCount * 1.0 / totalCount)
-                  .setCount(fractionalCount)
-                  .build());
+          .setType(Type.FRACTIONAL)
+          .setRatio(fractionalRatio)
+          .setCount(fractionalCount)
+          .build();
       return;
     }
 
@@ -125,10 +150,6 @@ public class SchemaTracker {
   }
 
   public static SchemaTracker fromProtobuf(SchemaMessage message) {
-    val typeCounts = new HashMap<Type, Long>();
-    Optional.of(message.getTypeCountsMap())
-        .ifPresent(m -> m.forEach((k, v) -> typeCounts.put(Type.forNumber(k), v)));
-
     return new SchemaTracker(message.toBuilder());
   }
 
@@ -148,25 +169,5 @@ public class SchemaTracker {
         .setRatio(ratio)
         .setCount(count)
         .build();
-  }
-
-  static InferredType.Type toEnumType(Object data) {
-    if (data instanceof String) {
-      return InferredType.Type.STRING;
-    }
-
-    if (data instanceof Long) {
-      return InferredType.Type.INTEGRAL;
-    }
-
-    if (data instanceof Double) {
-      return InferredType.Type.FRACTIONAL;
-    }
-
-    if (data instanceof Boolean) {
-      return InferredType.Type.BOOLEAN;
-    }
-
-    return InferredType.Type.UNKNOWN;
   }
 }
