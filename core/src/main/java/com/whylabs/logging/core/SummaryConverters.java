@@ -11,6 +11,7 @@ import com.whylabs.logging.core.statistics.NumberTracker;
 import com.whylabs.logging.core.statistics.SchemaTracker;
 import com.whylabs.logging.core.statistics.datatypes.StringTracker;
 import java.util.ArrayList;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -55,12 +56,13 @@ public class SummaryConverters {
   }
 
   public static SchemaSummary.Builder fromSchemaTracker(SchemaTracker tracker) {
-    val computedType = tracker.getOrComputeType();
-    if (computedType.getCount() == 0) {
-      return null;
-    }
-
-    return SchemaSummary.newBuilder().setInferredType(computedType);
+    val typeCounts = tracker.getTypeCounts();
+    val typeCountWithNames =
+        typeCounts.entrySet().stream()
+            .collect(Collectors.toMap(e -> e.getKey().name(), Entry::getValue));
+    return SchemaSummary.newBuilder()
+        .setInferredType(tracker.computeType().toProtobuf())
+        .putAllTypeCounts(typeCountWithNames);
   }
 
   public static NumberSummary fromNumberTracker(NumberTracker numberTracker) {

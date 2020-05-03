@@ -1,13 +1,9 @@
 package com.whylabs.logging.core.statistics;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.is;
-import static org.testng.Assert.assertEquals;
 
-import com.whylabs.logging.core.data.InferredType;
 import com.whylabs.logging.core.data.InferredType.Type;
-import com.whylabs.logging.core.format.SchemaMessage;
 import lombok.val;
 import org.testng.annotations.Test;
 
@@ -16,9 +12,9 @@ public class SchemaTrackerTest {
   public void track_Nothing_ShouldReturnUnknown() {
     val tracker = new SchemaTracker();
 
-    assertEquals(tracker.getType(), Type.UNKNOWN);
-    assertThat(tracker.getType(), is(Type.UNKNOWN));
-    assertThat(tracker.getTypeCounts(), is(anEmptyMap()));
+    val inferredType = tracker.computeType();
+    assertThat(inferredType.getType(), is(Type.UNKNOWN));
+    assertThat(inferredType.getRatio(), is(0.0));
   }
 
   @Test
@@ -27,21 +23,20 @@ public class SchemaTrackerTest {
 
     original.track(10L);
     original.track(2L);
-    val typeCounts = original.getTypeCounts();
-    assertThat(typeCounts.get(InferredType.Type.INTEGRAL.getNumber()), is(2L));
+    assertThat(original.getCount(Type.INTEGRAL), is(2L));
 
     original.track("string");
-    assertThat(typeCounts.get(InferredType.Type.STRING.getNumber()), is(1L));
+    assertThat(original.getCount(Type.STRING), is(1L));
 
     original.track(2.0);
-    assertThat(typeCounts.get(InferredType.Type.FRACTIONAL.getNumber()), is(1L));
+    assertThat(original.getCount(Type.FRACTIONAL), is(1L));
 
     original.track(true);
     original.track(false);
-    assertThat(typeCounts.get(InferredType.Type.BOOLEAN.getNumber()), is(2L));
+    assertThat(original.getCount(Type.BOOLEAN), is(2L));
 
     original.track(System.out);
-    assertThat(typeCounts.get(InferredType.Type.UNKNOWN.getNumber()), is(1L));
+    assertThat(original.getCount(Type.UNKNOWN), is(1L));
   }
 
   @Test
@@ -56,7 +51,8 @@ public class SchemaTrackerTest {
       tracker.track("stringdata");
     }
 
-    assertThat(tracker.getOrComputeType().getType(), is(Type.STRING));
+    val inferredType = tracker.computeType();
+    assertThat(inferredType.getType(), is(Type.STRING));
   }
 
   @Test
@@ -75,7 +71,8 @@ public class SchemaTrackerTest {
       tracker.track(System.out);
     }
 
-    assertThat(tracker.getOrComputeType().getType(), is(Type.FRACTIONAL));
+    val inferredType = tracker.computeType();
+    assertThat(inferredType.type, is(Type.FRACTIONAL));
   }
 
   @Test
@@ -93,7 +90,8 @@ public class SchemaTrackerTest {
     for (int i = 0; i < 20; i++) {
       tracker.track(System.out);
     }
-    assertThat(tracker.getOrComputeType().getType(), is(Type.INTEGRAL));
+
+    assertThat(tracker.computeType().getType(), is(Type.INTEGRAL));
   }
 
   @Test
@@ -112,7 +110,8 @@ public class SchemaTrackerTest {
       tracker.track("stringdata");
     }
 
-    assertThat(tracker.getOrComputeType().getType(), is(Type.FRACTIONAL));
+    val inferredType = tracker.computeType();
+    assertThat(inferredType.getType(), is(Type.FRACTIONAL));
   }
 
   @Test
@@ -131,9 +130,10 @@ public class SchemaTrackerTest {
       tracker.track("stringdata");
     }
 
-    assertThat(tracker.getOrComputeType().getType(), is(Type.STRING));
-  }
+    val inferredType = tracker.computeType();
 
+    assertThat(inferredType.getType(), is(Type.STRING));
+  }
 
   @Test
   public void serialization_RoundTrip_ShouldMatch() {
@@ -148,11 +148,10 @@ public class SchemaTrackerTest {
     }
 
     val protoBuf = tracker.toProtobuf();
-    val roundtrip = SchemaTracker.fromProtobuf(protoBuf);
+    val roundtrip = SchemaTracker.fromProtobuf(protoBuf.build());
 
-    assertThat(protoBuf, is(roundtrip.toProtobuf()));
-    assertThat(roundtrip.getTypeCounts().get(Type.INTEGRAL_VALUE), is(10L));
-    assertThat(roundtrip.getTypeCounts().get(Type.STRING_VALUE), is(100L));
+    assertThat(protoBuf.build(), is(roundtrip.toProtobuf().build()));
+    assertThat(roundtrip.getCount(Type.INTEGRAL), is(10L));
+    assertThat(roundtrip.getCount(Type.STRING), is(100L));
   }
-
 }
