@@ -2,7 +2,6 @@ package com.whylabs.logging.core.statistics;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.testng.Assert.assertEquals;
 
 import lombok.val;
 import org.testng.annotations.Test;
