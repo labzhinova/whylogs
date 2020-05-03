@@ -1,15 +1,16 @@
 package com.whylabs.logging.demo;
 
+import com.google.common.collect.Iterators;
 import com.google.protobuf.util.JsonFormat;
 import com.whylabs.logging.core.DatasetProfile;
 import com.whylabs.logging.core.data.DatasetSummaries;
 import com.whylabs.logging.core.datetime.EasyDateTimeParser;
 import com.whylabs.logging.demo.utils.RandomWordGenerator;
 import com.whylabs.logging.firehose.FirehosePublisher;
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.InputStreamReader;
 import java.text.MessageFormat;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -17,9 +18,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.Spliterators;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 import lombok.Cleanup;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -139,8 +137,8 @@ public class Profiler implements Runnable {
 
     try {
       LOG.info("Reading input from: {}", input.getAbsolutePath());
-      @Cleanup val fis = new FileInputStream(input);
-      @Cleanup val reader = new InputStreamReader(fis);
+      @Cleanup val fr = new FileReader(input);
+      @Cleanup val reader = new BufferedReader(fr);
       val csvFormat = CSV_FORMAT.withDelimiter(unescapedDelimiter.charAt(0));
       @Cleanup CSVParser parser = new CSVParser(reader, csvFormat);
       if (datetime != null) {
@@ -150,19 +148,18 @@ public class Profiler implements Runnable {
               datetime.column, parser.getHeaderMap());
         }
       }
-      val spliterator = Spliterators.spliteratorUnknownSize(parser.iterator(), 0);
-      val records =
-          (limit > 0)
-              ? StreamSupport.stream(spliterator, false).limit(limit)
-              : StreamSupport.stream(spliterator, false);
-
+      val allRecords = parser.iterator();
       if (limit > 0) {
         LOG.info("Limit stream to length: {}", limit);
       }
 
-      // Run the tracking
-      records.forEach(this::normalTracking);
+      val records = (limit > 0) ? Iterators.limit(allRecords, limit) : allRecords;
 
+      // Run the tracking
+      while (records.hasNext()) {
+        val record = records.next();
+        this.normalTracking(record);
+      }
       LOG.info(
           "Finished collecting statistics. Writing to output file: {}", output.getAbsolutePath());
 
@@ -187,7 +184,8 @@ public class Profiler implements Runnable {
 
         profiles.values().forEach(publisher::putProfile);
       }
-      printAndWait("Finished writing to file. Enter anything to exit");
+      LOG.info("Finished writing to file. Enter anything to exit");
+      SCANNER.nextLine();
       LOG.info("SUCCESS");
     } catch (Exception e) {
       if (!output.delete()) {
@@ -251,22 +249,6 @@ public class Profiler implements Runnable {
           ds.track(record.toMap());
           return ds;
         });
-  }
-
-  private void stressTest(DatasetProfile profile, CSVRecord record) {
-    for (int i = 0; i < 10; i++) {
-      int finalI = i;
-      val modifiedMap =
-          record.toMap().entrySet().stream()
-              .collect(Collectors.toMap(e -> e.getKey() + finalI, e -> e.getValue() + finalI));
-
-      profile.track(modifiedMap);
-    }
-  }
-
-  private static void printAndWait(String message) {
-    LOG.info(message);
-    SCANNER.nextLine();
   }
 
   public static void main(String[] args) {
