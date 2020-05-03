@@ -1,39 +1,29 @@
 package com.whylabs.logging.core.statistics.datatypes;
 
 import com.whylabs.logging.core.format.VarianceMessage;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import lombok.Getter;
 
-@AllArgsConstructor(access = AccessLevel.PACKAGE)
+@Getter
 public class VarianceTracker {
-  private final VarianceMessage.Builder proto;
+  long count;
+  double sum; // sample variance * (n-1)
+  double mean;
 
   public VarianceTracker() {
-    this.proto = VarianceMessage.newBuilder();
-  }
-
-  public long getCount() {
-    return proto.getCount();
-  }
-
-  public double getMean() {
-    return proto.getMean();
+    this.count = 0L;
+    this.sum = 0L;
+    this.mean = 0L;
   }
 
   // Based on
   // https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Welford's_online_algorithm
   public void update(double newValue) {
-    final long count = proto.getCount() + 1;
+    count++;
 
-    double mean = proto.getMean();
     double delta = newValue - mean;
     mean += delta / count;
     double delta2 = newValue - mean;
-    double sum = proto.getSum() + delta * delta2;
-
-    proto.setCount(count);
-    proto.setMean(mean);
-    proto.setSum(sum);
+    sum += delta * delta2;
   }
 
   /** @return sample standard deviation */
@@ -43,47 +33,45 @@ public class VarianceTracker {
 
   /** @return the sample variance */
   public double variance() {
-    if (proto.getCount() < 2) {
+    if (count < 2) {
       return Double.NaN;
     }
 
-    return proto.getSum() / (proto.getCount() - 1.0);
+    return sum / (count - 1.0);
   }
 
   /** https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm */
   public void merge(VarianceTracker other) {
-    final long cA = this.proto.getCount();
-    final long cB = other.proto.getCount();
-    if (cB == 0) {
+    if (other.count == 0L) {
       return;
     }
 
-    if (cA == 0) {
-      this.proto.mergeFrom(other.proto.build());
+    if (this.count == 0L) {
+      this.count = other.count;
+      this.sum = other.sum;
+      this.mean = other.mean;
       return;
     }
 
-    final double meanA = other.proto.getMean();
-    final double meanB = this.proto.getMean();
-    double delta = meanA - meanB;
-    double sumA = this.proto.getSum();
-    double sumB = this.proto.getSum();
-    double sum = sumA + sumB + Math.pow(delta, 2) * cA * cB / (cA + cB);
+    final double delta = this.mean - other.mean;
+    final long totalCount = this.count + other.count;
+    this.sum += other.sum + Math.pow(delta, 2) * this.count * other.count / (double) totalCount;
 
-    double ratioA = cA * 1.0 / (cA + cB);
-    double mean = meanA * ratioA + meanB * (1 - ratioA);
-
-    // update the storage
-    this.proto.setSum(sum);
-    this.proto.setMean(mean);
-    this.proto.setCount(cA + 2);
+    final double thisRatio = this.count / (double) totalCount;
+    final double otherRatio = 1.0 - thisRatio;
+    this.mean = this.mean * thisRatio + other.mean * otherRatio;
+    this.count += other.count;
   }
 
-  public VarianceMessage toProtobuf() {
-    return proto.build();
+  public VarianceMessage.Builder toProtobuf() {
+    return VarianceMessage.newBuilder().setCount(count).setMean(mean).setSum(sum);
   }
 
   public static VarianceTracker fromProtobuf(VarianceMessage message) {
-    return new VarianceTracker(message.toBuilder());
+    final VarianceTracker tracker = new VarianceTracker();
+    tracker.count = message.getCount();
+    tracker.mean = message.getMean();
+    tracker.sum = message.getSum();
+    return tracker;
   }
 }
