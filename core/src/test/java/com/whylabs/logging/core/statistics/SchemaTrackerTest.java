@@ -12,7 +12,7 @@ public class SchemaTrackerTest {
   public void track_Nothing_ShouldReturnUnknown() {
     val tracker = new SchemaTracker();
 
-    val inferredType = tracker.computeType();
+    val inferredType = tracker.getInferredType();
     assertThat(inferredType.getType(), is(Type.UNKNOWN));
     assertThat(inferredType.getRatio(), is(0.0));
   }
@@ -51,7 +51,7 @@ public class SchemaTrackerTest {
       tracker.track("stringdata");
     }
 
-    val inferredType = tracker.computeType();
+    val inferredType = tracker.getInferredType();
     assertThat(inferredType.getType(), is(Type.STRING));
   }
 
@@ -71,8 +71,8 @@ public class SchemaTrackerTest {
       tracker.track(System.out);
     }
 
-    val inferredType = tracker.computeType();
-    assertThat(inferredType.type, is(Type.FRACTIONAL));
+    val inferredType = tracker.getInferredType();
+    assertThat(inferredType.getType(), is(Type.FRACTIONAL));
   }
 
   @Test
@@ -91,7 +91,7 @@ public class SchemaTrackerTest {
       tracker.track(System.out);
     }
 
-    assertThat(tracker.computeType().getType(), is(Type.INTEGRAL));
+    assertThat(tracker.getInferredType().getType(), is(Type.INTEGRAL));
   }
 
   @Test
@@ -110,7 +110,7 @@ public class SchemaTrackerTest {
       tracker.track("stringdata");
     }
 
-    val inferredType = tracker.computeType();
+    val inferredType = tracker.getInferredType();
     assertThat(inferredType.getType(), is(Type.FRACTIONAL));
   }
 
@@ -130,7 +130,7 @@ public class SchemaTrackerTest {
       tracker.track("stringdata");
     }
 
-    val inferredType = tracker.computeType();
+    val inferredType = tracker.getInferredType();
 
     assertThat(inferredType.getType(), is(Type.STRING));
   }

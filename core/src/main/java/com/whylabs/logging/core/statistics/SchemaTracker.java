@@ -19,26 +19,8 @@ import lombok.val;
 @EqualsAndHashCode
 @RequiredArgsConstructor
 public class SchemaTracker {
-  @Getter
-  @Builder(setterPrefix = "set", toBuilder = true, builderClassName = "Builder")
-  public static class CalculatedType {
-    InferredType.Type type;
-    double ratio;
-
-    public InferredType.Builder toProtobuf() {
-      return InferredType.newBuilder().setType(type).setRatio(ratio);
-    }
-
-    static CalculatedType fromProtobuf(InferredType message) {
-      return CalculatedType.builder()
-          .setType(Optional.ofNullable(message.getType()).orElse(Type.UNKNOWN))
-          .setRatio(message.getRatio())
-          .build();
-    }
-  }
-
-  private static final CalculatedType.Builder UNKNOWN_TYPE_BUILDER =
-      CalculatedType.builder().setType(Type.UNKNOWN);
+  private static final InferredType.Builder UNKNOWN_TYPE_BUILDER =
+      InferredType.newBuilder().setType(Type.UNKNOWN);
 
   private final Map<InferredType.Type, Long> typeCounts;
 
@@ -83,7 +65,7 @@ public class SchemaTracker {
     return Collections.unmodifiableMap(typeCounts);
   }
 
-  public CalculatedType computeType() {
+  public InferredType getInferredType() {
     val totalCount = typeCounts.values().stream().mapToLong(Long::longValue).sum();
     if (totalCount == 0) {
       return UNKNOWN_TYPE_BUILDER.build();
@@ -91,8 +73,8 @@ public class SchemaTracker {
 
     // first figure out the most popular type and its count
     val candidate = getMostPopularType(totalCount);
-    if (candidate.ratio > 0.7) {
-      return candidate;
+    if (candidate.getRatio() > 0.7) {
+      return candidate.build();
     }
 
     // integral is a subset of fractional
@@ -103,7 +85,8 @@ public class SchemaTracker {
 
     // Handling String case first
     // it has to have more entries than fractional values
-    if (candidate.type == Type.STRING && typeCounts.get(candidate.type) > fractionalCount) {
+    final InferredType.Type candidateType = candidate.getType();
+    if (candidateType == Type.STRING && typeCounts.get(candidateType) > fractionalCount) {
       // treat everything else as "String" except UNKNOWN
       val coercedCount =
           Stream.of(Type.STRING, Type.INTEGRAL, Type.FRACTIONAL, Type.BOOLEAN)
@@ -111,18 +94,18 @@ public class SchemaTracker {
               .sum();
       val actualRatio = coercedCount / (double) totalCount;
 
-      return CalculatedType.builder().setType(Type.STRING).setRatio(actualRatio).build();
+      return InferredType.newBuilder().setType(Type.STRING).setRatio(actualRatio).build();
     }
 
     // if not string but another type with majority
-    if (candidate.ratio > 0.5) {
-      long actualCount = typeCounts.get(candidate.type);
-      if (candidate.type == Type.FRACTIONAL) {
+    if (candidate.getRatio() > 0.5) {
+      long actualCount = typeCounts.get(candidateType);
+      if (candidateType == Type.FRACTIONAL) {
         actualCount = fractionalCount;
       }
 
-      return CalculatedType.builder()
-          .setType(candidate.type)
+      return InferredType.newBuilder()
+          .setType(candidateType)
           .setRatio(actualCount / (double) totalCount)
           .build();
     }
@@ -130,10 +113,10 @@ public class SchemaTracker {
     // Otherwise, if fractional count is the majority, then likely this is a fractional type
     final double fractionalRatio = fractionalCount / (double) totalCount;
     if (fractionalRatio > 0.5) {
-      return CalculatedType.builder().setType(Type.FRACTIONAL).setRatio(fractionalRatio).build();
+      return InferredType.newBuilder().setType(Type.FRACTIONAL).setRatio(fractionalRatio).build();
     }
 
-    return CalculatedType.builder().setType(candidate.type).setRatio(1.0).build();
+    return InferredType.newBuilder().setType(candidateType).setRatio(1.0).build();
   }
 
   public SchemaMessage.Builder toProtobuf() {
@@ -152,7 +135,7 @@ public class SchemaTracker {
     return schemaTracker;
   }
 
-  private CalculatedType getMostPopularType(long totalCount) {
+  private InferredType.Builder getMostPopularType(long totalCount) {
     val mostPopularType =
         typeCounts.entrySet().stream()
             .max((e1, e2) -> (int) (e1.getValue() - e2.getValue()))
@@ -162,6 +145,6 @@ public class SchemaTracker {
     val count = typeCounts.getOrDefault(mostPopularType, 0L);
     val ratio = count * 1.0 / totalCount;
 
-    return CalculatedType.builder().setType(mostPopularType).setRatio(ratio).build();
+    return InferredType.newBuilder().setType(mostPopularType).setRatio(ratio);
   }
 }

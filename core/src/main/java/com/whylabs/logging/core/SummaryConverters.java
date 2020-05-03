@@ -61,7 +61,7 @@ public class SummaryConverters {
         typeCounts.entrySet().stream()
             .collect(Collectors.toMap(e -> e.getKey().name(), Entry::getValue));
     return SchemaSummary.newBuilder()
-        .setInferredType(tracker.computeType().toProtobuf())
+        .setInferredType(tracker.getInferredType())
         .putAllTypeCounts(typeCountWithNames);
   }
 
