@@ -7,7 +7,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.EqualsAndHashCode;
@@ -26,14 +25,24 @@ public class SchemaTracker {
     this.typeCounts = new HashMap<>(Type.values().length, 1.0f);
   }
 
+  public void track(Object normalizedData) {
+    val type = toEnumType(normalizedData);
+    updateTypeCount(type);
+  }
+
   @SuppressWarnings("unused")
-  public void track(Object ignored) {
-    updateTypeCount(InferredType.Type.UNKNOWN);
+  public void track(Long ignored) {
+    updateTypeCount(Type.INTEGRAL);
   }
 
   @SuppressWarnings("unused")
   public void track(long ignored) {
     updateTypeCount(Type.INTEGRAL);
+  }
+
+  @SuppressWarnings("unused")
+  public void track(Double ignored) {
+    updateTypeCount(Type.FRACTIONAL);
   }
 
   @SuppressWarnings("unused")
@@ -47,12 +56,18 @@ public class SchemaTracker {
   }
 
   @SuppressWarnings("unused")
+  public void track(Boolean ignored) {
+    updateTypeCount(Type.BOOLEAN);
+  }
+
+  @SuppressWarnings("unused")
   public void track(boolean ignored) {
     updateTypeCount(Type.BOOLEAN);
   }
 
   private void updateTypeCount(Type type) {
-    typeCounts.compute(type, (t, existing) -> Optional.ofNullable(existing).orElse(0L) + 1);
+    val existingCount = typeCounts.getOrDefault(type, 0L);
+    typeCounts.put(type, existingCount + 1);
   }
 
   long getCount(InferredType.Type type) {
@@ -83,8 +98,8 @@ public class SchemaTracker {
 
     // Handling String case first
     // it has to have more entries than fractional values
-    final InferredType.Type candidateType = candidate.getType();
-    if (candidateType == Type.STRING && typeCounts.get(candidateType) > fractionalCount) {
+    val candidateType = candidate.getType();
+    if (candidateType == Type.STRING && typeCounts.get(Type.STRING) > fractionalCount) {
       // treat everything else as "String" except UNKNOWN
       val coercedCount =
           Stream.of(Type.STRING, Type.INTEGRAL, Type.FRACTIONAL, Type.BOOLEAN)
@@ -144,5 +159,25 @@ public class SchemaTracker {
     val ratio = count * 1.0 / totalCount;
 
     return InferredType.newBuilder().setType(mostPopularType).setRatio(ratio);
+  }
+
+  static InferredType.Type toEnumType(Object data) {
+    if (data instanceof Long) {
+      return InferredType.Type.INTEGRAL;
+    }
+
+    if (data instanceof Double) {
+      return InferredType.Type.FRACTIONAL;
+    }
+
+    if (data instanceof Boolean) {
+      return InferredType.Type.BOOLEAN;
+    }
+
+    if (data instanceof String) {
+      return InferredType.Type.STRING;
+    }
+
+    return InferredType.Type.UNKNOWN;
   }
 }
