@@ -35,7 +35,7 @@ message UniqueCountSummary {
 
 message FrequentStringsSummary {
   message FrequentItem {
-    string item = 1;
+    string value = 1;
     double estimate = 2;
   }
   repeated FrequentItem items = 1;

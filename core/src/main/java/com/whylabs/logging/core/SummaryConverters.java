@@ -120,7 +120,7 @@ public class SummaryConverters {
   }
 
   private static FrequentItem toFrequentItem(Row<String> row) {
-    return FrequentItem.newBuilder().setItem(row.getItem()).setEstimate(row.getEstimate()).build();
+    return FrequentItem.newBuilder().setValue(row.getItem()).setEstimate(row.getEstimate()).build();
   }
 
   public static HistogramSummary fromUpdateDoublesSketch(UpdateDoublesSketch sketch) {
