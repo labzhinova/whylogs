@@ -1,10 +1,12 @@
 package com.whylabs.logging.demo;
 
 import com.google.common.collect.Iterators;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.protobuf.util.JsonFormat;
 import com.whylabs.logging.core.DatasetProfile;
 import com.whylabs.logging.core.data.DatasetSummaries;
 import com.whylabs.logging.core.datetime.EasyDateTimeParser;
+import com.whylabs.logging.demo.utils.BoundedExecutor;
 import com.whylabs.logging.demo.utils.RandomWordGenerator;
 import com.whylabs.logging.firehose.FirehosePublisher;
 import java.io.BufferedReader;
@@ -15,9 +17,11 @@ import java.text.MessageFormat;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import lombok.Cleanup;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -96,7 +100,7 @@ public class Profiler implements Runnable {
 
   static class FireHoseConfiguration {
     @Option(
-        names = {"-n", "--deliverystream"},
+        names = {"-ds", "--delivery-stream"},
         description = "the delivery stream name",
         required = true)
     String deliveryStream;
@@ -108,9 +112,15 @@ public class Profiler implements Runnable {
     String region;
   }
 
+  @Option(
+      names = {"-p", "--parallelism"},
+      paramLabel = "NUMBER_OF_THREADS",
+      description = "the number of threads. Default is (default: ${DEFAULT-VALUE})")
+  int parallelism = 1;
+
   private EasyDateTimeParser dateTimeParser;
 
-  private final Map<Instant, DatasetProfile> profiles = new HashMap<>();
+  private final Map<Instant, DatasetProfile> profiles = new ConcurrentHashMap<>();
 
   @SneakyThrows
   @Override
@@ -135,17 +145,26 @@ public class Profiler implements Runnable {
           firehose.region);
     }
 
+    final int parallelism = Math.max(1, this.parallelism);
+    val executorService =
+        Executors.newFixedThreadPool(
+            parallelism, new ThreadFactoryBuilder().setNameFormat("Profiler-Pool-%d").build());
+
+    val boundedExecutor = new BoundedExecutor(executorService, parallelism);
+
+    LOG.info("Using parallelism of: {} threads", parallelism);
+
     try {
       LOG.info("Reading input from: {}", input.getAbsolutePath());
       @Cleanup val fr = new FileReader(input);
       @Cleanup val reader = new BufferedReader(fr);
       val csvFormat = CSV_FORMAT.withDelimiter(unescapedDelimiter.charAt(0));
       @Cleanup CSVParser parser = new CSVParser(reader, csvFormat);
+      val headers = parser.getHeaderMap();
       if (datetime != null) {
-        if (!parser.getHeaderMap().containsKey(datetime.column)) {
+        if (!headers.containsKey(datetime.column)) {
           printErrorAndExit(
-              "Column does not exist in the CSV header: %s. Headers: %s",
-              datetime.column, parser.getHeaderMap());
+              "Column does not exist in the CSV header: {}. Headers: {}", datetime.column, headers);
         }
       }
       val allRecords = parser.iterator();
@@ -158,8 +177,12 @@ public class Profiler implements Runnable {
       // Run the tracking
       while (records.hasNext()) {
         val record = records.next();
-        this.normalTracking(record);
+        this.normalTracking(boundedExecutor, headers, record);
       }
+
+      LOG.info("Submitted all the data. Wait for the threads to complete");
+      executorService.shutdown();
+      executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
       LOG.info(
           "Finished collecting statistics. Writing to output file: {}", output.getAbsolutePath());
 
@@ -186,6 +209,7 @@ public class Profiler implements Runnable {
       }
       LOG.info("Finished writing to file. Enter anything to exit");
       SCANNER.nextLine();
+      LOG.info("Output path: {}", output.getAbsolutePath());
       LOG.info("SUCCESS");
     } catch (Exception e) {
       if (!output.delete()) {
@@ -198,7 +222,7 @@ public class Profiler implements Runnable {
   @SneakyThrows
   private void validateFiles() {
     if (!input.exists()) {
-      printErrorAndExit("ABORTING! Input file does not exist at: %s", input.getAbsolutePath());
+      printErrorAndExit("ABORTING! Input file does not exist at: {}", input.getAbsolutePath());
     }
     val inputFileName = input.getName();
     val extension = FilenameUtils.getExtension(inputFileName);
@@ -221,12 +245,12 @@ public class Profiler implements Runnable {
     }
 
     if (output.exists()) {
-      printErrorAndExit("ABORTING! Output file already exists at: %s", output.getAbsolutePath());
+      printErrorAndExit("ABORTING! Output file already exists at: {}", output.getAbsolutePath());
     }
 
     if (!output.createNewFile()) {
       printErrorAndExit(
-          "ABORTING! Failed to create new output file at: %s", output.getAbsolutePath());
+          "ABORTING! Failed to create new output file at: {}", output.getAbsolutePath());
     }
   }
 
@@ -236,19 +260,18 @@ public class Profiler implements Runnable {
   }
 
   /** Switch to #stressTest if we want to battle test the memory usage further */
-  private void normalTracking(CSVRecord record) {
+  private void normalTracking(
+      final BoundedExecutor boundedExecutor,
+      final Map<String, Integer> headers,
+      final CSVRecord record) {
     String issueDate = record.get(this.datetime.column);
     val time = this.dateTimeParser.parse(issueDate);
-    profiles.compute(
-        time,
-        (t, ds) -> {
-          if (ds == null) {
-            ds = new DatasetProfile(input.getName(), t);
-          }
-
-          ds.track(record.toMap());
-          return ds;
-        });
+    val ds = profiles.computeIfAbsent(time, t -> new DatasetProfile(input.getName(), t));
+    for (String header : headers.keySet()) {
+      val idx = headers.get(header);
+      val value = record.get(idx);
+      boundedExecutor.submitTask(() -> ds.track(header, value));
+    }
   }
 
   public static void main(String[] args) {
