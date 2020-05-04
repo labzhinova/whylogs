@@ -10,9 +10,12 @@ import com.whylabs.logging.demo.utils.BoundedExecutor;
 import com.whylabs.logging.demo.utils.RandomWordGenerator;
 import com.whylabs.logging.firehose.FirehosePublisher;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -119,6 +122,7 @@ public class Profiler implements Runnable {
   int parallelism = 1;
 
   private EasyDateTimeParser dateTimeParser;
+  private Path binaryOutput;
 
   private final Map<Instant, DatasetProfile> profiles = new ConcurrentHashMap<>();
 
@@ -150,7 +154,7 @@ public class Profiler implements Runnable {
         Executors.newFixedThreadPool(
             parallelism, new ThreadFactoryBuilder().setNameFormat("Profiler-Pool-%d").build());
 
-    val boundedExecutor = new BoundedExecutor(executorService, parallelism);
+    val boundedExecutor = new BoundedExecutor(executorService, parallelism * 2);
 
     LOG.info("Using parallelism of: {} threads", parallelism);
 
@@ -194,7 +198,15 @@ public class Profiler implements Runnable {
             profilesBuilder.putProfiles(timestamp, profile.toSummary());
           });
 
-      try (val writer = new FileWriter(output)) {
+      LOG.info("Output to Protobuf binary file: {}", binaryOutput);
+      try (val fos = Files.newOutputStream(binaryOutput)) {
+        for (val profile : profiles.values()) {
+          profile.toProtobuf().build().writeDelimitedTo(fos);
+        }
+      }
+
+      try (val fileWriter = new FileWriter(output);
+          val writer = new BufferedWriter(fileWriter)) {
         JsonFormat.printer().appendTo(profilesBuilder, writer);
       }
 
@@ -234,14 +246,15 @@ public class Profiler implements Runnable {
       val parentFolder = input.toPath().toAbsolutePath().getParent();
       val baseName = FilenameUtils.removeExtension(inputFileName);
       val epochMinutes = String.valueOf(Instant.now().getEpochSecond() / 60);
-      val outputFileName =
+      val outputFileBase =
           MessageFormat.format(
-              "{0}.{1}-{2}-{3}.json",
+              "{0}.{1}-{2}-{3}",
               baseName,
               epochMinutes,
               RandomWordGenerator.nextWord(),
               RandomWordGenerator.nextWord());
-      output = parentFolder.resolve(outputFileName).toFile();
+      output = parentFolder.resolve(outputFileBase + ".json").toFile();
+      binaryOutput = parentFolder.resolve(outputFileBase + ".bin");
     }
 
     if (output.exists()) {
