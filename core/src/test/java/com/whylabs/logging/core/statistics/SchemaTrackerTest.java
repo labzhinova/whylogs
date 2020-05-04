@@ -19,37 +19,30 @@ public class SchemaTrackerTest {
 
   @Test
   public void track_VariousDataTypes_ShouldHaveCorrectCount() {
-    val original = new SchemaTracker();
+    val tracker = new SchemaTracker();
 
-    original.track(10L);
-    original.track(2L);
-    assertThat(original.getCount(Type.INTEGRAL), is(2L));
+    trackAFewTimes(tracker, Type.INTEGRAL, 2);
+    assertThat(tracker.getCount(Type.INTEGRAL), is(2L));
 
-    original.track("string");
-    assertThat(original.getCount(Type.STRING), is(1L));
+    trackAFewTimes(tracker, Type.STRING, 2);
+    assertThat(tracker.getCount(Type.STRING), is(2L));
 
-    original.track(2.0);
-    assertThat(original.getCount(Type.FRACTIONAL), is(1L));
+    trackAFewTimes(tracker, Type.FRACTIONAL, 1);
+    assertThat(tracker.getCount(Type.FRACTIONAL), is(1L));
 
-    original.track(true);
-    original.track(false);
-    assertThat(original.getCount(Type.BOOLEAN), is(2L));
+    trackAFewTimes(tracker, Type.BOOLEAN, 2);
+    assertThat(tracker.getCount(Type.BOOLEAN), is(2L));
 
-    original.track(System.out);
-    assertThat(original.getCount(Type.UNKNOWN), is(1L));
+    trackAFewTimes(tracker, Type.UNKNOWN, 2);
+    assertThat(tracker.getCount(Type.UNKNOWN), is(2L));
   }
 
   @Test
   public void track_Over70PercentStringData_ShouldInferStringType() {
     val tracker = new SchemaTracker();
 
-    for (int i = 0; i < 10; i++) {
-      tracker.track(1L);
-    }
-
-    for (int i = 0; i < 71; i++) {
-      tracker.track("stringdata");
-    }
+    trackAFewTimes(tracker, Type.INTEGRAL, 29);
+    trackAFewTimes(tracker, Type.STRING, 71); // 71%
 
     val inferredType = tracker.getInferredType();
     assertThat(inferredType.getType(), is(Type.STRING));
@@ -59,39 +52,9 @@ public class SchemaTrackerTest {
   public void track_MajorityDoubleData_ShouldInferFractionalType() {
     val tracker = new SchemaTracker();
 
-    for (int i = 0; i < 50; i++) {
-      tracker.track(0.1);
-    }
-
-    for (int i = 0; i < 30; i++) {
-      tracker.track("stringdata");
-    }
-
-    for (int i = 0; i < 20; i++) {
-      tracker.track(System.out);
-    }
-
-    val inferredType = tracker.getInferredType();
-    assertThat(inferredType.getType(), is(Type.FRACTIONAL));
-  }
-
-  @Test
-  public void track_MajorityDoubleData_ShouldInferCastedFractionalType() {
-    val tracker = new SchemaTracker();
-
-    for (int i = 0; i < 50; i++) {
-      final double ignored = 0.1;
-      // cast this type to another superclass
-      tracker.track((Number) ignored);
-    }
-
-    for (int i = 0; i < 30; i++) {
-      tracker.track("stringdata");
-    }
-
-    for (int i = 0; i < 20; i++) {
-      tracker.track(System.out);
-    }
+    trackAFewTimes(tracker, Type.FRACTIONAL, 50);
+    trackAFewTimes(tracker, Type.STRING, 30);
+    trackAFewTimes(tracker, Type.UNKNOWN, 20);
 
     val inferredType = tracker.getInferredType();
     assertThat(inferredType.getType(), is(Type.FRACTIONAL));
@@ -101,17 +64,9 @@ public class SchemaTrackerTest {
   public void track_MajorityIntegerAndLongData_ShouldInferIntegralType() {
     val tracker = new SchemaTracker();
 
-    for (int i = 0; i < 50; i++) {
-      tracker.track(1L);
-    }
-
-    for (int i = 0; i < 30; i++) {
-      tracker.track("stringdata");
-    }
-
-    for (int i = 0; i < 20; i++) {
-      tracker.track(System.out);
-    }
+    trackAFewTimes(tracker, Type.INTEGRAL, 50);
+    trackAFewTimes(tracker, Type.STRING, 30);
+    trackAFewTimes(tracker, Type.UNKNOWN, 20);
 
     assertThat(tracker.getInferredType().getType(), is(Type.INTEGRAL));
   }
@@ -120,17 +75,9 @@ public class SchemaTrackerTest {
   public void track_DoubleAndLong_CoercedToFractional() {
     val tracker = new SchemaTracker();
 
-    for (int i = 0; i < 50; i++) {
-      tracker.track(1L);
-    }
-
-    for (int i = 0; i < 50; i++) {
-      tracker.track(0.0);
-    }
-
-    for (int i = 0; i < 10; i++) {
-      tracker.track("stringdata");
-    }
+    trackAFewTimes(tracker, Type.INTEGRAL, 50);
+    trackAFewTimes(tracker, Type.FRACTIONAL, 50);
+    trackAFewTimes(tracker, Type.STRING, 10);
 
     val inferredType = tracker.getInferredType();
     assertThat(inferredType.getType(), is(Type.FRACTIONAL));
@@ -140,17 +87,9 @@ public class SchemaTrackerTest {
   public void track_AllTypesEqual_CoercedToString() {
     val tracker = new SchemaTracker();
 
-    for (int i = 0; i < 20; i++) {
-      tracker.track(1L);
-    }
-
-    for (int i = 0; i < 29; i++) {
-      tracker.track(0.0);
-    }
-
-    for (int i = 0; i < 50; i++) {
-      tracker.track("stringdata");
-    }
+    trackAFewTimes(tracker, Type.INTEGRAL, 20);
+    trackAFewTimes(tracker, Type.FRACTIONAL, 29);
+    trackAFewTimes(tracker, Type.STRING, 50);
 
     val inferredType = tracker.getInferredType();
 
@@ -160,14 +99,8 @@ public class SchemaTrackerTest {
   @Test
   public void serialization_RoundTrip_ShouldMatch() {
     val tracker = new SchemaTracker();
-
-    for (int i = 0; i < 10; i++) {
-      tracker.track(1L);
-    }
-
-    for (int i = 0; i < 100; i++) {
-      tracker.track("stringdata");
-    }
+    trackAFewTimes(tracker, Type.INTEGRAL, 10);
+    trackAFewTimes(tracker, Type.STRING, 100);
 
     val protoBuf = tracker.toProtobuf();
     val roundtrip = SchemaTracker.fromProtobuf(protoBuf.build());
@@ -175,5 +108,11 @@ public class SchemaTrackerTest {
     assertThat(protoBuf.build(), is(roundtrip.toProtobuf().build()));
     assertThat(roundtrip.getCount(Type.INTEGRAL), is(10L));
     assertThat(roundtrip.getCount(Type.STRING), is(100L));
+  }
+
+  private static void trackAFewTimes(SchemaTracker original, Type type, int nTimes) {
+    for (int i = 0; i < nTimes; i++) {
+      original.track(type);
+    }
   }
 }

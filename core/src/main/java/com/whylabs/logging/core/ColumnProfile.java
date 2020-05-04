@@ -10,9 +10,8 @@ import com.whylabs.logging.core.statistics.CountersTracker;
 import com.whylabs.logging.core.statistics.NumberTracker;
 import com.whylabs.logging.core.statistics.SchemaTracker;
 import com.whylabs.logging.core.statistics.datatypes.StringTracker;
+import com.whylabs.logging.core.types.TypedDataConverter;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -24,21 +23,6 @@ import lombok.val;
 @Getter
 @Builder(setterPrefix = "set")
 public class ColumnProfile {
-  private static final Pattern FRACTIONAL = Pattern.compile("^[-+]? ?\\d+[.]\\d+$");
-  private static final Pattern INTEGRAL = Pattern.compile("^[-+]? ?\\d+$");
-  private static final Pattern BOOLEAN = Pattern.compile("^(?i)true|false$");
-  private static final Pattern EMPTY_SPACES = Pattern.compile("\\s");
-
-  private static final ThreadLocal<Matcher> FRACTIONAL_MATCHER =
-      ThreadLocal.withInitial(() -> FRACTIONAL.matcher(""));
-  private static final ThreadLocal<Matcher> INTEGRAL_MATCHER =
-      ThreadLocal.withInitial(() -> INTEGRAL.matcher(""));
-  private static final ThreadLocal<Matcher> BOOLEAN_MATCHER =
-      ThreadLocal.withInitial(() -> BOOLEAN.matcher(""));
-  private static final ThreadLocal<Matcher> EMPTY_SPACES_REMOVER =
-      ThreadLocal.withInitial(() -> EMPTY_SPACES.matcher(""));
-
-
   private static final Set<Type> NUMERIC_TYPES =
       Stream.of(Type.FRACTIONAL, Type.INTEGRAL).collect(toSet());
 
@@ -56,45 +40,6 @@ public class ColumnProfile {
     this.stringTracker = new StringTracker();
   }
 
-  private Object normalizeType(Object data) {
-    if (data == null) {
-      return null;
-    }
-
-    if (data instanceof String) {
-      val strData = (String) data;
-
-      INTEGRAL_MATCHER.get().reset(strData);
-      if (INTEGRAL_MATCHER.get().matches()) {
-        val trimmedText = EMPTY_SPACES_REMOVER.get().reset(strData).replaceAll("");
-        return Long.parseLong(trimmedText);
-      }
-
-      FRACTIONAL_MATCHER.get().reset(strData);
-      if (FRACTIONAL_MATCHER.get().matches()) {
-        val trimmedText = EMPTY_SPACES_REMOVER.get().reset(strData).replaceAll("");
-        return Double.parseDouble(trimmedText);
-      }
-
-      BOOLEAN_MATCHER.get().reset(strData);
-      if (BOOLEAN_MATCHER.get().matches()) {
-        val trimmedText = EMPTY_SPACES_REMOVER.get().reset(strData).replaceAll("");
-        return Boolean.parseBoolean(trimmedText);
-      }
-
-      return data;
-    }
-
-    if (data instanceof Double || data instanceof Float) {
-      return ((Number) data).doubleValue();
-    }
-
-    if (data instanceof Integer || data instanceof Long || data instanceof Short) {
-      return ((Number) data).longValue();
-    }
-    return data;
-  }
-
   public void track(Object value) {
     synchronized (this) {
       counters.incrementCount();
@@ -104,19 +49,27 @@ public class ColumnProfile {
         return;
       }
 
-      val normalizedData = normalizeType(value);
-      schemaTracker.track(normalizedData);
+      // always track text information
+      // TODO: ignore this if we already know the data type
+      if (value instanceof String) {
+        stringTracker.update((String) value);
+      }
 
-      if (normalizedData instanceof Number) {
-        numberTracker.track((Number) normalizedData);
-        stringTracker.update(value.toString());
+      val typedData = TypedDataConverter.convert(value);
+      schemaTracker.track(typedData.getType());
 
-      } else if (normalizedData instanceof Boolean) {
-        if ((Boolean) normalizedData) {
-          counters.incrementTrue();
-        }
-      } else if (normalizedData instanceof String) {
-        stringTracker.update((String) normalizedData);
+      switch (typedData.getType()) {
+        case FRACTIONAL:
+          numberTracker.track(typedData.getFractional());
+          break;
+        case INTEGRAL:
+          numberTracker.track(typedData.getIntegralValue());
+          break;
+        case BOOLEAN:
+          if (typedData.isBooleanValue()) {
+            counters.incrementTrue();
+          }
+          break;
       }
     }
   }

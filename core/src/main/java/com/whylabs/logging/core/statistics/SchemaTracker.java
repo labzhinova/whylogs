@@ -25,49 +25,8 @@ public class SchemaTracker {
     this.typeCounts = new HashMap<>(Type.values().length, 1.0f);
   }
 
-  public void track(Object normalizedData) {
-    val type = toEnumType(normalizedData);
-    updateTypeCount(type);
-  }
-
-  @SuppressWarnings("unused")
-  public void track(Long ignored) {
-    updateTypeCount(Type.INTEGRAL);
-  }
-
-  @SuppressWarnings("unused")
-  public void track(long ignored) {
-    updateTypeCount(Type.INTEGRAL);
-  }
-
-  @SuppressWarnings("unused")
-  public void track(Double ignored) {
-    updateTypeCount(Type.FRACTIONAL);
-  }
-
-  @SuppressWarnings("unused")
-  public void track(double ignored) {
-    updateTypeCount(Type.FRACTIONAL);
-  }
-
-  @SuppressWarnings("unused")
-  public void track(String ignored) {
-    updateTypeCount(Type.STRING);
-  }
-
-  @SuppressWarnings("unused")
-  public void track(Boolean ignored) {
-    updateTypeCount(Type.BOOLEAN);
-  }
-
-  @SuppressWarnings("unused")
-  public void track(boolean ignored) {
-    updateTypeCount(Type.BOOLEAN);
-  }
-
-  private void updateTypeCount(Type type) {
-    val existingCount = typeCounts.getOrDefault(type, 0L);
-    typeCounts.put(type, existingCount + 1);
+  public void track(InferredType.Type type) {
+    typeCounts.merge(type, 1L, Long::sum);
   }
 
   long getCount(InferredType.Type type) {
@@ -159,25 +118,5 @@ public class SchemaTracker {
     val ratio = count * 1.0 / totalCount;
 
     return InferredType.newBuilder().setType(mostPopularType).setRatio(ratio);
-  }
-
-  static InferredType.Type toEnumType(Object data) {
-    if (data instanceof Long) {
-      return InferredType.Type.INTEGRAL;
-    }
-
-    if (data instanceof Double) {
-      return InferredType.Type.FRACTIONAL;
-    }
-
-    if (data instanceof Boolean) {
-      return InferredType.Type.BOOLEAN;
-    }
-
-    if (data instanceof String) {
-      return InferredType.Type.STRING;
-    }
-
-    return InferredType.Type.UNKNOWN;
   }
 }
