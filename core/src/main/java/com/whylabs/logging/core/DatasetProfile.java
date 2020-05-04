@@ -16,13 +16,14 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import lombok.Getter;
 import lombok.Value;
 import lombok.val;
 
 public class DatasetProfile {
 
-  String name;
-  Instant timestamp;
+  @Getter String name;
+  @Getter Instant timestamp;
   Map<String, ColumnProfile> columns;
 
   public DatasetProfile(String name, Instant timestamp) {
@@ -88,6 +89,13 @@ public class DatasetProfile {
         DatasetProfileMessage.newBuilder().setName(name).setTimestamp(timestamp.toEpochMilli());
     columns.forEach((k, v) -> builder.putColumns(k, v.toProtobuf().build()));
     return builder;
+  }
+
+  public static DatasetProfile fromProtobuf(DatasetProfileMessage message) {
+    val ds = new DatasetProfile(message.getName(), Instant.ofEpochMilli(message.getTimestamp()));
+    message.getColumnsMap().forEach((k, v) -> ds.columns.put(k, ColumnProfile.fromProtobuf(v)));
+
+    return ds;
   }
 
   @Value
