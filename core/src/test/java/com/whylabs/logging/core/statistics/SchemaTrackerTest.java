@@ -76,6 +76,28 @@ public class SchemaTrackerTest {
   }
 
   @Test
+  public void track_MajorityDoubleData_ShouldInferCastedFractionalType() {
+    val tracker = new SchemaTracker();
+
+    for (int i = 0; i < 50; i++) {
+      final double ignored = 0.1;
+      // cast this type to another superclass
+      tracker.track((Number) ignored);
+    }
+
+    for (int i = 0; i < 30; i++) {
+      tracker.track("stringdata");
+    }
+
+    for (int i = 0; i < 20; i++) {
+      tracker.track(System.out);
+    }
+
+    val inferredType = tracker.getInferredType();
+    assertThat(inferredType.getType(), is(Type.FRACTIONAL));
+  }
+
+  @Test
   public void track_MajorityIntegerAndLongData_ShouldInferIntegralType() {
     val tracker = new SchemaTracker();
 
