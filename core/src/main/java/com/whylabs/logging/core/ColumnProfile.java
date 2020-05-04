@@ -24,20 +24,16 @@ import lombok.val;
 @Getter
 @Builder(setterPrefix = "set")
 public class ColumnProfile {
+  private static final Pattern FRACTIONAL = Pattern.compile("^[-+]? ?\\d+[.]\\d+$");
+  private static final Pattern INTEGRAL = Pattern.compile("^[-+]? ?\\d+$");
+  private static final Pattern BOOLEAN = Pattern.compile("^(?i)true|false$");
 
-  private static final ThreadLocal<Matcher> FRACTIONAL_MATCHER = new ThreadLocal<>();
-  private static final ThreadLocal<Matcher> INTEGRAL_MATCHER = new ThreadLocal<>();
-  private static final ThreadLocal<Matcher> BOOLEAN_MATCHER = new ThreadLocal<>();
-
-  static {
-    final Pattern FRACTIONAL = Pattern.compile("^[-+]? ?\\d+[.]\\d+$");
-    final Pattern INTEGRAL = Pattern.compile("^[-+]? ?\\d+$");
-    final Pattern BOOLEAN = Pattern.compile("^(?i)true|false$");
-
-    FRACTIONAL_MATCHER.set(FRACTIONAL.matcher(""));
-    INTEGRAL_MATCHER.set(INTEGRAL.matcher(""));
-    BOOLEAN_MATCHER.set(BOOLEAN.matcher(""));
-  }
+  private static final ThreadLocal<Matcher> FRACTIONAL_MATCHER =
+      ThreadLocal.withInitial(() -> FRACTIONAL.matcher(""));
+  private static final ThreadLocal<Matcher> INTEGRAL_MATCHER =
+      ThreadLocal.withInitial(() -> INTEGRAL.matcher(""));
+  private static final ThreadLocal<Matcher> BOOLEAN_MATCHER =
+      ThreadLocal.withInitial(() -> BOOLEAN.matcher(""));
 
   private static final Set<Type> NUMERIC_TYPES =
       Stream.of(Type.FRACTIONAL, Type.INTEGRAL).collect(toSet());
@@ -93,26 +89,28 @@ public class ColumnProfile {
   }
 
   public void track(Object value) {
-    counters.incrementCount();
+    synchronized (this) {
+      counters.incrementCount();
 
-    if (value == null) {
-      counters.incrementNull();
-      return;
-    }
-
-    val normalizedData = normalizeType(value);
-    schemaTracker.track(normalizedData);
-
-    if (normalizedData instanceof Number) {
-      numberTracker.track((Number) normalizedData);
-      stringTracker.update(value.toString());
-
-    } else if (normalizedData instanceof Boolean) {
-      if ((Boolean) normalizedData) {
-        counters.incrementTrue();
+      if (value == null) {
+        counters.incrementNull();
+        return;
       }
-    } else if (normalizedData instanceof String) {
-      stringTracker.update((String) normalizedData);
+
+      val normalizedData = normalizeType(value);
+      schemaTracker.track(normalizedData);
+
+      if (normalizedData instanceof Number) {
+        numberTracker.track((Number) normalizedData);
+        stringTracker.update(value.toString());
+
+      } else if (normalizedData instanceof Boolean) {
+        if ((Boolean) normalizedData) {
+          counters.incrementTrue();
+        }
+      } else if (normalizedData instanceof String) {
+        stringTracker.update((String) normalizedData);
+      }
     }
   }
 

@@ -11,10 +11,10 @@ import com.whylabs.logging.core.format.DatasetProfileMessage.Builder;
 import com.whylabs.logging.core.format.MessageSegment;
 import com.whylabs.logging.core.iterator.ColumnsChunkSegmentIterator;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import lombok.Value;
 import lombok.val;
@@ -28,7 +28,7 @@ public class DatasetProfile {
   public DatasetProfile(String name, Instant timestamp) {
     this.name = name;
     this.timestamp = timestamp;
-    this.columns = new HashMap<>();
+    this.columns = new ConcurrentHashMap<>();
   }
 
   public void track(String columnName, Object data) {
@@ -36,11 +36,7 @@ public class DatasetProfile {
   }
 
   private void trackSingleColumn(String columnName, Object data) {
-    val columnProfile =
-        columns.compute(
-            columnName,
-            (colName, existingProfile) ->
-                (existingProfile == null) ? new ColumnProfile(columnName) : existingProfile);
+    val columnProfile = columns.computeIfAbsent(columnName, ColumnProfile::new);
     columnProfile.track(data);
   }
 
