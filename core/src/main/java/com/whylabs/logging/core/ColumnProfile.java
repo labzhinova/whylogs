@@ -27,6 +27,7 @@ public class ColumnProfile {
   private static final Pattern FRACTIONAL = Pattern.compile("^[-+]? ?\\d+[.]\\d+$");
   private static final Pattern INTEGRAL = Pattern.compile("^[-+]? ?\\d+$");
   private static final Pattern BOOLEAN = Pattern.compile("^(?i)true|false$");
+  private static final Pattern EMPTY_SPACES = Pattern.compile("\\s");
 
   private static final ThreadLocal<Matcher> FRACTIONAL_MATCHER =
       ThreadLocal.withInitial(() -> FRACTIONAL.matcher(""));
@@ -34,6 +35,9 @@ public class ColumnProfile {
       ThreadLocal.withInitial(() -> INTEGRAL.matcher(""));
   private static final ThreadLocal<Matcher> BOOLEAN_MATCHER =
       ThreadLocal.withInitial(() -> BOOLEAN.matcher(""));
+  private static final ThreadLocal<Matcher> EMPTY_SPACES_REMOVER =
+      ThreadLocal.withInitial(() -> EMPTY_SPACES.matcher(""));
+
 
   private static final Set<Type> NUMERIC_TYPES =
       Stream.of(Type.FRACTIONAL, Type.INTEGRAL).collect(toSet());
@@ -62,17 +66,20 @@ public class ColumnProfile {
 
       INTEGRAL_MATCHER.get().reset(strData);
       if (INTEGRAL_MATCHER.get().matches()) {
-        return Long.parseLong(strData);
+        val trimmedText = EMPTY_SPACES_REMOVER.get().reset(strData).replaceAll("");
+        return Long.parseLong(trimmedText);
       }
 
       FRACTIONAL_MATCHER.get().reset(strData);
       if (FRACTIONAL_MATCHER.get().matches()) {
-        return Double.parseDouble(strData);
+        val trimmedText = EMPTY_SPACES_REMOVER.get().reset(strData).replaceAll("");
+        return Double.parseDouble(trimmedText);
       }
 
       BOOLEAN_MATCHER.get().reset(strData);
       if (BOOLEAN_MATCHER.get().matches()) {
-        return Boolean.parseBoolean(strData);
+        val trimmedText = EMPTY_SPACES_REMOVER.get().reset(strData).replaceAll("");
+        return Boolean.parseBoolean(trimmedText);
       }
 
       return data;
