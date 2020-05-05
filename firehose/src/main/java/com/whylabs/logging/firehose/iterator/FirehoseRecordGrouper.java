@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 public class FirehoseRecordGrouper implements Iterator<List<Record>> {
   private static final Logger LOG = LoggerFactory.getLogger(FirehoseRecordGrouper.class);
 
-  private static final int MAX_SIZE_IN_BYTES = 4_000_000; // 1MB for each message, but minus 1KB
+  private static final int MAX_SIZE_IN_BYTES = 4_000_000; // 4MB for a batch put message
 
   private final int maxLen;
   private final Iterator<MessageSegment> segments;
