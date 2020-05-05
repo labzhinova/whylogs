@@ -1,25 +1,30 @@
 package com.whylabs.logging.demo;
 
+import com.google.common.collect.Iterators;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.protobuf.util.JsonFormat;
 import com.whylabs.logging.core.DatasetProfile;
 import com.whylabs.logging.core.data.DatasetSummaries;
 import com.whylabs.logging.core.datetime.EasyDateTimeParser;
+import com.whylabs.logging.demo.utils.BoundedExecutor;
+import com.whylabs.logging.demo.utils.RandomWordGenerator;
+import com.whylabs.logging.firehose.FirehosePublisher;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.time.Instant;
 import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoField;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.Spliterators;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import lombok.Cleanup;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -28,6 +33,8 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
@@ -38,6 +45,7 @@ import picocli.CommandLine.Option;
     description = "Run WhyLogs profiling against custom CSV dataset",
     mixinStandardHelpOptions = true)
 public class Profiler implements Runnable {
+  private static final Logger LOG = LoggerFactory.getLogger(Profiler.class);
 
   private static final Scanner SCANNER = new Scanner(System.in);
   private static final CSVFormat CSV_FORMAT =
@@ -71,11 +79,12 @@ public class Profiler implements Runnable {
   String delimiter = ",";
 
   @ArgGroup(exclusive = false)
-  Dependent datetime;
+  DateTimeColumn datetime;
 
-  private EasyDateTimeParser dateTimeParser;
+  @ArgGroup(exclusive = false)
+  FireHoseConfiguration firehose;
 
-  static class Dependent {
+  static class DateTimeColumn {
     @Option(
         names = {"-d", "--datetime"},
         description =
@@ -92,7 +101,30 @@ public class Profiler implements Runnable {
     String format;
   }
 
-  private final Map<Instant, DatasetProfile> profiles = new HashMap<>();
+  static class FireHoseConfiguration {
+    @Option(
+        names = {"-ds", "--delivery-stream"},
+        description = "the delivery stream name",
+        required = true)
+    String deliveryStream;
+
+    @Option(
+        names = {"-r", "--region"},
+        description = "Region of the Firehose",
+        required = true)
+    String region;
+  }
+
+  @Option(
+      names = {"-p", "--parallelism"},
+      paramLabel = "NUMBER_OF_THREADS",
+      description = "the number of threads. Default is (default: ${DEFAULT-VALUE})")
+  int parallelism = 1;
+
+  private EasyDateTimeParser dateTimeParser;
+  private Path binaryOutput;
+
+  private final Map<Instant, DatasetProfile> profiles = new ConcurrentHashMap<>();
 
   @SneakyThrows
   @Override
@@ -106,38 +138,57 @@ public class Profiler implements Runnable {
     }
 
     if (datetime != null) {
-      System.out.printf("Using date time format: %s\n", datetime.format);
-      System.out.printf("Using date time column: %s\n", datetime.column);
+      LOG.info("Using date time format: [{}] on column: [{}]", datetime.format, datetime.column);
       this.dateTimeParser = new EasyDateTimeParser(datetime.format);
     }
 
+    if (firehose != null) {
+      LOG.info(
+          "AWS Configuration: delivery stream: [{}]. region: [{}]",
+          firehose.deliveryStream,
+          firehose.region);
+    }
+
+    final int parallelism = Math.max(1, this.parallelism);
+    val executorService =
+        Executors.newFixedThreadPool(
+            parallelism, new ThreadFactoryBuilder().setNameFormat("Profiler-Pool-%d").build());
+
+    val boundedExecutor = new BoundedExecutor(executorService, parallelism * 2);
+
+    LOG.info("Using parallelism of: {} threads", parallelism);
+
     try {
-      System.out.printf("Reading input from: %s\n", input);
-      @Cleanup val fis = new FileInputStream(input);
-      @Cleanup val reader = new InputStreamReader(fis);
+      LOG.info("Reading input from: {}", input.getAbsolutePath());
+      @Cleanup val fr = new FileReader(input);
+      @Cleanup val reader = new BufferedReader(fr);
       val csvFormat = CSV_FORMAT.withDelimiter(unescapedDelimiter.charAt(0));
       @Cleanup CSVParser parser = new CSVParser(reader, csvFormat);
+      val headers = parser.getHeaderMap();
       if (datetime != null) {
-        if (!parser.getHeaderMap().containsKey(datetime.column)) {
+        if (!headers.containsKey(datetime.column)) {
           printErrorAndExit(
-              "Column does not exist in the CSV header: %s. Headers: %s",
-              datetime.column, parser.getHeaderMap());
+              "Column does not exist in the CSV header: {}. Headers: {}", datetime.column, headers);
         }
       }
-      val spliterator = Spliterators.spliteratorUnknownSize(parser.iterator(), 0);
-      val records =
-          (limit > 0)
-              ? StreamSupport.stream(spliterator, false).limit(limit)
-              : StreamSupport.stream(spliterator, false);
-
+      val allRecords = parser.iterator();
       if (limit > 0) {
-        System.out.printf("Limit stream to length: %d\n", limit);
+        LOG.info("Limit stream to length: {}", limit);
       }
 
-      records.forEach(this::normalTracking);
+      val records = (limit > 0) ? Iterators.limit(allRecords, limit) : allRecords;
 
-      System.out.println(
-          "Finished collecting statistics. Writing to output file: " + output.getAbsolutePath());
+      // Run the tracking
+      while (records.hasNext()) {
+        val record = records.next();
+        this.normalTracking(boundedExecutor, headers, record);
+      }
+
+      LOG.info("Submitted all the data. Wait for the threads to complete");
+      executorService.shutdown();
+      executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
+      LOG.info(
+          "Finished collecting statistics. Writing to output file: {}", output.getAbsolutePath());
 
       val profilesBuilder = DatasetSummaries.newBuilder();
       profiles.forEach(
@@ -147,14 +198,34 @@ public class Profiler implements Runnable {
             profilesBuilder.putProfiles(timestamp, profile.toSummary());
           });
 
-      try (val writer = new FileWriter(output)) {
+      LOG.info("Output to Protobuf binary file: {}", binaryOutput);
+      try (val fos = Files.newOutputStream(binaryOutput)) {
+        for (val profile : profiles.values()) {
+          profile.toProtobuf().build().writeDelimitedTo(fos);
+        }
+      }
+
+      try (val fileWriter = new FileWriter(output);
+          val writer = new BufferedWriter(fileWriter)) {
         JsonFormat.printer().appendTo(profilesBuilder, writer);
       }
-      printAndWait("Finished writing to file. Enter anything to exit");
-      System.out.println("SUCCESS");
+
+      if (firehose != null) {
+        LOG.info(
+            "Publish to AWS Firehose. Delivery stream: [{}]. Region: [{}]",
+            firehose.deliveryStream,
+            firehose.region);
+        val publisher = new FirehosePublisher(firehose.region, firehose.deliveryStream);
+
+        profiles.values().forEach(publisher::putProfile);
+      }
+      LOG.info("Finished writing to file. Enter anything to exit");
+      SCANNER.nextLine();
+      LOG.info("Output path: {}", output.getAbsolutePath());
+      LOG.info("SUCCESS");
     } catch (Exception e) {
       if (!output.delete()) {
-        System.err.println("Failed to clean up output file: " + output.getAbsolutePath());
+        LOG.error("Failed to clean up output file: " + output.getAbsolutePath());
         e.printStackTrace();
       }
     }
@@ -163,72 +234,57 @@ public class Profiler implements Runnable {
   @SneakyThrows
   private void validateFiles() {
     if (!input.exists()) {
-      printErrorAndExit("ABORTING! Input file does not exist at: %s", input.getAbsolutePath());
+      printErrorAndExit("ABORTING! Input file does not exist at: {}", input.getAbsolutePath());
     }
     val inputFileName = input.getName();
     val extension = FilenameUtils.getExtension(inputFileName);
     if (!"csv".equalsIgnoreCase(extension) && !"tsv".equalsIgnoreCase(extension)) {
-      System.err.printf("WARNING: Input does not have CSV extension. Got: %s\n", extension);
+      LOG.info("WARNING: Input does not have CSV extension. Got: {}\n", extension);
     }
 
     if (output == null) {
       val parentFolder = input.toPath().toAbsolutePath().getParent();
       val baseName = FilenameUtils.removeExtension(inputFileName);
-      val now = ZonedDateTime.now();
-      val today = now.format(DateTimeFormatter.ISO_LOCAL_DATE);
-      val secondOfDay = now.get(ChronoField.SECOND_OF_DAY);
-      val outputFileName =
-          MessageFormat.format("{0}.{1}-{2,number,#}.json", baseName, today, secondOfDay);
-      output = parentFolder.resolve(outputFileName).toFile();
+      val epochMinutes = String.valueOf(Instant.now().getEpochSecond() / 60);
+      val outputFileBase =
+          MessageFormat.format(
+              "{0}.{1}-{2}-{3}",
+              baseName,
+              epochMinutes,
+              RandomWordGenerator.nextWord(),
+              RandomWordGenerator.nextWord());
+      output = parentFolder.resolve(outputFileBase + ".json").toFile();
+      binaryOutput = parentFolder.resolve(outputFileBase + ".bin");
     }
 
     if (output.exists()) {
-      printErrorAndExit("ABORTING! Output file already exists at: %s", output.getAbsolutePath());
+      printErrorAndExit("ABORTING! Output file already exists at: {}", output.getAbsolutePath());
     }
 
     if (!output.createNewFile()) {
       printErrorAndExit(
-          "ABORTING! Failed to create new output file at: %s", output.getAbsolutePath());
+          "ABORTING! Failed to create new output file at: {}", output.getAbsolutePath());
     }
   }
 
   private void printErrorAndExit(String message, Object... args) {
-    System.out.printf(message, args);
-    System.out.println();
+    LOG.error(message, args);
     System.exit(1);
   }
 
   /** Switch to #stressTest if we want to battle test the memory usage further */
-  private void normalTracking(CSVRecord record) {
+  private void normalTracking(
+      final BoundedExecutor boundedExecutor,
+      final Map<String, Integer> headers,
+      final CSVRecord record) {
     String issueDate = record.get(this.datetime.column);
     val time = this.dateTimeParser.parse(issueDate);
-    profiles.compute(
-        time,
-        (t, ds) -> {
-          if (ds == null) {
-            ds = new DatasetProfile(input.getName(), t);
-          }
-
-          ds.track(record.toMap());
-          return ds;
-        });
-  }
-
-  private void stressTest(DatasetProfile profile, CSVRecord record) {
-    for (int i = 0; i < 10; i++) {
-      int finalI = i;
-      val modifiedMap =
-          record.toMap().entrySet().stream()
-              .collect(Collectors.toMap(e -> e.getKey() + finalI, e -> e.getValue() + finalI));
-
-      profile.track(modifiedMap);
+    val ds = profiles.computeIfAbsent(time, t -> new DatasetProfile(input.getName(), t));
+    for (String header : headers.keySet()) {
+      val idx = headers.get(header);
+      val value = record.get(idx);
+      boundedExecutor.submitTask(() -> ds.track(header, value));
     }
-  }
-
-  private static void printAndWait(String message) {
-    System.out.println(message);
-    System.out.flush();
-    SCANNER.nextLine();
   }
 
   public static void main(String[] args) {

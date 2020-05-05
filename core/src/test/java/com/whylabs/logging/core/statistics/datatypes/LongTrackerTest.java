@@ -1,6 +1,7 @@
 package com.whylabs.logging.core.statistics.datatypes;
 
-import static org.testng.Assert.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 import lombok.val;
 import org.testng.annotations.Test;
@@ -14,9 +15,9 @@ public class LongTrackerTest {
     tracker.update(2L);
     tracker.update(3L);
 
-    assertEquals(tracker.getCount(), 3);
-    assertEquals(tracker.getMax(), 3L);
-    assertEquals(tracker.getMin(), 1L);
-    assertEquals(tracker.getMean(), 2.0);
+    assertThat(tracker.getCount(), is(3L));
+    assertThat(tracker.getMax(), is(3L));
+    assertThat(tracker.getMin(), is(1L));
+    assertThat(tracker.getMean(), is(2.0));
   }
 }

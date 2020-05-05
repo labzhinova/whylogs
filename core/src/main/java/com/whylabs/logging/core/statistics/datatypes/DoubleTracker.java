@@ -1,62 +1,60 @@
 package com.whylabs.logging.core.statistics.datatypes;
 
 import com.whylabs.logging.core.format.DoublesMessage;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.val;
 
-@AllArgsConstructor(access = AccessLevel.PACKAGE)
+@Getter
+@EqualsAndHashCode
 public class DoubleTracker {
-  private final DoublesMessage.Builder proto;
+
+  private double min;
+  private double max;
+  private double sum;
+  private long count;
 
   public DoubleTracker() {
-    this.proto = DoublesMessage.newBuilder().setMin(Double.MAX_VALUE).setMax(-Double.MAX_VALUE);
+    this.min = Double.MAX_VALUE;
+    this.max = -Double.MAX_VALUE;
+    this.sum = 0;
+    this.count = 0;
   }
 
   public void addLongs(LongTracker longs) {
     if (longs != null && longs.getCount() != 0) {
-      this.proto.setMin(longs.getMin());
-      this.proto.setMax(longs.getMax());
-      this.proto.setSum(longs.getSum());
-      this.proto.setCount(longs.getCount());
+      this.min = longs.getMin();
+      this.max = longs.getMax();
+      this.sum = longs.getSum();
+      this.count = longs.getCount();
     }
   }
 
-  public Double getMean() {
-    if (proto.getCount() == 0) {
-      return null;
-    } else {
-      return proto.getSum() / proto.getCount();
-    }
+  public double getMean() {
+    return sum / count;
   }
 
   public void update(double value) {
-    if (value > proto.getMax()) {
-      proto.setMax(value);
+    if (value > max) {
+      max = value;
     }
-    if (value < proto.getMin()) {
-      proto.setMin(value);
+    if (value < min) {
+      min = value;
     }
-    proto.setCount(proto.getCount() + 1);
-    proto.setSum(proto.getSum() + value);
+    count++;
+    sum += value;
   }
 
-  public DoublesMessage toProtobuf() {
-    return proto.build();
+  public DoublesMessage.Builder toProtobuf() {
+    return DoublesMessage.newBuilder().setCount(count).setSum(sum).setMin(max).setMax(max);
   }
 
   public static DoubleTracker fromProtobuf(DoublesMessage message) {
-    return new DoubleTracker(message.toBuilder());
-  }
-
-  public long getCount() {
-    return proto.getCount();
-  }
-
-  public double getMin() {
-    return proto.getMin();
-  }
-
-  public double getMax() {
-    return proto.getMax();
+    val tracker = new DoubleTracker();
+    tracker.count = message.getCount();
+    tracker.max = message.getMax();
+    tracker.min = message.getMin();
+    tracker.sum = message.getSum();
+    return tracker;
   }
 }

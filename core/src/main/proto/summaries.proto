@@ -25,7 +25,6 @@ message InferredType {
 
   Type type = 1;
   double ratio = 2;
-  int64 count = 3;
 }
 
 message UniqueCountSummary {
@@ -36,7 +35,7 @@ message UniqueCountSummary {
 
 message FrequentStringsSummary {
   message FrequentItem {
-    string item = 1;
+    string value = 1;
     double estimate = 2;
   }
   repeated FrequentItem items = 1;
@@ -49,8 +48,7 @@ message StringsSummary {
 
 message SchemaSummary {
   InferredType inferred_type = 1;
-  InferredType determined_type = 2;
-  map<string, int64> type_counts = 3;
+  map<string, int64> type_counts = 2;
 }
 
 message HistogramSummary {

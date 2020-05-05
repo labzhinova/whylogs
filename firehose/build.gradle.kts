@@ -29,6 +29,9 @@ dependencies {
 
     // testng
     testImplementation("org.testng:testng:6.8")
+    testImplementation("org.hamcrest:hamcrest:2.2")
+    testImplementation("org.apache.commons:commons-lang3:3.10")
+    testImplementation("com.google.guava:guava:29.0-jre")
 }
 
 sourceSets {

@@ -1,10 +1,6 @@
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import com.google.protobuf.gradle.plugins
-import com.google.protobuf.gradle.proto
-import com.google.protobuf.gradle.protobuf
-import com.google.protobuf.gradle.protoc
-import com.google.protobuf.gradle.id
+import com.google.protobuf.gradle.*
 import groovy.util.Node
 import groovy.util.NodeList
 
@@ -39,6 +35,7 @@ dependencies {
     api("com.google.protobuf:protobuf-java:3.11.4")
 
     implementation("org.apache.datasketches:datasketches-java:1.2.0-incubating")
+    implementation("com.google.guava:guava:29.0-jre")
 
     // lombok support
     compileOnly("org.projectlombok:lombok:1.18.12")
@@ -48,6 +45,8 @@ dependencies {
 
     // testng
     testImplementation("org.testng:testng:6.8")
+    testImplementation("org.hamcrest:hamcrest:2.2")
+    testImplementation("org.apache.commons:commons-lang3:3.10")
 }
 
 sourceSets {

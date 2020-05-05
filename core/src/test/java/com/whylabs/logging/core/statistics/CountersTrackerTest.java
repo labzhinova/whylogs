@@ -1,28 +1,28 @@
 package com.whylabs.logging.core.statistics;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 import lombok.val;
 import org.testng.annotations.Test;
 
 public class CountersTrackerTest {
   @Test
-  public void kryo_RoundtripSerialization_ShouldSucceed() {
+  public void counters_SimpleTracking() {
     val original = new CountersTracker();
-    assertEquals(original.getCount(), 0);
+    assertThat(original.getCount(), is(0L));
 
     original.incrementCount();
     original.incrementCount();
 
-    assertEquals(original.getCount(), 2);
-    assertNull(original.getNullCount());
-    assertNull(original.getTrueCount());
+    assertThat(original.getCount(), is(2L));
+    assertThat(original.getNullCount(), is(0L));
+    assertThat(original.getTrueCount(), is(0L));
 
     original.incrementNull();
-    assertEquals(original.getNullCount(), Long.valueOf(1));
+    assertThat(original.getNullCount(), is(1L));
 
     original.incrementTrue();
-    assertEquals(original.getTrueCount(), Long.valueOf(1));
+    assertThat(original.getTrueCount(), is(1L));
   }
 }

@@ -4,15 +4,14 @@ import static com.whylabs.logging.core.SummaryConverters.fromSchemaTracker;
 import static java.util.stream.Collectors.toSet;
 
 import com.whylabs.logging.core.data.ColumnSummary;
-import com.whylabs.logging.core.data.InferredType;
 import com.whylabs.logging.core.data.InferredType.Type;
 import com.whylabs.logging.core.format.ColumnMessage;
 import com.whylabs.logging.core.statistics.CountersTracker;
 import com.whylabs.logging.core.statistics.NumberTracker;
 import com.whylabs.logging.core.statistics.SchemaTracker;
 import com.whylabs.logging.core.statistics.datatypes.StringTracker;
+import com.whylabs.logging.core.types.TypedDataConverter;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -24,11 +23,6 @@ import lombok.val;
 @Getter
 @Builder(setterPrefix = "set")
 public class ColumnProfile {
-
-  private static final Pattern FRACTIONAL = Pattern.compile("^[-+]?( )?\\d+([.]\\d+)$");
-  private static final Pattern INTEGRAL = Pattern.compile("^[-+]?( )?\\d+$");
-  private static final Pattern BOOLEAN = Pattern.compile("^(?i)(true|false)$");
-
   private static final Set<Type> NUMERIC_TYPES =
       Stream.of(Type.FRACTIONAL, Type.INTEGRAL).collect(toSet());
 
@@ -46,63 +40,37 @@ public class ColumnProfile {
     this.stringTracker = new StringTracker();
   }
 
-  private Object normalizeType(Object data) {
-    if (data == null) {
-      return null;
-    }
-
-    if (data instanceof String) {
-      val strData = (String) data;
-
-      // ignore pattern matching if we already determine the type
-      if (this.schemaTracker.getType() == InferredType.Type.STRING) {
-        return data;
-      }
-
-      if (INTEGRAL.matcher(strData).matches()) {
-        return Long.parseLong(strData);
-      }
-      if (FRACTIONAL.matcher(strData).matches()) {
-        return Double.parseDouble(strData);
-      }
-      if (BOOLEAN.matcher(strData).matches()) {
-        return Boolean.parseBoolean(strData);
-      }
-
-      return data;
-    }
-
-    if (data instanceof Double || data instanceof Float) {
-      return ((Number) data).doubleValue();
-    }
-
-    if (data instanceof Integer || data instanceof Long || data instanceof Short) {
-      return ((Number) data).longValue();
-    }
-    return data;
-  }
-
   public void track(Object value) {
-    counters.incrementCount();
+    synchronized (this) {
+      counters.incrementCount();
 
-    if (value == null) {
-      counters.incrementNull();
-      return;
-    }
-
-    val normalizedData = normalizeType(value);
-    schemaTracker.track(normalizedData);
-
-    if (normalizedData instanceof Number) {
-      numberTracker.track((Number) normalizedData);
-      stringTracker.update(value.toString());
-
-    } else if (normalizedData instanceof Boolean) {
-      if ((Boolean) normalizedData) {
-        counters.incrementTrue();
+      if (value == null) {
+        counters.incrementNull();
+        return;
       }
-    } else if (normalizedData instanceof String) {
-      stringTracker.update((String) normalizedData);
+
+      // always track text information
+      // TODO: ignore this if we already know the data type
+      if (value instanceof String) {
+        stringTracker.update((String) value);
+      }
+
+      val typedData = TypedDataConverter.convert(value);
+      schemaTracker.track(typedData.getType());
+
+      switch (typedData.getType()) {
+        case FRACTIONAL:
+          numberTracker.track(typedData.getFractional());
+          break;
+        case INTEGRAL:
+          numberTracker.track(typedData.getIntegralValue());
+          break;
+        case BOOLEAN:
+          if (typedData.isBooleanValue()) {
+            counters.incrementTrue();
+          }
+          break;
+      }
     }
   }
 
