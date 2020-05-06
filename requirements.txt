@@ -1,0 +1,7 @@
+numpy
+ipython
+datasketch  # Third party open source datasketches python library, different from the official apache library
+protobuf
+# grpcio
+# grpcio-tools
+2to3
