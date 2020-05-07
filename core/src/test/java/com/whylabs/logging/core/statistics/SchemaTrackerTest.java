@@ -61,7 +61,7 @@ public class SchemaTrackerTest {
   }
 
   @Test
-  public void track_HalfIsFractionalData_CannotInferType(){
+  public void track_HalfIsFractionalData_CannotInferType() {
     val tracker = new SchemaTracker();
 
     trackAFewTimes(tracker, Type.FRACTIONAL, 50);
@@ -71,7 +71,6 @@ public class SchemaTrackerTest {
     val inferredType = tracker.getInferredType();
     assertThat(inferredType.getType(), is(Type.UNKNOWN));
   }
-
 
   @Test
   public void track_MajorityIntegerAndLongData_ShouldInferIntegralType() {
@@ -121,6 +120,27 @@ public class SchemaTrackerTest {
     assertThat(protoBuf.build(), is(roundtrip.toProtobuf().build()));
     assertThat(roundtrip.getCount(Type.INTEGRAL), is(10L));
     assertThat(roundtrip.getCount(Type.STRING), is(100L));
+  }
+
+  @Test
+  public void merge_TotalCounts_ShouldMatch() {
+    val first = new SchemaTracker();
+    trackAFewTimes(first, Type.INTEGRAL, 10);
+    trackAFewTimes(first, Type.FRACTIONAL, 10);
+    trackAFewTimes(first, Type.BOOLEAN, 10);
+    trackAFewTimes(first, Type.UNKNOWN, 10);
+
+    val second = new SchemaTracker();
+    trackAFewTimes(first, Type.INTEGRAL, 20);
+    trackAFewTimes(first, Type.FRACTIONAL, 20);
+    trackAFewTimes(first, Type.BOOLEAN, 20);
+    trackAFewTimes(first, Type.UNKNOWN, 20);
+
+    final val merged = first.merge(second);
+    assertThat(merged.getCount(Type.INTEGRAL), is(30L));
+    assertThat(merged.getCount(Type.FRACTIONAL), is(30L));
+    assertThat(merged.getCount(Type.BOOLEAN), is(30L));
+    assertThat(merged.getCount(Type.UNKNOWN), is(30L));
   }
 
   private static void trackAFewTimes(SchemaTracker original, Type type, int nTimes) {

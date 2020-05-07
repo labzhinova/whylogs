@@ -1,5 +1,6 @@
 package com.whylabs.logging.core.statistics;
 
+import com.google.common.collect.Maps;
 import com.whylabs.logging.core.data.InferredType;
 import com.whylabs.logging.core.data.InferredType.Type;
 import com.whylabs.logging.core.format.SchemaMessage;
@@ -119,5 +120,16 @@ public class SchemaTracker {
     val ratio = count * 1.0 / totalCount;
 
     return InferredType.newBuilder().setType(mostPopularType).setRatio(ratio);
+  }
+
+  public SchemaTracker merge(SchemaTracker other) {
+    final val thisCopy = new SchemaTracker(Maps.newHashMap(typeCounts));
+
+    final Type[] allTypes = Type.values();
+    for (val type : allTypes) {
+      thisCopy.typeCounts.merge(type, other.getCount(type), Long::sum);
+    }
+
+    return thisCopy;
   }
 }
