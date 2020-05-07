@@ -1,4 +1,6 @@
 plugins {
+    `java-library`
+
     id("com.diffplug.gradle.spotless") version ("3.28.1") apply false
 }
 
@@ -9,6 +11,11 @@ allprojects {
     apply(plugin = "java")
     repositories {
         mavenCentral()
+    }
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
 }
 
