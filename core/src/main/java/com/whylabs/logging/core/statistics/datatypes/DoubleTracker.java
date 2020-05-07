@@ -1,12 +1,17 @@
 package com.whylabs.logging.core.statistics.datatypes;
 
 import com.whylabs.logging.core.format.DoublesMessage;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 import lombok.val;
 
 @Getter
 @EqualsAndHashCode
+@ToString
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class DoubleTracker {
 
   private double min;
@@ -45,8 +50,23 @@ public class DoubleTracker {
     sum += value;
   }
 
+  public DoubleTracker merge(DoubleTracker other) {
+    val thisCopy = new DoubleTracker(min, max, sum, count);
+    if (other.min < thisCopy.min) {
+      thisCopy.min = other.min;
+    }
+
+    if (other.max > thisCopy.max) {
+      thisCopy.max = other.max;
+    }
+    thisCopy.sum += other.sum;
+    thisCopy.count += other.count;
+
+    return thisCopy;
+  }
+
   public DoublesMessage.Builder toProtobuf() {
-    return DoublesMessage.newBuilder().setCount(count).setSum(sum).setMin(max).setMax(max);
+    return DoublesMessage.newBuilder().setCount(count).setSum(sum).setMin(min).setMax(max);
   }
 
   public static DoubleTracker fromProtobuf(DoublesMessage message) {
