@@ -3,6 +3,7 @@
 created 5/5/20 by ibackus 
 """
 import math
+from whylogs.logging.core.data import VarianceMessage
 
 
 class VarianceTracker:
@@ -11,6 +12,7 @@ class VarianceTracker:
     batched data.
     """
     def __init__(self):
+        # TODO: add keyword argument intialization
         self.count = 0
         self.sum = 0
         self.mean = 0
@@ -70,7 +72,12 @@ class VarianceTracker:
         self.count += other.count
 
     def toProtobuf(self):
-        raise NotImplementedError
+        return VarianceMessage(count=self.count, sum=self.sum, mean=self.mean)
 
-    def fromProtobuf(self):
-        raise NotImplementedError
+    @staticmethod
+    def fromProtobuf(message):
+        tracker = VarianceTracker()
+        tracker.count = message.count
+        tracker.mean = message.mean
+        tracker.sum = message.sum
+        return tracker
