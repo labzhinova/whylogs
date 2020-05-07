@@ -22,7 +22,7 @@ plugins {
 }
 
 group = "com.whylabs.logging.core"
-version = "0.1-alpha"
+version = "0.1.1-alpha"
 
 spotless {
     java {
@@ -97,10 +97,12 @@ shadowJar.apply {
     exclude("*.properties")
     exclude("META-INF/*")
     dependencies {
-        exclude(dependency("org.slf4j:slf4j-api:1.7.27"))
+        exclude(dependency("org.slf4j:slf4j-api"))
+        exclude(dependency("javax.annotation:javax.annotation-api"))
     }
     relocate("org.apache.datasketches", "zzz.com.whylabs.org.apache.datasketches")
     relocate("com.google", "zzz.com.whylabs.com.google")
+    relocate("org.checkerframework", "zzz.com.whylabs.org.checkerframework")
 }
 
 publishing {
