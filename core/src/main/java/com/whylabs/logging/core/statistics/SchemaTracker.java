@@ -88,7 +88,8 @@ public class SchemaTracker {
       return InferredType.newBuilder().setType(Type.FRACTIONAL).setRatio(fractionalRatio).build();
     }
 
-    return InferredType.newBuilder().setType(candidateType).setRatio(1.0).build();
+    // we can't infer any type
+    return InferredType.newBuilder().setType(Type.UNKNOWN).setRatio(1.0).build();
   }
 
   public SchemaMessage.Builder toProtobuf() {

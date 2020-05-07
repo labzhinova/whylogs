@@ -52,7 +52,7 @@ public class SchemaTrackerTest {
   public void track_MajorityDoubleData_ShouldInferFractionalType() {
     val tracker = new SchemaTracker();
 
-    trackAFewTimes(tracker, Type.FRACTIONAL, 50);
+    trackAFewTimes(tracker, Type.FRACTIONAL, 51);
     trackAFewTimes(tracker, Type.STRING, 30);
     trackAFewTimes(tracker, Type.UNKNOWN, 20);
 
@@ -61,10 +61,23 @@ public class SchemaTrackerTest {
   }
 
   @Test
+  public void track_HalfIsFractionalData_CannotInferType(){
+    val tracker = new SchemaTracker();
+
+    trackAFewTimes(tracker, Type.FRACTIONAL, 50);
+    trackAFewTimes(tracker, Type.STRING, 30);
+    trackAFewTimes(tracker, Type.UNKNOWN, 20);
+
+    val inferredType = tracker.getInferredType();
+    assertThat(inferredType.getType(), is(Type.UNKNOWN));
+  }
+
+
+  @Test
   public void track_MajorityIntegerAndLongData_ShouldInferIntegralType() {
     val tracker = new SchemaTracker();
 
-    trackAFewTimes(tracker, Type.INTEGRAL, 50);
+    trackAFewTimes(tracker, Type.INTEGRAL, 51);
     trackAFewTimes(tracker, Type.STRING, 30);
     trackAFewTimes(tracker, Type.UNKNOWN, 20);
 
