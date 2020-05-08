@@ -8,6 +8,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 import lombok.val;
+import org.w3c.dom.css.Counter;
 
 @EqualsAndHashCode
 @Getter
@@ -27,6 +28,15 @@ public class CountersTracker {
 
   public void incrementNull() {
     nullCount++;
+  }
+
+  public CountersTracker merge(CountersTracker other) {
+    val result = new CountersTracker();
+    result.count = this.count + other.count;
+    result.trueCount = this.trueCount + other.trueCount;
+    result.nullCount = this.nullCount + other.nullCount;
+
+    return result;
   }
 
   public Counters.Builder toProtobuf() {
