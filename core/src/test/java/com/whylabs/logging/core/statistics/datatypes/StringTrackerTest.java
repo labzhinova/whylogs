@@ -1,7 +1,37 @@
 package com.whylabs.logging.core.statistics.datatypes;
 
-import static org.testng.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+
+import lombok.val;
+import org.testng.annotations.Test;
 
 public class StringTrackerTest {
 
+  @Test
+  public void stringTracker_BasicStringTracking() {
+    val tracker = new StringTracker();
+    tracker.update("foo1");
+    tracker.update("foo2");
+    tracker.update("foo3");
+
+    assertThat(tracker.getCount(), is(3L));
+    assertThat(tracker.getItems().getNumActiveItems(), is(3));
+    assertThat(tracker.getThetaSketch().getEstimate(), is(3));
+  }
+
+  @Test
+  public void stringTracker_Merge() {
+    val tracker = new StringTracker();
+    tracker.update("foo1");
+    tracker.update("foo2");
+    tracker.update("foo3");
+
+    assertThat(tracker.getCount(), is(3L));
+    assertThat(tracker.getItems().getNumActiveItems(), is(3));
+
+    val merged = tracker.merge(tracker);
+    assertThat(merged.getCount(), is(6L));
+    assertThat(merged.getItems().getNumActiveItems(), is(3));
+  }
 }
