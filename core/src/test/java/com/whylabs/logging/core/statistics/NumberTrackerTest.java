@@ -103,6 +103,5 @@ public class NumberTrackerTest {
     assertThat(roundtrip.getHistogram().getN(), is(3L));
     assertThat(roundtrip.getHistogram().getMaxValue(), is(13.0));
     assertThat(roundtrip.getHistogram().getMinValue(), is(10.0));
-
   }
 }

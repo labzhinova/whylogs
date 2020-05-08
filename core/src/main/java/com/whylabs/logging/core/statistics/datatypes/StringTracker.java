@@ -44,6 +44,7 @@ public final class StringTracker {
 
   /**
    * Merge this StringTracker object with another. This merges the sketches as well
+   *
    * @param other the other String tracker to merge
    * @return a new StringTracker object
    */

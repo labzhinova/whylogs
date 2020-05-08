@@ -37,7 +37,6 @@ public class CountersTrackerTest {
     first.incrementNull();
     first.incrementTrue();
 
-
     assertThat(first.getCount(), is(2L));
     assertThat(first.getNullCount(), is(3L));
     assertThat(first.getTrueCount(), is(1L));
