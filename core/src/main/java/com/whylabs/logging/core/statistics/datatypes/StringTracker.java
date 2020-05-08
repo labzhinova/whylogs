@@ -11,6 +11,7 @@ import org.apache.datasketches.ArrayOfStringsSerDe;
 import org.apache.datasketches.frequencies.ItemsSketch;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.WritableMemory;
+import org.apache.datasketches.theta.Union;
 import org.apache.datasketches.theta.UpdateSketch;
 
 @Builder
@@ -39,6 +40,25 @@ public final class StringTracker {
     count++;
     thetaSketch.update(value);
     items.update(value);
+  }
+
+  /**
+   * Merge this StringTracker object with another. This merges the sketches as well
+   *
+   * @param other the other String tracker to merge
+   * @return a new StringTracker object
+   */
+  public StringTracker merge(StringTracker other) {
+    val bytes = this.items.toByteArray(ARRAY_OF_STRINGS_SER_DE);
+    val itemsCopy = ItemsSketch.getInstance(WritableMemory.wrap(bytes), ARRAY_OF_STRINGS_SER_DE);
+    itemsCopy.merge(other.items);
+
+    val thetaUnion = Union.builder().buildUnion();
+    thetaUnion.update(this.thetaSketch);
+    thetaUnion.update(other.thetaSketch);
+    val thetaSketch = UpdateSketch.heapify(WritableMemory.wrap(thetaUnion.toByteArray()));
+
+    return new StringTracker(this.count + other.count, itemsCopy, thetaSketch);
   }
 
   public StringsMessage.Builder toProtobuf() {

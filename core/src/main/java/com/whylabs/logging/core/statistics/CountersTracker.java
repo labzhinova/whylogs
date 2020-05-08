@@ -29,6 +29,15 @@ public class CountersTracker {
     nullCount++;
   }
 
+  public CountersTracker merge(CountersTracker other) {
+    val result = new CountersTracker();
+    result.count = this.count + other.count;
+    result.trueCount = this.trueCount + other.trueCount;
+    result.nullCount = this.nullCount + other.nullCount;
+
+    return result;
+  }
+
   public Counters.Builder toProtobuf() {
     val countersBuilder = Counters.newBuilder().setCount(count);
 

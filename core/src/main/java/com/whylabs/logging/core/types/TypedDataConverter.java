@@ -68,6 +68,10 @@ public class TypedDataConverter {
       return TypedData.integralValue(longValue);
     }
 
+    if (data instanceof Boolean) {
+      return TypedData.booleanValue((boolean) data);
+    }
+
     return TypedData.unknownValue();
   }
 }

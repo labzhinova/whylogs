@@ -2,6 +2,7 @@ package com.whylabs.logging.core.statistics.datatypes;
 
 import com.whylabs.logging.core.format.VarianceMessage;
 import lombok.Getter;
+import lombok.val;
 
 @Getter
 public class VarianceTracker {
@@ -41,26 +42,35 @@ public class VarianceTracker {
   }
 
   /** https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm */
-  public void merge(VarianceTracker other) {
+  public VarianceTracker merge(VarianceTracker other) {
+    final VarianceTracker thisCopy = this.copy();
     if (other.count == 0L) {
-      return;
+      return thisCopy;
     }
 
     if (this.count == 0L) {
-      this.count = other.count;
-      this.sum = other.sum;
-      this.mean = other.mean;
-      return;
+      return other.copy();
     }
 
-    final double delta = this.mean - other.mean;
-    final long totalCount = this.count + other.count;
-    this.sum += other.sum + Math.pow(delta, 2) * this.count * other.count / (double) totalCount;
+    val delta = thisCopy.mean - other.mean;
+    val totalCount = thisCopy.count + other.count;
+    thisCopy.sum +=
+        other.sum + Math.pow(delta, 2) * thisCopy.count * other.count / (double) totalCount;
 
-    final double thisRatio = this.count / (double) totalCount;
-    final double otherRatio = 1.0 - thisRatio;
-    this.mean = this.mean * thisRatio + other.mean * otherRatio;
-    this.count += other.count;
+    val thisRatio = thisCopy.count / (double) totalCount;
+    val otherRatio = 1.0 - thisRatio;
+    thisCopy.mean = thisCopy.mean * thisRatio + other.mean * otherRatio;
+    thisCopy.count += other.count;
+
+    return thisCopy;
+  }
+
+  VarianceTracker copy() {
+    val result = new VarianceTracker();
+    result.count = this.count;
+    result.sum = this.sum;
+    result.mean = this.mean;
+    return result;
   }
 
   public VarianceMessage.Builder toProtobuf() {

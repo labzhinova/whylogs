@@ -1,12 +1,15 @@
 package com.whylabs.logging.core.statistics.datatypes;
 
 import com.whylabs.logging.core.format.LongsMessage;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.val;
 
 @Getter
 @EqualsAndHashCode
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class LongTracker {
 
   private long min;
@@ -35,6 +38,20 @@ public class LongTracker {
     }
     count++;
     sum += value;
+  }
+
+  public LongTracker merge(LongTracker other) {
+    val thisCopy = new LongTracker(min, max, sum, count);
+    if (other.min < thisCopy.min) {
+      thisCopy.min = other.min;
+    }
+
+    if (other.max > thisCopy.max) {
+      thisCopy.max = other.max;
+    }
+    thisCopy.sum += other.sum;
+    thisCopy.count += other.count;
+    return thisCopy;
   }
 
   public void reset() {
