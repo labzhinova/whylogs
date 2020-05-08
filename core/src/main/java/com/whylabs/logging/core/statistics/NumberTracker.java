@@ -14,7 +14,9 @@ import lombok.val;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.WritableMemory;
 import org.apache.datasketches.quantiles.DoublesSketch;
+import org.apache.datasketches.quantiles.DoublesUnion;
 import org.apache.datasketches.quantiles.UpdateDoublesSketch;
+import org.apache.datasketches.theta.Union;
 import org.apache.datasketches.theta.UpdateSketch;
 
 @Getter
@@ -54,6 +56,27 @@ public class NumberTracker {
       longs.reset();
       doubles.update(dValue);
     }
+  }
+
+  public NumberTracker merge(NumberTracker other) {
+    val doubleUnion = DoublesUnion.builder().build();
+    doubleUnion.update(this.histogram);
+    doubleUnion.update(other.histogram);
+    val histMem = WritableMemory.wrap(doubleUnion.toByteArray());
+    val unionHistogram = UpdateDoublesSketch.heapify(histMem);
+
+    val unionTheta = Union.builder().buildUnion();
+    unionTheta.update(this.thetaSketch);
+    unionTheta.update(other.thetaSketch);
+    val thetaSketch = UpdateSketch.heapify(WritableMemory.wrap(unionTheta.toByteArray()));
+
+    return NumberTracker.builder()
+        .setVariance(this.variance.merge(other.variance))
+        .setDoubles(this.doubles.merge(other.doubles))
+        .setLongs(this.longs.merge(other.longs))
+        .setHistogram(unionHistogram)
+        .setThetaSketch(thetaSketch)
+        .build();
   }
 
   public NumbersMessage.Builder toProtobuf() {

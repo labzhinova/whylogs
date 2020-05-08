@@ -1,6 +1,8 @@
 package com.whylabs.logging.core.statistics;
 
-import static org.testng.Assert.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.closeTo;
+import static org.hamcrest.Matchers.is;
 
 import lombok.val;
 import org.testng.annotations.Test;
@@ -14,13 +16,14 @@ public class NumberTrackerTest {
     numberTracker.track(11L);
     numberTracker.track(12);
 
-    assertEquals(numberTracker.getLongs().getCount(), 3L);
-    assertEquals(numberTracker.getDoubles().getCount(), 0L);
-    assertEquals(numberTracker.getVariance().stddev(), 1.0);
-    assertEquals(Math.round(numberTracker.getThetaSketch().getEstimate()), 3L);
-    assertEquals(Math.round(numberTracker.getHistogram().getN()), 3L);
-    assertEquals(Math.round(numberTracker.getHistogram().getMaxValue()), 12);
-    assertEquals(Math.round(numberTracker.getHistogram().getMinValue()), 10);
+    assertThat(numberTracker.getLongs().getCount(), is(3L));
+    assertThat(numberTracker.getDoubles().getCount(), is(0L));
+    assertThat(numberTracker.getVariance().stddev(), closeTo(1.0, 0.001));
+
+    assertThat(numberTracker.getHistogram().getN(), is(3L));
+    assertThat(numberTracker.getThetaSketch().getEstimate(), closeTo(3, 0.001));
+    assertThat(numberTracker.getHistogram().getMaxValue(), closeTo(12, 0.0001));
+    assertThat(numberTracker.getHistogram().getMinValue(), closeTo(10, 0.0001));
   }
 
   @Test
@@ -30,13 +33,14 @@ public class NumberTrackerTest {
     numberTracker.track(11.0);
     numberTracker.track(12.0);
 
-    assertEquals(numberTracker.getLongs().getCount(), 0L);
-    assertEquals(numberTracker.getDoubles().getCount(), 3L);
-    assertEquals(numberTracker.getVariance().stddev(), 1.0);
-    assertEquals(Math.round(numberTracker.getThetaSketch().getEstimate()), 3L);
-    assertEquals(Math.round(numberTracker.getHistogram().getN()), 3L);
-    assertEquals(Math.round(numberTracker.getHistogram().getMaxValue()), 12);
-    assertEquals(Math.round(numberTracker.getHistogram().getMinValue()), 10);
+    assertThat(numberTracker.getLongs().getCount(), is(0L));
+    assertThat(numberTracker.getDoubles().getCount(), is(3L));
+    assertThat(numberTracker.getVariance().stddev(), closeTo(1.0, 0.001));
+
+    assertThat(numberTracker.getHistogram().getN(), is(3L));
+    assertThat(numberTracker.getThetaSketch().getEstimate(), closeTo(3, 0.001));
+    assertThat(numberTracker.getHistogram().getMaxValue(), closeTo(12, 0.0001));
+    assertThat(numberTracker.getHistogram().getMinValue(), closeTo(10, 0.0001));
   }
 
   @Test
@@ -44,18 +48,61 @@ public class NumberTrackerTest {
     val numberTracker = new NumberTracker();
     numberTracker.track(10L);
     numberTracker.track(11L);
-    assertEquals(numberTracker.getLongs().getCount(), 2L);
-    assertEquals(numberTracker.getDoubles().getCount(), 0L);
+    assertThat(numberTracker.getLongs().getCount(), is(2L));
+    assertThat(numberTracker.getDoubles().getCount(), is(0L));
 
     // instead of Long, we got a double value here
     numberTracker.track(12.0);
 
-    assertEquals(numberTracker.getLongs().getCount(), 0L);
-    assertEquals(numberTracker.getDoubles().getCount(), 3L);
-    assertEquals(numberTracker.getVariance().stddev(), 1.0);
-    assertEquals(Math.round(numberTracker.getThetaSketch().getEstimate()), 3L);
-    assertEquals(Math.round(numberTracker.getHistogram().getN()), 3L);
-    assertEquals(Math.round(numberTracker.getHistogram().getMaxValue()), 12);
-    assertEquals(Math.round(numberTracker.getHistogram().getMinValue()), 10);
+    assertThat(numberTracker.getLongs().getCount(), is(0L));
+    assertThat(numberTracker.getDoubles().getCount(), is(3L));
+    assertThat(numberTracker.getVariance().stddev(), closeTo(1.0, 0.001));
+
+    assertThat(numberTracker.getHistogram().getN(), is(3L));
+    assertThat(numberTracker.getThetaSketch().getEstimate(), closeTo(3, 0.001));
+    assertThat(numberTracker.getHistogram().getMaxValue(), closeTo(12, 0.0001));
+    assertThat(numberTracker.getHistogram().getMinValue(), closeTo(10, 0.0001));
+  }
+
+  @Test
+  public void merge_TwoNumberTrackers_ShouldSuccess() {
+    val numberTracker = new NumberTracker();
+    numberTracker.track(10L);
+    numberTracker.track(11L);
+    numberTracker.track(13L);
+
+    assertThat(numberTracker.getLongs().getCount(), is(3L));
+    assertThat(numberTracker.getDoubles().getCount(), is(0L));
+    assertThat(numberTracker.getLongs().getCount(), is(3L));
+    assertThat(numberTracker.getHistogram().getN(), is(3L));
+    assertThat(numberTracker.getHistogram().getMaxValue(), is(13.0));
+    assertThat(numberTracker.getHistogram().getMinValue(), is(10.0));
+
+    val merged = numberTracker.merge(numberTracker);
+    assertThat(merged.getLongs().getCount(), is(6L));
+    assertThat(merged.getDoubles().getCount(), is(0L));
+    assertThat(merged.getLongs().getCount(), is(6L));
+    assertThat(merged.getHistogram().getN(), is(6L));
+    assertThat(merged.getHistogram().getMaxValue(), is(13.0));
+    assertThat(merged.getHistogram().getMinValue(), is(10.0));
+  }
+
+  @Test
+  public void serialization_NumberTracker_Roundtrip() {
+    val original = new NumberTracker();
+    original.track(10L);
+    original.track(11L);
+    original.track(13L);
+
+    val msg = original.toProtobuf().build();
+    val roundtrip = NumberTracker.fromProtobuf(msg);
+
+    assertThat(roundtrip.getLongs().getCount(), is(3L));
+    assertThat(roundtrip.getDoubles().getCount(), is(0L));
+    assertThat(roundtrip.getLongs().getCount(), is(3L));
+    assertThat(roundtrip.getHistogram().getN(), is(3L));
+    assertThat(roundtrip.getHistogram().getMaxValue(), is(13.0));
+    assertThat(roundtrip.getHistogram().getMinValue(), is(10.0));
+
   }
 }
