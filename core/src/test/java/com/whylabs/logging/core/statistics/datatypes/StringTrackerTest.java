@@ -17,7 +17,7 @@ public class StringTrackerTest {
 
     assertThat(tracker.getCount(), is(3L));
     assertThat(tracker.getItems().getNumActiveItems(), is(3));
-    assertThat(tracker.getThetaSketch().getEstimate(), is(3));
+    assertThat(tracker.getThetaSketch().getEstimate(), is(3.0));
   }
 
   @Test
