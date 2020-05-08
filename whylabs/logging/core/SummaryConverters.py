@@ -2,8 +2,8 @@
 """
 created 5/7/20 by ibackus 
 """
-from whylogs.logging.core.statistics import NumberTracker
-from whylogs.logging.core.data import NumberSummary, UniqueCountSummary
+from whylabs.logging.core.statistics import NumberTracker
+from whylabs.logging.core.data import NumberSummary, UniqueCountSummary
 from datasketches import update_theta_sketch
 
 

@@ -2,7 +2,7 @@
 """
 created 5/7/20 by ibackus 
 """
-from whylogs.logging.core import ColumnProfile
+from whylabs.logging.core import ColumnProfile
 
 class DatasetProfile:
     """

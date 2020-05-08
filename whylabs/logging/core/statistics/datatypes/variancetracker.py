@@ -3,7 +3,7 @@
 created 5/5/20 by ibackus 
 """
 import math
-from whylogs.logging.core.data import VarianceMessage
+from whylabs.logging.core.data import VarianceMessage
 
 
 class VarianceTracker:

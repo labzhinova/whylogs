@@ -3,9 +3,9 @@
 created 5/5/20 by ibackus 
 """
 import datasketches
-from whylogs.logging.core.statistics.datatypes import VarianceTracker, \
+from whylabs.logging.core.statistics.datatypes import VarianceTracker, \
     LongTracker, DoubleTracker
-from whylogs.logging.core.data import NumbersMessage
+from whylabs.logging.core.data import NumbersMessage
 
 
 class NumberTracker:

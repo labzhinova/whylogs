@@ -10,10 +10,10 @@ TODO:
     * multi-threading/parallelism
     * python version of `TypedDataConverter`
 """
-from whylogs.logging.core.types import TypedDataConverter
-from whylogs.logging.core.statistics import NumberTracker
-from whylogs.logging.core.SummaryConverters import fromNumberTracker
-from whylogs.logging.core.data import ColumnSummary
+from whylabs.logging.core.types import TypedDataConverter
+from whylabs.logging.core.statistics import NumberTracker
+from whylabs.logging.core.SummaryConverters import fromNumberTracker
+from whylabs.logging.core.data import ColumnSummary
 
 
 class ColumnProfile:
