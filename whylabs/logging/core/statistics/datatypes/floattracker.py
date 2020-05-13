@@ -6,30 +6,30 @@ import math
 from whylabs.logging.core.data import DoublesMessage
 
 
-class DoubleTracker:
+class FloatTracker:
     def __init__(self):
         self.min = math.inf
         self.max = -math.inf
         self.sum = 0.0
         self.count = 0
 
-    def addLongs(self, longs):
+    def add_integers(self, tracker):
         """
-        Copy data from a LongTracker into this object, overwriting the current
+        Copy data from a IntTracker into this object, overwriting the current
         values.
 
         Parameters
         ----------
-        longs : LongTracker
+        tracker : IntTracker
         """
-        if longs is not None and longs.count != 0:
-            # Copy data over from the longs, casting as floats
-            self.min = float(longs.min)
-            self.max = float(longs.max)
-            self.sum = float(longs.sum)
-            self.count = longs.count
+        if tracker is not None and tracker.count != 0:
+            # Copy data over from the ints, casting as floats
+            self.min = float(tracker.min)
+            self.max = float(tracker.max)
+            self.sum = float(tracker.sum)
+            self.count = tracker.count
 
-    def getMean(self):
+    def mean(self):
         return self.sum/self.count
 
     def update(self, value):
@@ -42,7 +42,7 @@ class DoubleTracker:
         self.count += 1
         self.sum += value
 
-    def toProtobuf(self):
+    def to_protobuf(self):
         return DoublesMessage(
             count=self.count,
             max=self.max,
@@ -51,8 +51,8 @@ class DoubleTracker:
         )
 
     @staticmethod
-    def fromProtobuf(message):
-        x = DoubleTracker()
+    def from_protobuf(message):
+        x = FloatTracker()
         x.count = message.count
         x.max = message.max
         x.min = message.min

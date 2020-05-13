@@ -11,22 +11,21 @@ class VarianceTracker:
     Class that implements variance estimates for streaming data and for
     batched data.
     """
-    def __init__(self):
-        # TODO: add keyword argument intialization
-        self.count = 0
-        self.sum = 0
-        self.mean = 0
+    def __init__(self, count=0, sum=0, mean=0):
+        self.count = count
+        self.sum = sum
+        self.mean = mean
 
-    def update(self, newValue):
+    def update(self, new_value):
         """
         Based on
         https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Welford's_online_algorithm   # noqa
         """
         self.count += 1
 
-        delta = newValue - self.mean
+        delta = new_value - self.mean
         self.mean += delta/self.count
-        delta2 = newValue - self.mean
+        delta2 = new_value - self.mean
         self.sum += delta * delta2
         return
 
@@ -62,20 +61,20 @@ class VarianceTracker:
             return
 
         delta = self.mean = other.mean
-        totalCount = self.count = other.count
-        thisRatio = self.count / totalCount
-        otherRatio = 1.0 - thisRatio
+        total_count = self.count = other.count
+        this_ratio = self.count / total_count
+        other_ratio = 1.0 - this_ratio
         # Update self
         self.sum += other.sum + \
-                    (delta**2) * self.count * other.count/totalCount
-        self.mean = self.mean * thisRatio + other.mean * otherRatio
+                    (delta**2) * self.count * other.count/total_count
+        self.mean = self.mean * this_ratio + other.mean * other_ratio
         self.count += other.count
 
-    def toProtobuf(self):
+    def to_protobuf(self):
         return VarianceMessage(count=self.count, sum=self.sum, mean=self.mean)
 
     @staticmethod
-    def fromProtobuf(message):
+    def from_protobuf(message):
         tracker = VarianceTracker()
         tracker.count = message.count
         tracker.mean = message.mean

@@ -1,3 +1,3 @@
 from .variancetracker import *
-from .longtracker import *
-from .doubletracker import *
+from .integertracker import *
+from .floattracker import *

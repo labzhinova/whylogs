@@ -6,7 +6,7 @@ import math
 from whylabs.logging.core.data import LongsMessage
 
 
-class LongTracker:
+class IntTracker:
     def __init__(self):
         self.reset()
 
@@ -19,9 +19,9 @@ class LongTracker:
         self.sum = 0
         self.count = 0
 
-    def getMean(self):
+    def mean(self):
         try:
-            return self.sum/self.count
+            return self.sum/float(self.count)
         except ZeroDivisionError:
             return None
 
@@ -33,7 +33,7 @@ class LongTracker:
         self.count += 1
         self.sum += value
 
-    def toProtobuf(self):
+    def to_protobuf(self):
         return LongsMessage(
             count=self.count,
             max=self.max,
@@ -42,8 +42,8 @@ class LongTracker:
         )
 
     @staticmethod
-    def fromProtobuf(message):
-        x = LongTracker()
+    def from_protobuf(message):
+        x = IntTracker()
         x.count = message.count
         x.max = message.max
         x.min = message.min
