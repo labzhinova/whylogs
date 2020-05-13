@@ -2,17 +2,13 @@
 """
 created 5/7/20 by ibackus 
 """
+from logging.core.data import ColumnsChunkSegment
 from whylabs.logging.core import ColumnProfile
-from whylabs.logging.core.iterator import ColumnsChunkSegmentIterator
 from whylabs.logging.core.data import DatasetSummary, DatasetMetadataSegment, \
     MessageSegment, DatasetProfileMessage
 from uuid import uuid4
 
-
-class _Pair:
-    def __init__(self, column: ColumnProfile):
-        self.name = column.columnName
-        self.statistics = column.toColumnSummary()
+COLUMN_CHUNK_MAX_LEN_IN_BYTES = int(1e6) - 10
 
 
 class DatasetProfile:
@@ -24,10 +20,6 @@ class DatasetProfile:
     timestamp : datetime.datetime
         Timestamp
     """
-    # Note: we define the `Pair` here as a "nested" class to mimic the Java
-    # implementation
-    Pair = _Pair
-
     def __init__(self, name, timestamp, columns=None):
         self.name = name
         self.timestamp = timestamp
@@ -53,21 +45,21 @@ class DatasetProfile:
             Value to track.  Specify if `columns` is a string.
         """
         if data is not None:
-            self._trackSingleColumn(columns, data)
+            self._track_single_column(columns, data)
         else:
-            for columnName, data in columns.items():
-                self._trackSingleColumn(columnName, data)
+            for column_name, data in columns.items():
+                self._track_single_column(column_name, data)
 
-    def _trackSingleColumn(self, columnName, data):
+    def _track_single_column(self, column_name, data):
         try:
-            prof = self.columns[columnName]
+            prof = self.columns[column_name]
         except KeyError:
-            prof = ColumnProfile(columnName)
-            self.columns[columnName] = prof
+            prof = ColumnProfile(column_name)
+            self.columns[column_name] = prof
         prof.track(data)
 
-    def toSummary(self):
-        column_summaries = {name: colprof.toSummary()
+    def to_summary(self):
+        column_summaries = {name: colprof.to_summary()
                             for name, colprof in self.columns.items()}
         return DatasetSummary(
             name=self.name,
@@ -77,14 +69,14 @@ class DatasetProfile:
 
     def _column_message_iterator(self):
         for col in self.columns.items():
-            yield col.toProtobuf()
+            yield col.to_protobuf()
 
-    def toChunkIterator(self):
+    def chunk_iterator(self):
         # Generate unique identifier
         marker = self.name + str(uuid4())
 
         # Generate metadata
-        metadataSegment = MessageSegment(
+        yield MessageSegment(
             metadata=DatasetMetadataSegment(
                 name=self.name,
                 timestamp=self.timestamp_ms,
@@ -92,26 +84,49 @@ class DatasetProfile:
             )
         )
 
-        yield metadataSegment
-
-        chunkedColumns = self._column_message_iterator()
-        for msg in ColumnsChunkSegmentIterator(chunkedColumns, marker):
+        chunked_columns = self._column_message_iterator()
+        for msg in columns_chunk_iterator(chunked_columns, marker):
             yield MessageSegment(columns=msg)
 
-    def toProtobuf(self):
+    def to_protobuf(self):
         return DatasetProfileMessage(
             name=self.name,
             timestamp=self.timestamp_ms,
-            columns={k: v.toProtobuf() for k, v in self.columns.items()},
+            columns={k: v.to_protobuf() for k, v in self.columns.items()},
         )
 
     @staticmethod
-    def fromProtobuf(message):
+    def from_protobuf(message):
         # TODO: convert message timestamp from ms to datetime object
         dt = message.timestamp
         return DatasetProfile(
             message.name,
             dt,
-            columns={k: ColumnProfile.fromProtbuf(v)
+            columns={k: ColumnProfile.from_protobuf(v)
                      for k, v in message.columns.items()},
         )
+
+
+def columns_chunk_iterator(iterator, marker):
+    # Initialize
+    max_len = COLUMN_CHUNK_MAX_LEN_IN_BYTES
+    content_len = 0
+    message = ColumnsChunkSegment(marker=marker)
+
+    # Loop over columns
+    for col_message in iterator:
+        message_len = col_message.ByteSize()
+        candidate_content_size = content_len + message_len
+        if candidate_content_size <= max_len:
+            # Keep appending columns
+            message.columns.append(col_message)
+            content_len = candidate_content_size
+        else:
+            yield message
+            message = ColumnsChunkSegment(marker=marker)
+            message.columns.append(col_message)
+            content_len = message_len
+
+    # Take care of any remaining messages
+    if len(message.columns) > 0:
+        yield message

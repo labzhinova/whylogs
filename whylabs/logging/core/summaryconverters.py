@@ -7,7 +7,7 @@ from whylabs.logging.core.data import NumberSummary, UniqueCountSummary
 from datasketches import update_theta_sketch
 
 
-def fromSketch(sketch: update_theta_sketch, num_std_devs=1):
+def from_sketch(sketch: update_theta_sketch, num_std_devs=1):
     return UniqueCountSummary(
         estimate=sketch.get_estimate(),
         upper=sketch.get_upper_bound(num_std_devs),
@@ -15,37 +15,37 @@ def fromSketch(sketch: update_theta_sketch, num_std_devs=1):
     )
 
 
-def fromNumberTracker(numberTracker: NumberTracker):
+def from_number_tracker(number_tracker: NumberTracker):
     """
     Construct a `NumberSummary` message from a `NumberTracker`
     """
-    if numberTracker is None:
+    if number_tracker is None:
         return
 
-    if numberTracker.variance.count == 0:
+    if number_tracker.variance.count == 0:
         return
 
-    stddev = numberTracker.variance.stddev()
-    doubles = numberTracker.doubles.toProtobuf()
+    stddev = number_tracker.variance.stddev()
+    doubles = number_tracker.floats.to_protobuf()
     if doubles.count > 0:
-        mean = doubles.getMean()
+        mean = doubles.mean()
         min = doubles.min
         max = doubles.max
     else:
-        mean = numberTracker.longs.getMean()
-        min = float(numberTracker.longs.min)
-        max = float(numberTracker.longs.max)
+        mean = number_tracker.ints.mean()
+        min = float(number_tracker.ints.min)
+        max = float(number_tracker.ints.max)
 
     # TODO: implement histogram
     # TODO: implement unique count from theta sketch
-    uniqueCount = fromSketch(numberTracker.thetaSketch)
+    unique_count = from_sketch(number_tracker.theta_sketch)
 
     return NumberSummary(
-        count=numberTracker.variance.count,
+        count=number_tracker.variance.count,
         stddev=stddev,
         min=min,
         max=max,
         mean=mean,
         # histogram=histogram,
-        unique_count=uniqueCount,
+        unique_count=unique_count,
     )
