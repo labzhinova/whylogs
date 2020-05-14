@@ -7,6 +7,15 @@ plugins {
 group = "com.whylabs"
 version = "0.1-alpha"
 
+if (rootProject.hasProperty("isGitLabCi")) {
+    println("Running in GitLab. Skip setting hooks")
+} else {
+    println("Running outside of GitLab CI. Config Git hooks")
+    project.exec {
+        commandLine = "git config core.hooksPath hooks".split(" ")
+    }
+}
+
 allprojects {
     apply(plugin = "java")
     repositories {
@@ -18,7 +27,6 @@ allprojects {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
 }
-
 
 subprojects {
     version = "1.0"
