@@ -28,7 +28,7 @@ def from_number_tracker(number_tracker: NumberTracker):
     stddev = number_tracker.variance.stddev()
     doubles = number_tracker.floats.to_protobuf()
     if doubles.count > 0:
-        mean = doubles.mean()
+        mean = number_tracker.floats.mean()
         min = doubles.min
         max = doubles.max
     else:
