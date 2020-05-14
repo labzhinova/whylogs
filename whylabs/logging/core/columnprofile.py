@@ -70,5 +70,5 @@ class ColumnProfile:
             message.name,
             # counters=<class>.from_protobuf(),
             # schemaTracker=<class>.from_protobuf(),
-            numberTracker=NumberTracker.from_protobuf(message.numbers),
+            number_tracker=NumberTracker.from_protobuf(message.numbers),
         )

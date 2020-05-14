@@ -8,3 +8,4 @@ protobuf
 2to3
 pyyaml
 argh
+pytest

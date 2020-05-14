@@ -2,7 +2,7 @@
 """
 created 5/7/20 by ibackus 
 """
-from logging.core.data import ColumnsChunkSegment
+from whylabs.logging.core.data import ColumnsChunkSegment
 from whylabs.logging.core import ColumnProfile
 from whylabs.logging.core.data import DatasetSummary, DatasetMetadataSegment, \
     MessageSegment, DatasetProfileMessage
