@@ -128,6 +128,7 @@ public class ColumnProfile {
         .setCounters(CountersTracker.fromProtobuf(message.getCounters()))
         .setSchemaTracker(SchemaTracker.fromProtobuf(message.getSchema()))
         .setNumberTracker(NumberTracker.fromProtobuf(message.getNumbers()))
+        .setStringTracker(StringTracker.fromProtobuf(message.getStrings()))
         .build();
   }
 }

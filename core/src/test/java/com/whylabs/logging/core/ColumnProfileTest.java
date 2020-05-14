@@ -51,4 +51,17 @@ public class ColumnProfileTest {
     val other = new ColumnProfile("bar");
     col.merge(other);
   }
+
+  @Test
+  public void protobuf_RoundTripSerialization_Success() {
+    val original = new ColumnProfile("test");
+    original.track(1L);
+    original.track(1.0);
+
+    val msg = original.toProtobuf().build();
+    val roundTrip = ColumnProfile.fromProtobuf(msg);
+
+    assertThat(roundTrip.getColumnName(), is("test"));
+    assertThat(roundTrip.getCounters().getCount(), is(2L));
+  }
 }
