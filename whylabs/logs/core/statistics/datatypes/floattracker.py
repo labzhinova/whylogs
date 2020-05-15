@@ -3,7 +3,7 @@
 created 5/7/20 by ibackus 
 """
 import math
-from whylabs.logging.core.data import DoublesMessage
+from whylabs.logs.core.data import DoublesMessage
 
 
 class FloatTracker:

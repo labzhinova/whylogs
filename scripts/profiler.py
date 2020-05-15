@@ -103,8 +103,8 @@ def run(input_path, datetime=None, delivery_stream=None, fmt=None,
         Overwrite existing output files
     """
     datetime_col = datetime  # don't shadow the standard module name
-    from whylabs.logging.core import DatasetProfile
-    from whylabs.logging.core.data import DatasetSummaries
+    from whylabs.logs.core import DatasetProfile
+    from whylabs.logs.core.data import DatasetSummaries
     from google.protobuf.json_format import MessageToJson
     from datetime import datetime
     import os
