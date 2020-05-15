@@ -3,9 +3,12 @@
 created 5/5/20 by ibackus 
 """
 import datasketches
-from whylabs.logging.core.statistics.datatypes import VarianceTracker, \
+
+from whylabs.logs.core.data import NumberSummary
+from whylabs.logs.core.summaryconverters import from_sketch
+from whylabs.logs.core.statistics.datatypes import VarianceTracker, \
     IntTracker, FloatTracker
-from whylabs.logging.core.data import NumbersMessage
+from whylabs.logs.core.data import NumbersMessage
 
 
 class NumberTracker:
@@ -80,3 +83,38 @@ class NumberTracker:
             tracker.ints = IntTracker.from_protobuf(message.longs)
         return tracker
 
+
+def from_number_tracker(number_tracker: NumberTracker):
+    """
+    Construct a `NumberSummary` message from a `NumberTracker`
+    """
+    if number_tracker is None:
+        return
+
+    if number_tracker.variance.count == 0:
+        return
+
+    stddev = number_tracker.variance.stddev()
+    doubles = number_tracker.floats.to_protobuf()
+    if doubles.count > 0:
+        mean = number_tracker.floats.mean()
+        min = doubles.min
+        max = doubles.max
+    else:
+        mean = number_tracker.ints.mean()
+        min = float(number_tracker.ints.min)
+        max = float(number_tracker.ints.max)
+
+    # TODO: implement histogram
+    # TODO: implement unique count from theta sketch
+    unique_count = from_sketch(number_tracker.theta_sketch)
+
+    return NumberSummary(
+        count=number_tracker.variance.count,
+        stddev=stddev,
+        min=min,
+        max=max,
+        mean=mean,
+        # histogram=histogram,
+        unique_count=unique_count,
+    )

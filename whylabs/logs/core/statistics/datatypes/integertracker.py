@@ -3,7 +3,7 @@
 created 5/7/20 by ibackus 
 """
 import math
-from whylabs.logging.core.data import LongsMessage
+from whylabs.logs.core.data import LongsMessage
 
 
 class IntTracker:

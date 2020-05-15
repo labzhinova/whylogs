@@ -2,9 +2,9 @@
 """
 created 5/7/20 by ibackus 
 """
-from whylabs.logging.core.data import ColumnsChunkSegment
-from whylabs.logging.core import ColumnProfile
-from whylabs.logging.core.data import DatasetSummary, DatasetMetadataSegment, \
+from whylabs.logs.core.data import ColumnsChunkSegment
+from whylabs.logs.core import ColumnProfile
+from whylabs.logs.core.data import DatasetSummary, DatasetMetadataSegment, \
     MessageSegment, DatasetProfileMessage
 from uuid import uuid4
 

@@ -1,5 +1,5 @@
 #1/bin/bash
-DIRECTORY="whylabs/logging/core/data/"
+DIRECTORY="whylabs/logs/core/data/"
 echo "Compiling protobuf files in directory: $DIRECTORY"
 protoc -I $DIRECTORY --python_out=$DIRECTORY $DIRECTORY/*.proto
 echo "Fixing relative import problems in generated python files"
