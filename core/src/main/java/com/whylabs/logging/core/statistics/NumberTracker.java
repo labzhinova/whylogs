@@ -100,7 +100,7 @@ public class NumberTracker {
     val hMem = Memory.wrap(message.getHistogram().toByteArray());
     val builder =
         NumberTracker.builder()
-            .setThetaSketch(UpdateSketch.wrap(tMem))
+            .setThetaSketch(UpdateSketch.heapify(tMem))
             .setHistogram(UpdateDoublesSketch.heapify(hMem))
             .setVariance(VarianceTracker.fromProtobuf(message.getVariance()));
 
