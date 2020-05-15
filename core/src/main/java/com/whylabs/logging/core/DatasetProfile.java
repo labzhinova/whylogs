@@ -1,6 +1,8 @@
 package com.whylabs.logging.core;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterators;
+import com.google.common.collect.Sets;
 import com.whylabs.logging.core.data.ColumnSummary;
 import com.whylabs.logging.core.data.DatasetSummary;
 import com.whylabs.logging.core.format.ColumnMessage;
@@ -13,10 +15,12 @@ import com.whylabs.logging.core.iterator.ColumnsChunkSegmentIterator;
 import java.time.Instant;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Value;
 import lombok.val;
 
@@ -82,6 +86,32 @@ public class DatasetProfile {
             msg -> MessageSegment.newBuilder().setColumns(msg).build());
 
     return Iterators.concat(Iterators.singletonIterator(metadataSegment), columnSegmentMessages);
+  }
+
+  public DatasetProfile merge(@NonNull DatasetProfile other) {
+    Preconditions.checkArgument(
+        Objects.equals(this.name, other.name),
+        "Mismatched name. Current name [%s] is merged with [%s]",
+        this.name,
+        other.name);
+    Preconditions.checkArgument(
+        Objects.equals(this.timestamp, other.timestamp),
+        "Mismatched timestamp. Current ts [%s] is merged with [%s]",
+        this.timestamp,
+        other.timestamp);
+    val unionColumns = Sets.union(this.columns.keySet(), other.columns.keySet());
+
+    val result = new DatasetProfile(this.name, this.timestamp);
+
+    for (String column : unionColumns) {
+      val emptyColumn = new ColumnProfile(column);
+      val thisColumn = this.columns.getOrDefault(column, emptyColumn);
+      val otherColumn = other.columns.getOrDefault(column, emptyColumn);
+
+      result.columns.put(column, thisColumn.merge(otherColumn));
+    }
+
+    return result;
   }
 
   public DatasetProfileMessage.Builder toProtobuf() {

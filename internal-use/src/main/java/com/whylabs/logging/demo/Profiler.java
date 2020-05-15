@@ -137,9 +137,12 @@ public class Profiler implements Runnable {
       printErrorAndExit("Separator must be 1 character only (excluding escape characters)");
     }
 
+    val now = Instant.now();
     if (datetime != null) {
       LOG.info("Using date time format: [{}] on column: [{}]", datetime.format, datetime.column);
       this.dateTimeParser = new EasyDateTimeParser(datetime.format);
+    } else {
+      LOG.info("Using batch mode. Will use current time for DatasetProfile: {}", now.toString());
     }
 
     if (firehose != null) {
@@ -181,7 +184,11 @@ public class Profiler implements Runnable {
       // Run the tracking
       while (records.hasNext()) {
         val record = records.next();
-        this.normalTracking(boundedExecutor, headers, record);
+        if (datetime != null) {
+          this.parseToDateTime(boundedExecutor, headers, record);
+        } else {
+          this.parseBatch(now, boundedExecutor, headers, record);
+        }
       }
 
       LOG.info("Submitted all the data. Wait for the threads to complete");
@@ -273,13 +280,26 @@ public class Profiler implements Runnable {
   }
 
   /** Switch to #stressTest if we want to battle test the memory usage further */
-  private void normalTracking(
+  private void parseToDateTime(
       final BoundedExecutor boundedExecutor,
       final Map<String, Integer> headers,
       final CSVRecord record) {
     String issueDate = record.get(this.datetime.column);
     val time = this.dateTimeParser.parse(issueDate);
     val ds = profiles.computeIfAbsent(time, t -> new DatasetProfile(input.getName(), t));
+    for (String header : headers.keySet()) {
+      val idx = headers.get(header);
+      val value = record.get(idx);
+      boundedExecutor.submitTask(() -> ds.track(header, value));
+    }
+  }
+
+  private void parseBatch(
+      final Instant time,
+      final BoundedExecutor boundedExecutor,
+      final Map<String, Integer> headers,
+      final CSVRecord record) {
+    val ds = profiles.getOrDefault(time, new DatasetProfile(input.getName(), time));
     for (String header : headers.keySet()) {
       val idx = headers.get(header);
       val value = record.get(idx);
