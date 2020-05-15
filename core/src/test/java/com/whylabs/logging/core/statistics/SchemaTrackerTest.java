@@ -1,7 +1,9 @@
 package com.whylabs.logging.core.statistics;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 import com.whylabs.logging.core.data.InferredType.Type;
 import lombok.val;
@@ -141,6 +143,12 @@ public class SchemaTrackerTest {
     assertThat(merged.getCount(Type.FRACTIONAL), is(30L));
     assertThat(merged.getCount(Type.BOOLEAN), is(30L));
     assertThat(merged.getCount(Type.UNKNOWN), is(30L));
+
+    // should never contain this type. We can't serialize if this is the case
+    assertThat(merged.getTypeCounts(), not(hasKey(Type.UNRECOGNIZED)));
+
+    // verify troundtrip serialization
+    SchemaTracker.fromProtobuf(merged.toProtobuf().build());
   }
 
   private static void trackAFewTimes(SchemaTracker original, Type type, int nTimes) {
