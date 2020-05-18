@@ -1,6 +1,6 @@
-#!/usr/bin/env python3
 """
-created 5/5/20 by ibackus 
+TODO:
+    * Implement histograms
 """
 import datasketches
 
@@ -13,9 +13,32 @@ from whylabs.logs.core.data import NumbersMessage
 
 class NumberTracker:
     """
+    Class to track statistics for numeric data.
 
+    Parameters
+    ----------
+    variance
+        Tracker to follow the variance
+    floats
+        Float tracker for tracking all floats
+    ints
+        Integer tracker
+
+    Attributes
+    ----------
+    variance
+        See above
+    floats
+        See above
+    ints
+        See above
+    theta_sketch : `datasketches.update_theta_sketch`
+        Sketch which tracks approximate cardinality
     """
-    def __init__(self, variance=None, floats=None, ints=None):
+    def __init__(self,
+                 variance: VarianceTracker=None,
+                 floats: FloatTracker=None,
+                 ints: IntTracker=None):
         # Our own trackers
         if variance is None:
             variance = VarianceTracker()
@@ -34,7 +57,12 @@ class NumberTracker:
 
     def track(self, number):
         """
+        Add a number to statistics tracking
 
+        Parameters
+        ----------
+        number : int, float
+            A numeric value
         """
         self.variance.update(number)
         self.theta_sketch.update(number)
@@ -49,11 +77,12 @@ class NumberTracker:
             self.ints.update(number)
         else:
             self.floats.add_integers(self.ints)
-            self.ints.reset()
+            self.ints.set_defaults()
             self.floats.update(f_value)
 
     def to_protobuf(self):
         """
+        Return the object serialized as a protobuf message
         """
         opts = dict(
             variance=self.variance.to_protobuf(),
@@ -68,8 +97,13 @@ class NumberTracker:
         return msg
 
     @staticmethod
-    def from_protobuf(message):
+    def from_protobuf(message: NumbersMessage):
         """
+        Load from a protobuf message
+
+        Returns
+        -------
+        number_tracker : NumberTracker
         """
         theta_sketch = datasketches.update_theta_sketch.deserialize(
             message.theta)
@@ -87,6 +121,16 @@ class NumberTracker:
 def from_number_tracker(number_tracker: NumberTracker):
     """
     Construct a `NumberSummary` message from a `NumberTracker`
+
+    Parameters
+    ----------
+    number_tracker
+        Number tracker to serialize
+
+    Returns
+    -------
+    summary : NumberSummary
+        Summary of the tracker statistics
     """
     if number_tracker is None:
         return

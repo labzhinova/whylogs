@@ -1,17 +1,36 @@
-#!/usr/bin/env python3
-"""
-created 5/7/20 by ibackus 
-"""
 import math
 from whylabs.logs.core.data import DoublesMessage
 
 
 class FloatTracker:
-    def __init__(self):
-        self.min = math.inf
-        self.max = -math.inf
-        self.sum = 0.0
-        self.count = 0
+    """
+    Track statistics for floating point numbers
+
+    Parameters
+    ---------
+    min
+        Current min value
+    max
+        Current max value
+    sum
+        Sum of the numbers
+    count
+        Total count of numbers
+    """
+    def __init__(self, min: float=None, max: float=None,
+                 sum: float=None, count: int=None):
+        if min is None:
+            min = math.inf
+        if max is None:
+            max = -math.inf
+        if sum is None:
+            sum = 0.0
+        if count is None:
+            count = 0
+        self.min = min
+        self.max = max
+        self.sum = sum
+        self.count = count
 
     def add_integers(self, tracker):
         """
@@ -30,9 +49,18 @@ class FloatTracker:
             self.count = tracker.count
 
     def mean(self):
-        return self.sum/self.count
+        """
+        Calculate the current mean
+        """
+        try:
+            return self.sum/self.count
+        except ZeroDivisionError:
+            return math.nan
 
-    def update(self, value):
+    def update(self, value: float):
+        """
+        Add a number to the tracking statistics
+        """
         # Python: force the value to be a float
         value = float(value)
         if value > self.max:
@@ -43,6 +71,13 @@ class FloatTracker:
         self.sum += value
 
     def to_protobuf(self):
+        """
+        Return the object serialized as a protobuf message
+
+        Returns
+        -------
+        message : DoublesMessage
+        """
         return DoublesMessage(
             count=self.count,
             max=self.max,
@@ -52,9 +87,16 @@ class FloatTracker:
 
     @staticmethod
     def from_protobuf(message):
-        x = FloatTracker()
-        x.count = message.count
-        x.max = message.max
-        x.min = message.min
-        x.sum = message.sum
-        return x
+        """
+        Load from a protobuf message
+
+        Returns
+        -------
+        number_tracker : FloatTracker
+        """
+        return FloatTracker(
+            min=message.min,
+            max=message.max,
+            sum=message.sum,
+            count=message.count
+        )

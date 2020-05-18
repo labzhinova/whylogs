@@ -1,5 +1,3 @@
-"""
-"""
 import os
 import sys
 _MY_DIR = os.path.realpath(os.path.dirname(__file__))

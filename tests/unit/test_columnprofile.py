@@ -1,5 +1,3 @@
-"""
-"""
 from whylabs.logs.core import ColumnProfile
 
 

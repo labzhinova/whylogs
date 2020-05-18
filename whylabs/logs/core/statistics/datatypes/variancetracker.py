@@ -1,7 +1,3 @@
-#!/usr/bin/env python3
-"""
-created 5/5/20 by ibackus 
-"""
 import math
 from whylabs.logs.core.data import VarianceMessage
 
@@ -10,16 +6,31 @@ class VarianceTracker:
     """
     Class that implements variance estimates for streaming data and for
     batched data.
+
+    Parameters
+    ----------
+    count
+        Number tracked elements
+    sum
+        Sum of all numbers
+    mean
+        Current estimate of the mean
     """
-    def __init__(self, count=0, sum=0, mean=0):
+    def __init__(self, count=0, sum=0.0, mean=0.0):
         self.count = count
         self.sum = sum
         self.mean = mean
 
     def update(self, new_value):
         """
+        Add a number to tracking estimates
+
         Based on
         https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Welford's_online_algorithm   # noqa
+
+        Parameters
+        ----------
+        new_value : int, float
         """
         self.count += 1
 
@@ -44,7 +55,7 @@ class VarianceTracker:
         except ZeroDivisionError:
             return math.nan
 
-    def merge(self, other):
+    def merge(self, other: 'VarianceTracker'):
         """
         Merge statistics from another VarianceTracker into this one
 
@@ -71,10 +82,24 @@ class VarianceTracker:
         self.count += other.count
 
     def to_protobuf(self):
+        """
+        Return the object serialized as a protobuf message
+
+        Returns
+        -------
+        message : VarianceMessage
+        """
         return VarianceMessage(count=self.count, sum=self.sum, mean=self.mean)
 
     @staticmethod
     def from_protobuf(message):
+        """
+        Load from a protobuf message
+
+        Returns
+        -------
+        variance_tracker : VarianceTracker
+        """
         tracker = VarianceTracker()
         tracker.count = message.count
         tracker.mean = message.mean
