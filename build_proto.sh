@@ -1,4 +1,4 @@
-#1/bin/bash
+#!/bin/bash
 DIRECTORY="whylabs/logs/core/data/"
 echo "Compiling protobuf files in directory: $DIRECTORY"
 protoc -I $DIRECTORY --python_out=$DIRECTORY $DIRECTORY/*.proto
