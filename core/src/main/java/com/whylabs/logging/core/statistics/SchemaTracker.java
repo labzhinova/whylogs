@@ -127,7 +127,9 @@ public class SchemaTracker {
 
     final Type[] allTypes = Type.values();
     for (val type : allTypes) {
-      thisCopy.typeCounts.merge(type, other.getCount(type), Long::sum);
+      if (this.typeCounts.containsKey(type) || other.typeCounts.containsKey(type)) {
+        thisCopy.typeCounts.merge(type, other.getCount(type), Long::sum);
+      }
     }
 
     return thisCopy;

@@ -85,6 +85,10 @@ public class NumberTrackerTest {
     assertThat(merged.getHistogram().getN(), is(6L));
     assertThat(merged.getHistogram().getMaxValue(), is(13.0));
     assertThat(merged.getHistogram().getMinValue(), is(10.0));
+
+    // test serialization with merged object
+    val mergedMsg = merged.toProtobuf().build();
+    NumberTracker.fromProtobuf(mergedMsg);
   }
 
   @Test

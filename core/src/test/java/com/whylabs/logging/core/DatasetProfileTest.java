@@ -8,6 +8,7 @@ import static org.hamcrest.Matchers.is;
 
 import java.time.Instant;
 import lombok.val;
+import org.apache.commons.lang3.SerializationUtils;
 import org.testng.annotations.Test;
 
 public class DatasetProfileTest {
@@ -77,5 +78,19 @@ public class DatasetProfileTest {
     assertThat(roundTrip.columns, aMapWithSize(2));
     assertThat(roundTrip.columns.get("col1").getCounters().getCount(), is(1L));
     assertThat(roundTrip.columns.get("col2").getCounters().getCount(), is(1L));
+  }
+
+  @Test
+  public void javaSerialization_RoundTrip_Success() {
+    val time = Instant.now();
+    val original = new DatasetProfile("test", time);
+    original.track("col1", "value");
+    original.track("col1", 1);
+    original.track("col2", "value");
+
+    val clone = SerializationUtils.clone(original);
+    assertThat(clone.getName(), is("test"));
+    assertThat(clone.getTimestamp(), is(time));
+    assertThat(clone.columns, aMapWithSize(2));
   }
 }

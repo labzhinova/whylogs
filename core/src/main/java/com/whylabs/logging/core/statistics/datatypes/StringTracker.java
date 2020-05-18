@@ -72,7 +72,7 @@ public final class StringTracker {
     val iMem = Memory.wrap(message.getItems().toByteArray());
     val items = ItemsSketch.getInstance(iMem, ARRAY_OF_STRINGS_SER_DE);
     val tMem = WritableMemory.wrap(message.getTheta().toByteArray());
-    val theta = UpdateSketch.wrap(tMem);
+    val theta = UpdateSketch.heapify(tMem);
 
     return StringTracker.builder()
         .count(message.getCount())
