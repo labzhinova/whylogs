@@ -7,4 +7,3 @@ Make sure `whylogs-python` is installed to your python environment.
 Some commands:
 * Display help: ```./profiler.py -h```
 * Run on the first 5 lines of a file: ```./profiler.py -l 5 data/lending-club-accepted-10.csv```
-

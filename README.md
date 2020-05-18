@@ -2,14 +2,22 @@
 
 Python port of the [WhyLogs Java library](https://gitlab.com/whylabs/whylogs-java)
 
-## Setup
-#### Install requirements to current python environment 
-```./requirements.sh```
- 
-#### Build protobuf files  
-Run `build_proto.sh` from a terminal to generate the python protobuf interface files.
-This only needs to be done when the `.proto` files are changed.
+## Installation
+Currently, `python 3.7` is recommended.
 
+1. Clone the repo and cd into the directory
+2. Install with pip.
+   - For a dev installation with development requirements, it's recommended to create a fresh conda environment or virtualenv
+     ```
+     # Development installation
+     pip install -v -e .[dev]
+     ```
+   - Standard installation:
+     ```
+     # Standard installation
+     pip install .
+     ```
+ 
 
 ## Tests
 Testing is handled with the `pytest` framework.
