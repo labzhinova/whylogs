@@ -1,26 +1,30 @@
-#!/usr/bin/env python3
-"""
-created 5/7/20 by ibackus 
-"""
 from whylabs.logs.core.data import ColumnsChunkSegment
 from whylabs.logs.core import ColumnProfile
 from whylabs.logs.core.data import DatasetSummary, DatasetMetadataSegment, \
     MessageSegment, DatasetProfileMessage
 from uuid import uuid4
+import datetime
 
 COLUMN_CHUNK_MAX_LEN_IN_BYTES = int(1e6) - 10
 
 
 class DatasetProfile:
     """
+    Statistics tracking for a dataset.
+
+    A dataset refers to a collection of columns.
+
     Parameters
     ----------
     name : str
         Name of the dataset (e.g. timestamp string)
     timestamp : datetime.datetime
-        Timestamp
+        Timestamp of the dataset
+    columns : dict
+        Dictionary lookup of `ColumnProfile`s
     """
-    def __init__(self, name, timestamp, columns=None):
+    def __init__(self, name: str, timestamp: datetime.datetime,
+                 columns: dict=None):
         self.name = name
         self.timestamp = timestamp
         if columns is None:
@@ -29,11 +33,16 @@ class DatasetProfile:
 
     @property
     def timestamp_ms(self):
+        """
+        Return the timestamp value in epoch milliseconds
+        """
         # TODO: Implement proper timestamp conversion
         return 1588978362910  # Some made up timestamp in milliseconds
 
     def track(self, columns, data=None):
         """
+        Add value(s) to tracking statistics for column(s)
+
         Parameters
         ----------
         columns : str, dict
@@ -59,6 +68,14 @@ class DatasetProfile:
         prof.track(data)
 
     def to_summary(self):
+        """
+        Generate a summary of the statistics
+
+        Returns
+        -------
+        summary : DatasetSummary
+            Protobuf summary message.
+        """
         column_summaries = {name: colprof.to_summary()
                             for name, colprof in self.columns.items()}
         return DatasetSummary(
@@ -72,6 +89,9 @@ class DatasetProfile:
             yield col.to_protobuf()
 
     def chunk_iterator(self):
+        """
+        Generate an iterator to iterate over chunks of data
+        """
         # Generate unique identifier
         marker = self.name + str(uuid4())
 
@@ -89,6 +109,13 @@ class DatasetProfile:
             yield MessageSegment(columns=msg)
 
     def to_protobuf(self):
+        """
+        Return the object serialized as a protobuf message
+
+        Returns
+        -------
+        message : DatasetProfileMessage
+        """
         return DatasetProfileMessage(
             name=self.name,
             timestamp=self.timestamp_ms,
@@ -97,6 +124,13 @@ class DatasetProfile:
 
     @staticmethod
     def from_protobuf(message):
+        """
+        Load from a protobuf message
+
+        Returns
+        -------
+        dataset_profile : DatasetProfile
+        """
         # TODO: convert message timestamp from ms to datetime object
         dt = message.timestamp
         return DatasetProfile(
@@ -107,7 +141,17 @@ class DatasetProfile:
         )
 
 
-def columns_chunk_iterator(iterator, marker):
+def columns_chunk_iterator(iterator, marker: str):
+    """
+    Create an iterator to return column messages in batches
+
+    Parameters
+    ----------
+    iterator
+        An iterator which returns protobuf column messages
+    marker
+        Value used to mark a group of column messages
+    """
     # Initialize
     max_len = COLUMN_CHUNK_MAX_LEN_IN_BYTES
     content_len = 0

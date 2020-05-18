@@ -25,3 +25,9 @@ You can run all the tests by running `pytest -vvs tests/` from the parent direct
 
 ## Scripts
 See the `scripts/` directory for some example scripts for interacting with `whylogs-python`
+
+
+# Development/contribution
+## Doc string format
+We use the [numpydocs docstring standard](https://numpydoc.readthedocs.io/en/latest/format.html), which is human-readable and works with [sphinx](https://www.sphinx-doc.org/en/master/) api documentation generator.
+

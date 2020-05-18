@@ -15,18 +15,25 @@ _NUMERIC_TYPES = set([_TYPES.FRACTIONAL, _TYPES.INTEGRAL])
 
 class ColumnProfile:
     """
+    Statistics tracking for a column
+
     Parameters
     ----------
-    name : str
+    name : str (required)
         Name of the column profile
+    number_tracker : NumberTracker
+        Implements numeric data statisics tracking
+    string_tracker : StringTracker
+        Implements string data-type statistics tracking
+    schema_tracker : SchemaTracker
+        Implements tracking of schema-related information
+    counters : CountersTracker
+        Keep count of various things
 
     TODO:
-        * _NUMERIC_TYPES for number type checking
-        * SchemaTracker
         * Proper TypedDataConverter type checking
         * Multi-threading/parallelism
     """
-    _NUMERIC_TYPES = None  # TODO: Implement
 
     def __init__(self, name, number_tracker=None, string_tracker=None,
                  schema_tracker=None, counters=None):
@@ -47,6 +54,9 @@ class ColumnProfile:
         self.counters = counters
 
     def track(self, value):
+        """
+        Add `value` to tracking statistics.
+        """
         self.counters.increment_count()
         if value is None:
             self.counters.increment_null()
@@ -69,6 +79,14 @@ class ColumnProfile:
             self.number_tracker.track(typed_data)
 
     def to_summary(self):
+        """
+        Generate a summary of the statistics
+
+        Returns
+        -------
+        summary : ColumnSummary
+            Protobuf summary message.
+        """
         schema = None
         if self.schema_tracker is not None:
             schema = self.schema_tracker.to_summary()
@@ -91,6 +109,13 @@ class ColumnProfile:
         return ColumnSummary(**opts)
 
     def to_protobuf(self):
+        """
+        Return the object serialized as a protobuf message
+
+        Returns
+        -------
+        message : ColumnMessage
+        """
         return ColumnMessage(
             name=self.column_name,
             counters=self.counters.to_protobuf(),
@@ -101,6 +126,13 @@ class ColumnProfile:
 
     @staticmethod
     def from_protobuf(message):
+        """
+        Load from a protobuf message
+
+        Returns
+        -------
+        column_profile : ColumnProfile
+        """
         return ColumnProfile(
             message.name,
             counters=CountersTracker.from_protobuf(message.counters),

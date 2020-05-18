@@ -5,6 +5,15 @@ Type = InferredType.Type
 
 
 class SchemaTracker:
+    """
+    Track information about a column's schema and present datatypes
+
+    Paramters
+    ---------
+    type_counts : dict
+        If specified, a dictionary containing information about the counts of
+        all data types.
+    """
     UNKNOWN_TYPE = InferredType(type=Type.UNKNOWN)
     CANDIDATE_MIN_FRAC = 0.7
 
@@ -14,15 +23,29 @@ class SchemaTracker:
         self.type_counts = type_counts
 
     def track(self, item_type):
+        """
+        Track an item type
+        """
         try:
             self.type_counts[item_type] += 1
         except KeyError:
             self.type_counts[item_type] = 1
 
     def get_count(self, item_type):
+        """
+        Return the count of a given item type
+        """
         return self.type_counts.get(item_type, 0)
 
     def infer_type(self):
+        """
+        Generate a guess at what type the tracked values are.
+
+        Returns
+        -------
+        type_guess : object
+            The guess tome.  See `InferredType.Type` for candidates
+        """
         total_count = sum(self.type_counts.values())
         if total_count == 0:
             return SchemaTracker.UNKNOWN_TYPE
@@ -71,14 +94,36 @@ class SchemaTracker:
         return InferredType(type=item_type, ratio=ratio)
 
     def to_protobuf(self):
+        """
+        Return the object serialized as a protobuf message
+
+        Returns
+        -------
+        message : SchemaMessage
+        """
         return SchemaMessage(typeCounts=self.type_counts,
                              inferred_type=self.infer_type())
 
     @staticmethod
     def from_protobuf(message):
+        """
+        Load from a protobuf message
+
+        Returns
+        -------
+        schema_tracker : SchemaTracker
+        """
         return SchemaTracker(type_counts=message.typeCounts)
 
     def to_summary(self):
+        """
+        Generate a summary of the statistics
+
+        Returns
+        -------
+        summary : SchemaSummary
+            Protobuf summary message.
+        """
         type_counts = self.type_counts
         # Convert the integer keys to their corresponding string names
         type_counts_with_names = {Type.Name(k): v
