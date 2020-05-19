@@ -15,7 +15,7 @@ import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 
 object InstantDateTimeFormatter {
-  private val Formatter = DateTimeFormatter.BASIC_ISO_DATE.withZone(ZoneOffset.UTC)
+  private val Formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneOffset.UTC)
 
   def format(instant: Instant): String = {
     Formatter.format(instant)
