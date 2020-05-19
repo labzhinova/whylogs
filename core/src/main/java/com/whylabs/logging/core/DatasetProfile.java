@@ -40,15 +40,49 @@ public class DatasetProfile implements Serializable {
 
   @Getter String name;
   @Getter Instant timestamp;
-  Map<String, ColumnProfile> columns;
   // always sorted
-  List<String> tags;
+  @Getter List<String> tags;
+  Map<String, ColumnProfile> columns;
 
-  public DatasetProfile(String name, Instant timestamp, List<String> tags) {
+  /**
+   * DEVELOPER API. DO NOT USE DIRECTLY
+   *
+   * @param name dataset name
+   * @param timestamp the timestamp
+   * @param tags tags of the dataset
+   * @param columns the columns that we're copying over. Note that the source of columns should stop
+   *     using these column objects as they will back this DatasetProfile instead
+   */
+  public DatasetProfile(
+      @NonNull String name,
+      @NonNull Instant timestamp,
+      @NonNull List<String> tags,
+      @NonNull Map<String, ColumnProfile> columns) {
     this.name = name;
     this.timestamp = timestamp;
     this.columns = new ConcurrentHashMap<>();
-    this.tags = ImmutableList.sortedCopyOf(tags);
+    this.tags = ImmutableList.sortedCopyOf(Sets.newHashSet(tags));
+    this.columns = new ConcurrentHashMap<>(columns);
+  }
+
+  /**
+   * Create a new Dataset profile
+   *
+   * @param name the name of the dataset profile
+   * @param timestamp the timestamp. Normally this is associated with the runtime timestamp
+   * @param tags the tags to track the dataset with
+   */
+  public DatasetProfile(
+      @NonNull String name, @NonNull Instant timestamp, @NonNull List<String> tags) {
+    this(name, timestamp, tags, Collections.emptyMap());
+  }
+
+  public DatasetProfile(String name, Instant timestamp) {
+    this(name, timestamp, Collections.emptyList());
+  }
+
+  public Map<String, ColumnProfile> getColumns() {
+    return Collections.unmodifiableMap(columns);
   }
 
   private void validate() {
@@ -58,10 +92,6 @@ public class DatasetProfile implements Serializable {
     Preconditions.checkNotNull(tags);
     Preconditions.checkState(
         Ordering.natural().isOrdered(this.tags), "Tags should be sorted %s", this.tags);
-  }
-
-  public DatasetProfile(String name, Instant timestamp) {
-    this(name, timestamp, Collections.emptyList());
   }
 
   public void track(String columnName, Object data) {
