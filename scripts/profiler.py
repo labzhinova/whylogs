@@ -5,6 +5,7 @@ TODO:
     * Date parsing compatible with EasyDateTimeParser (Java)
 
 """
+from whylabs.logs.util import varint, protobuf
 CSV_READER_BATCH_SIZE = int(1e4)
 OUTPUT_DATE_FORMAT = "%Y/%m/%d"
 
@@ -15,27 +16,26 @@ def write_protobuf(vals: list, fname):
 
     `vals` must be iterable
     """
+    serialized = [x.to_protobuf() for x in vals]
     print("Writing to protobuf binary file: {}".format(fname))
-    with open(fname, 'wb') as fp:
-        for x in vals:
-
-            msg = x.to_summary()
-            n = msg.ByteSize()
-            fp.write(bytes(n))
-            print(f"Writing protobuf message of len: {n}")
-            fp.write(msg.SerializeToString())
+    protobuf.write_multi_msg(serialized, fname)
 
 
-def df_to_records(df):
+def df_to_records(df, dropna=True):
     """
     Convert a dataframe to a list of dictionaries, one per row, dropping null
     values
     """
     import pandas as pd
-    return [{k: v for k, v in m.items() if pd.notnull(v)}
-            for m in df.to_dict(orient='records')]
+    records = df.to_dict(orient='records')
+    if dropna:
+        records = [{k: v for k, v in m.items() if pd.notnull(v)}
+                for m in records]
+    return records
 
-def csv_reader(f, date_format: str=None, **kwargs):
+
+def csv_reader(f, date_format: str=None, dropna=False, infer_dtypes=False,
+               **kwargs):
     """
     Wrapper for `pandas.read_csv` to return an iterator to return dict
     records for a CSV file
@@ -48,6 +48,11 @@ def csv_reader(f, date_format: str=None, **kwargs):
         File to read from.  See `pandas.read_csv` documentation
     date_format : str
         If specified, string format for the date.  See `pd.datetime.strptime`
+    dropna : bool
+        Remove null values from returned records
+    infer_dtypes : bool
+        Automatically infer data types (standard pandas behavior).  Else,
+        return all items as strings (except specified date columns)
     **kwargs : passed to `pandas.read_csv`
     """
     import pandas as pd
@@ -57,24 +62,22 @@ def csv_reader(f, date_format: str=None, **kwargs):
         date_parser = lambda x: pd.datetime.strptime(x, date_format)
     opts = {
         'chunksize': CSV_READER_BATCH_SIZE,
-        'date_parser': date_parser
+        'date_parser': date_parser,
     }
+    if not infer_dtypes:
+        # HACKY way not parse any entries and return strings
+        opts['converters'] = {i: str for i in range(10000)}
     opts.update(kwargs)
 
     for batch in pd.read_csv(f, **opts):
-        records = df_to_records(batch)
+        records = df_to_records(batch, dropna=dropna)
         for record in records:
             yield record
 
 
-class Profiler:
-    def __init__(self, ):
-        ...
-
-
-def run(input_path, datetime=None, delivery_stream=None, fmt=None,
+def run(input_path, datetime: str=None, delivery_stream=None, fmt=None,
         limit=-1, output_path=None, region=None, separator=None,
-        overwrite=False):
+        overwrite=False, dropna=False, infer_dtypes=False):
     """
     Run the profiler on CSV data
 
@@ -98,9 +101,14 @@ def run(input_path, datetime=None, delivery_stream=None, fmt=None,
     region : str
         [IGNORED] AWS region name for Firehose
     separator : str
-        Record separator
+        Record separator.  Default = ','
     overwrite : bool
         Overwrite existing output files
+    dropna : bool
+        Drop null values when reading
+    infer_dtypes : bool
+        Infer input datatypes when reading.  If false, treat inputs as
+        un-converted strings.
     """
     datetime_col = datetime  # don't shadow the standard module name
     from whylabs.logs.core import DatasetProfile
@@ -110,6 +118,8 @@ def run(input_path, datetime=None, delivery_stream=None, fmt=None,
     import os
 
     # Parse arguments
+    if separator is None:
+        separator = ','
     name = os.path.basename(input_path)
     parse_dates = False
     if datetime_col is not None:
@@ -138,7 +148,8 @@ def run(input_path, datetime=None, delivery_stream=None, fmt=None,
 
     # Process records
     reader = csv_reader(input_path, fmt, parse_dates=parse_dates,
-                        nrows=nrows, sep=separator)
+                        nrows=nrows, sep=separator, dropna=dropna,
+                        infer_dtypes=infer_dtypes)
     profiles = {}
     for record in reader:
         dt = record.get(datetime_col, datetime.utcnow())
@@ -161,6 +172,7 @@ def run(input_path, datetime=None, delivery_stream=None, fmt=None,
         print("Writing JSON summaries to: {}".format(output_path))
         fp.write(MessageToJson(summaries))
 
+    # Write the protobuf binary file
     write_protobuf(profiles.values(), binary_output_path)
     return profiles
 

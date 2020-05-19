@@ -31,6 +31,7 @@ class TypedDataConverter:
         Extract the data type of a value.  See `typeddataconvert.TYPES` for
         available types.
         """
+        dtype = TYPES.UNKNOWN
         if typed_data is None:
             dtype = TYPES.NULL
         elif isinstance(typed_data, bool):
