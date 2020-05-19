@@ -2,32 +2,21 @@ package org.apache.spark.whylabs.logs
 
 
 import java.io.ByteArrayOutputStream
-import java.time.Instant
 
 import com.whylabs.logging.core.DatasetProfile
 import com.whylabs.logging.core.format.DatasetProfileMessage
+import com.whylabs.logging.core.utils.ProtobufHelper
 import org.apache.spark.sql.types.{BinaryType, DataType, SQLUserDefinedType, UserDefinedType}
-
-import scala.collection.JavaConverters._
 
 /**
  * Dataset API requires a case class for automatic encoders. I couldn't figure out
- * how to manually create an encoder for a Java class and thus a warpper
- *
+ * how to manually create an encoder for a Java class and thus a wrapper
  * @param value the actual DatasetProfile object
  */
 @SerialVersionUID(value = -687991492884005033L)
 @SQLUserDefinedType(udt = classOf[ScalaDatasetProfileUDT])
 case class ScalaDatasetProfile(value: DatasetProfile) extends Serializable {
-  override def toString: String = {
-    val summary = value.toSummary
-    val columns = summary.getColumnsMap.keySet()
-    val name = summary.getName
-    val tags = summary.getTagsList.asByteStringList().asScala.map(_.toStringUtf8).mkString(",")
-    val timestamp = Instant.ofEpochMilli(summary.getTimestamp).toString
-
-    s"[Name: $name. Tags: $tags. Timestamp: $timestamp. Columns: $columns]"
-  }
+  override def toString: String = ProtobufHelper.summaryToString(value.toSummary)
 }
 
 object ScalaDatasetProfileUDT {
