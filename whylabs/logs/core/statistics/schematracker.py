@@ -101,8 +101,7 @@ class SchemaTracker:
         -------
         message : SchemaMessage
         """
-        return SchemaMessage(typeCounts=self.type_counts,
-                             inferred_type=self.infer_type())
+        return SchemaMessage(typeCounts=self.type_counts)
 
     @staticmethod
     def from_protobuf(message):
