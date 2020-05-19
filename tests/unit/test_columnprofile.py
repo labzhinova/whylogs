@@ -38,8 +38,6 @@ def test_summary():
     true_val = {
         "counters": {
             "count": "3",
-            "trueCount": "0",
-            "nullCount": "0"
         },
         "schema": {
             "inferredType": {
