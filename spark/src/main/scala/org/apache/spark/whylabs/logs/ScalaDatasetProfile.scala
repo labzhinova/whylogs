@@ -5,7 +5,7 @@ import java.io.ByteArrayOutputStream
 
 import com.whylabs.logging.core.DatasetProfile
 import com.whylabs.logging.core.format.DatasetProfileMessage
-import org.apache.spark.sql.types._
+import org.apache.spark.sql.types.{BinaryType, DataType, SQLUserDefinedType, UserDefinedType}
 
 /**
  * Dataset API requires a case class for automatic encoders. I couldn't figure out

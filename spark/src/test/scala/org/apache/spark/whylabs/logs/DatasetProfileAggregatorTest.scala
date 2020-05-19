@@ -1,32 +1,34 @@
 package org.apache.spark.whylabs.logs
 
+import java.sql.Timestamp
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 import com.whylabs.logging.core.data.InferredType
 import org.scalatest.funsuite.AnyFunSuite
 
-case class ExamplePoint(x: Int, y: Double, z: String)
+case class ExamplePoint(x: Int, y: Double, z: String, ts: Timestamp = new Timestamp(Instant.now().toEpochMilli))
 
 class DatasetProfileAggregatorTest extends AnyFunSuite with SharedSparkContext {
   test("dataset profile aggregator with select() succeeds") {
     val _spark = spark
     import _spark.implicits._
-    val datasetProfileAggregator = DatasetProfileAggregator("test", Instant.now())
     val numberOfEntries = 1000 * 1000
 
     val examples = (1 to numberOfEntries)
       .map(i => ExamplePoint(i, i * 1.50, "text " + i))
       .toDS()
-      .repartition(32) // repartitioning forces Spark to serialize/deserialize data
+      .repartition(16) // repartitioning forces Spark to serialize/deserialize data
       .toDF() // have to convert to a DataFrame, aka Dataset[Row]
-      .repartition(32)
+      .repartition(16)
 
     // run the aggregation
-    val profiles = examples.select(datasetProfileAggregator.toColumn).collect()
+    val dpAggregator = DatasetProfileAggregator("test", Instant.now().toEpochMilli)
+    val profiles = examples.select(dpAggregator.toColumn).collect()
     assert(profiles.length == 1)
 
     val summary = profiles(0).value.toSummary
-    assert(summary.getColumnsMap.size() == 3)
+    assert(summary.getColumnsMap.size() == 4)
 
     // assert count
     assert(summary.getColumnsMap.get("x").getCounters.getCount == numberOfEntries)
@@ -42,22 +44,20 @@ class DatasetProfileAggregatorTest extends AnyFunSuite with SharedSparkContext {
   test("dataset profile aggregator with groupBy().agg() succeeds") {
     val _spark = spark
     import _spark.implicits._
-    val datasetProfileAggregator = DatasetProfileAggregator("test", Instant.now())
     val numberOfEntries = 1000 * 1000
 
     val examples = (1 to numberOfEntries)
       // the "x" field value is between 0 to 3 (inclusive)
       .map(i => ExamplePoint(i % 4, i * 1.50, "text " + i))
-      .toDS()
-      .repartition(32) // repartitioning forces Spark to serialize/deserialize data
       .toDF() // have to convert to a DataFrame, aka Dataset[Row]
-      .repartition(32)
+      .repartition(16)
 
     import org.apache.spark.sql.functions._
 
     // group by column x and aggregate
+    val dpAggregator = DatasetProfileAggregator("test", Instant.now().toEpochMilli, groupByColumns = Seq("x"))
     val groupedDf = examples.groupBy(col("x"))
-      .agg(datasetProfileAggregator.toColumn.name("whylogs_profile"))
+      .agg(dpAggregator.toColumn.name("whylogs_profile"))
     groupedDf.printSchema()
 
     // extract the nested column, collect them and turn them into Summary objects
@@ -68,20 +68,58 @@ class DatasetProfileAggregatorTest extends AnyFunSuite with SharedSparkContext {
       .map(_.toSummary)
     assert(summaries.length == 4)
 
+    // assert that the "x" column was not profiled
+    for (summary <- summaries) {
+      assert(!summary.containsColumns("x"))
+    }
+
     // total number of counts should be the total number of entries
-    assert(summaries.map(_.getColumnsOrThrow("x")).map(_.getCounters.getCount).sum == numberOfEntries)
     assert(summaries.map(_.getColumnsOrThrow("y")).map(_.getCounters.getCount).sum == numberOfEntries)
     assert(summaries.map(_.getColumnsOrThrow("z")).map(_.getCounters.getCount).sum == numberOfEntries)
-
-    // verify the max and min in each summary should be the same for the "x" column
-    // remember, we are grouping by x
-    summaries.foreach(s => {
-      val numberSummary = s.getColumnsMap.get("x").getNumberSummary
-      assert(numberSummary.getMax == numberSummary.getMin)
-
-      // assert that each group should have equal number of entries
-      assert(numberSummary.getCount == numberOfEntries / 4)
-    })
   }
 
+
+  test("dataset profile aggregator works with SQL time") {
+    val _spark = spark
+    import _spark.implicits._
+    val numberOfEntries = 1000 * 1000
+
+    val examples = (1 to numberOfEntries)
+      // the "x" field value is between 0 to 3 (inclusive)
+      .map(i => {
+        val dayTs = Instant.now().truncatedTo(ChronoUnit.DAYS).minus(i % 3, ChronoUnit.DAYS)
+        ExamplePoint(i % 4, i * 1.50, "text " + i, new Timestamp(dayTs.toEpochMilli))
+      })
+      .toDF() // have to convert to a DataFrame, aka Dataset[Row]
+      .repartition(16)
+
+    import org.apache.spark.sql.functions._
+
+    // group by column x and aggregate
+    val dpAggregator = DatasetProfileAggregator("test", Instant.now().toEpochMilli, timeColumn = "ts", groupByColumns = Seq("x"))
+
+    // the dataset must be groupped by BOTH ts and x
+    val groupedDf = examples.groupBy(col("x"), col("ts"))
+      .agg(dpAggregator.toColumn.name("whylogs_profile"))
+    groupedDf.printSchema()
+
+    groupedDf.explain()
+
+    // extract the nested column, collect them and turn them into Summary objects
+    val summaries = groupedDf.select("whylogs_profile.value")
+      .collect()
+      .map(_.getAs[ScalaDatasetProfile](0))
+      .map(_.value)
+      .map(_.toSummary)
+    assert(summaries.length == 12)
+
+    // assert that the "x" column was not profiled
+    for (summary <- summaries) {
+      assert(!summary.containsColumns("x"))
+    }
+
+    // total number of counts should be the total number of entries
+    assert(summaries.map(_.getColumnsOrThrow("y")).map(_.getCounters.getCount).sum == numberOfEntries)
+    assert(summaries.map(_.getColumnsOrThrow("z")).map(_.getCounters.getCount).sum == numberOfEntries)
+  }
 }
