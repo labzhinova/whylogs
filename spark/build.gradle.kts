@@ -69,11 +69,13 @@ dependencies {
     // testng
     testImplementation("org.testng:testng:6.8")
     testImplementation(scalaPackage("org.scalatest", "scalatest", "3.1.2"))
+    testRuntimeOnly("org.slf4j:slf4j-log4j12:1.7.30")
     testRuntimeOnly("com.vladsch.flexmark:flexmark-profile-pegdown:0.36.8")
 }
 
 tasks.test {
     useTestNG()
+    jvmArgs("-Dlog4j.configuration=file://${projectDir}/configurations/log4j.properties")
     testLogging {
         testLogging.showStandardStreams = true
         failFast = true
