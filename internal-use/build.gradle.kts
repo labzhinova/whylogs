@@ -55,8 +55,6 @@ dependencies {
 tasks.compileJava {
     //enable compilation in a separate daemon process
     options.fork()
-
-//    options.compilerArgs.add("-Aproject=${project.group}/${project.name}")
 }
 
 sourceSets {
