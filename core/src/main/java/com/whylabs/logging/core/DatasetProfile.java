@@ -1,15 +1,18 @@
 package com.whylabs.logging.core;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
+import com.google.protobuf.ByteString;
 import com.whylabs.logging.core.data.ColumnSummary;
 import com.whylabs.logging.core.data.DatasetSummary;
 import com.whylabs.logging.core.format.ColumnMessage;
 import com.whylabs.logging.core.format.ColumnsChunkSegment;
 import com.whylabs.logging.core.format.DatasetMetadataSegment;
 import com.whylabs.logging.core.format.DatasetProfileMessage;
-import com.whylabs.logging.core.format.DatasetProfileMessage.Builder;
 import com.whylabs.logging.core.format.MessageSegment;
 import com.whylabs.logging.core.iterator.ColumnsChunkSegmentIterator;
 import java.io.IOException;
@@ -17,7 +20,10 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -34,12 +40,58 @@ public class DatasetProfile implements Serializable {
 
   @Getter String name;
   @Getter Instant timestamp;
+  // always sorted
+  @Getter List<String> tags;
   Map<String, ColumnProfile> columns;
 
-  public DatasetProfile(String name, Instant timestamp) {
+  /**
+   * DEVELOPER API. DO NOT USE DIRECTLY
+   *
+   * @param name dataset name
+   * @param timestamp the timestamp
+   * @param tags tags of the dataset
+   * @param columns the columns that we're copying over. Note that the source of columns should stop
+   *     using these column objects as they will back this DatasetProfile instead
+   */
+  public DatasetProfile(
+      @NonNull String name,
+      @NonNull Instant timestamp,
+      @NonNull List<String> tags,
+      @NonNull Map<String, ColumnProfile> columns) {
     this.name = name;
     this.timestamp = timestamp;
     this.columns = new ConcurrentHashMap<>();
+    this.tags = ImmutableList.sortedCopyOf(Sets.newHashSet(tags));
+    this.columns = new ConcurrentHashMap<>(columns);
+  }
+
+  /**
+   * Create a new Dataset profile
+   *
+   * @param name the name of the dataset profile
+   * @param timestamp the timestamp. Normally this is associated with the runtime timestamp
+   * @param tags the tags to track the dataset with
+   */
+  public DatasetProfile(
+      @NonNull String name, @NonNull Instant timestamp, @NonNull List<String> tags) {
+    this(name, timestamp, tags, Collections.emptyMap());
+  }
+
+  public DatasetProfile(String name, Instant timestamp) {
+    this(name, timestamp, Collections.emptyList());
+  }
+
+  public Map<String, ColumnProfile> getColumns() {
+    return Collections.unmodifiableMap(columns);
+  }
+
+  private void validate() {
+    Preconditions.checkNotNull(name);
+    Preconditions.checkNotNull(timestamp);
+    Preconditions.checkNotNull(columns);
+    Preconditions.checkNotNull(tags);
+    Preconditions.checkState(
+        Ordering.natural().isOrdered(this.tags), "Tags should be sorted %s", this.tags);
   }
 
   public void track(String columnName, Object data) {
@@ -56,6 +108,8 @@ public class DatasetProfile implements Serializable {
   }
 
   public DatasetSummary toSummary() {
+    validate();
+
     val intpColumns =
         columns.values().stream()
             .map(Pair::fromColumn)
@@ -65,10 +119,13 @@ public class DatasetProfile implements Serializable {
         .setName(name)
         .setTimestamp(timestamp.toEpochMilli())
         .putAllColumns(intpColumns)
+        .addAllTags(tags)
         .build();
   }
 
   public Iterator<MessageSegment> toChunkIterator() {
+    validate();
+
     final String marker = name + UUID.randomUUID().toString();
 
     // first message is the metadata
@@ -76,6 +133,7 @@ public class DatasetProfile implements Serializable {
         DatasetMetadataSegment.newBuilder()
             .setName(this.name)
             .setTimestamp(this.timestamp.toEpochMilli())
+            .addAllTags(this.tags)
             .setMarker(marker);
     val metadataSegment = MessageSegment.newBuilder().setMetadata(metadataBuilder).build();
 
@@ -95,6 +153,9 @@ public class DatasetProfile implements Serializable {
   }
 
   public DatasetProfile merge(@NonNull DatasetProfile other) {
+    this.validate();
+    other.validate();
+
     Preconditions.checkArgument(
         Objects.equals(this.name, other.name),
         "Mismatched name. Current name [%s] is merged with [%s]",
@@ -105,9 +166,14 @@ public class DatasetProfile implements Serializable {
         "Mismatched timestamp. Current ts [%s] is merged with [%s]",
         this.timestamp,
         other.timestamp);
+    Preconditions.checkArgument(
+        Objects.equals(this.tags, other.tags),
+        "Mismatched tags. Current %s being merged with %s",
+        this.tags,
+        other.tags);
     val unionColumns = Sets.union(this.columns.keySet(), other.columns.keySet());
 
-    val result = new DatasetProfile(this.name, this.timestamp);
+    val result = new DatasetProfile(this.name, this.timestamp, this.tags);
 
     for (String column : unionColumns) {
       val emptyColumn = new ColumnProfile(column);
@@ -121,20 +187,28 @@ public class DatasetProfile implements Serializable {
   }
 
   public DatasetProfileMessage.Builder toProtobuf() {
-    final Builder builder =
+    validate();
+    val builder =
         DatasetProfileMessage.newBuilder().setName(name).setTimestamp(timestamp.toEpochMilli());
     columns.forEach((k, v) -> builder.putColumns(k, v.toProtobuf().build()));
+    builder.addAllTags(tags);
     return builder;
   }
 
   public static DatasetProfile fromProtobuf(DatasetProfileMessage message) {
-    val ds = new DatasetProfile(message.getName(), Instant.ofEpochMilli(message.getTimestamp()));
+    val tags = Lists.transform(message.getTagsList().asByteStringList(), ByteString::toStringUtf8);
+    val timestamp = Instant.ofEpochMilli(message.getTimestamp());
+    val ds = new DatasetProfile(message.getName(), timestamp, tags);
     message.getColumnsMap().forEach((k, v) -> ds.columns.put(k, ColumnProfile.fromProtobuf(v)));
+
+    ds.validate();
 
     return ds;
   }
 
   private void writeObject(ObjectOutputStream out) throws IOException {
+    validate();
+
     toProtobuf().build().writeDelimitedTo(out);
   }
 
@@ -143,7 +217,14 @@ public class DatasetProfile implements Serializable {
     this.name = msg.getName();
     this.timestamp = Instant.ofEpochMilli(msg.getTimestamp());
     this.columns = new ConcurrentHashMap<>();
+    this.tags = new ArrayList<>();
     msg.getColumnsMap().forEach((k, v) -> this.columns.put(k, ColumnProfile.fromProtobuf(v)));
+    for (val tag : msg.getTagsList().asByteStringList()) {
+      this.tags.add(tag.toStringUtf8());
+    }
+    Collections.sort(this.tags);
+
+    this.validate();
   }
 
   @Value

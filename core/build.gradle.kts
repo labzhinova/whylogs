@@ -22,7 +22,8 @@ plugins {
 }
 
 group = "com.whylabs.logging.core"
-version = "0.1.1-alpha"
+version = "0.1.2-alpha-${project.properties.getOrDefault("versionType", "SNAPSHOT")}"
+
 
 spotless {
     java {

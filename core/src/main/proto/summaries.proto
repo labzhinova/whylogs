@@ -83,6 +83,7 @@ message DatasetSummary {
   string name = 1;
   int64 timestamp = 2;
   map<string, ColumnSummary> columns = 3;
+  repeated string tags = 4;
 }
 
 message DatasetSummaries {
