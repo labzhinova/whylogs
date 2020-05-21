@@ -11,11 +11,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.val;
+import org.apache.datasketches.kll.KllFloatsSketch;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.WritableMemory;
-import org.apache.datasketches.quantiles.DoublesSketch;
-import org.apache.datasketches.quantiles.DoublesUnion;
-import org.apache.datasketches.quantiles.UpdateDoublesSketch;
 import org.apache.datasketches.theta.Union;
 import org.apache.datasketches.theta.UpdateSketch;
 
@@ -29,7 +27,7 @@ public class NumberTracker {
   LongTracker longs;
 
   // sketches
-  UpdateDoublesSketch histogram; // histogram
+  KllFloatsSketch histogram; // histogram
   UpdateSketch thetaSketch;
 
   public NumberTracker() {
@@ -38,11 +36,11 @@ public class NumberTracker {
     this.longs = new LongTracker();
 
     this.thetaSketch = UpdateSketch.builder().build();
-    this.histogram = DoublesSketch.builder().setK(256).build();
+    this.histogram = new KllFloatsSketch(256);
   }
 
   public void track(Number number) {
-    double dValue = number.doubleValue();
+    float dValue = number.floatValue();
     variance.update(dValue);
     thetaSketch.update(dValue);
     histogram.update(dValue);
@@ -59,11 +57,8 @@ public class NumberTracker {
   }
 
   public NumberTracker merge(NumberTracker other) {
-    val doubleUnion = DoublesUnion.builder().build();
-    doubleUnion.update(this.histogram);
-    doubleUnion.update(other.histogram);
-    val histMem = WritableMemory.wrap(doubleUnion.toByteArray());
-    val unionHistogram = UpdateDoublesSketch.heapify(histMem);
+    val unionHistogram = KllFloatsSketch.heapify(Memory.wrap(this.histogram.toByteArray()));
+    unionHistogram.merge(other.histogram);
 
     val unionTheta = Union.builder().buildUnion();
     unionTheta.update(this.thetaSketch);
@@ -101,7 +96,7 @@ public class NumberTracker {
     val builder =
         NumberTracker.builder()
             .setThetaSketch(UpdateSketch.heapify(tMem))
-            .setHistogram(UpdateDoublesSketch.heapify(hMem))
+            .setHistogram(KllFloatsSketch.heapify(hMem))
             .setVariance(VarianceTracker.fromProtobuf(message.getVariance()));
 
     Optional.ofNullable(message.getDoubles())

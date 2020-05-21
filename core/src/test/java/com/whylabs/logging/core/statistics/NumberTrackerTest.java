@@ -22,8 +22,8 @@ public class NumberTrackerTest {
 
     assertThat(numberTracker.getHistogram().getN(), is(3L));
     assertThat(numberTracker.getThetaSketch().getEstimate(), closeTo(3, 0.001));
-    assertThat(numberTracker.getHistogram().getMaxValue(), closeTo(12, 0.0001));
-    assertThat(numberTracker.getHistogram().getMinValue(), closeTo(10, 0.0001));
+    assertThat((double) numberTracker.getHistogram().getMaxValue(), closeTo(12, 0.0001));
+    assertThat((double) numberTracker.getHistogram().getMinValue(), closeTo(10, 0.0001));
   }
 
   @Test
@@ -39,8 +39,8 @@ public class NumberTrackerTest {
 
     assertThat(numberTracker.getHistogram().getN(), is(3L));
     assertThat(numberTracker.getThetaSketch().getEstimate(), closeTo(3, 0.001));
-    assertThat(numberTracker.getHistogram().getMaxValue(), closeTo(12, 0.0001));
-    assertThat(numberTracker.getHistogram().getMinValue(), closeTo(10, 0.0001));
+    assertThat((double) numberTracker.getHistogram().getMaxValue(), closeTo(12, 0.0001));
+    assertThat((double) numberTracker.getHistogram().getMinValue(), closeTo(10, 0.0001));
   }
 
   @Test
@@ -60,8 +60,8 @@ public class NumberTrackerTest {
 
     assertThat(numberTracker.getHistogram().getN(), is(3L));
     assertThat(numberTracker.getThetaSketch().getEstimate(), closeTo(3, 0.001));
-    assertThat(numberTracker.getHistogram().getMaxValue(), closeTo(12, 0.0001));
-    assertThat(numberTracker.getHistogram().getMinValue(), closeTo(10, 0.0001));
+    assertThat((double) numberTracker.getHistogram().getMaxValue(), closeTo(12, 0.0001));
+    assertThat((double) numberTracker.getHistogram().getMinValue(), closeTo(10, 0.0001));
   }
 
   @Test
@@ -75,16 +75,16 @@ public class NumberTrackerTest {
     assertThat(numberTracker.getDoubles().getCount(), is(0L));
     assertThat(numberTracker.getLongs().getCount(), is(3L));
     assertThat(numberTracker.getHistogram().getN(), is(3L));
-    assertThat(numberTracker.getHistogram().getMaxValue(), is(13.0));
-    assertThat(numberTracker.getHistogram().getMinValue(), is(10.0));
+    assertThat(numberTracker.getHistogram().getMaxValue(), is(13.0f));
+    assertThat(numberTracker.getHistogram().getMinValue(), is(10.0f));
 
     val merged = numberTracker.merge(numberTracker);
     assertThat(merged.getLongs().getCount(), is(6L));
     assertThat(merged.getDoubles().getCount(), is(0L));
     assertThat(merged.getLongs().getCount(), is(6L));
     assertThat(merged.getHistogram().getN(), is(6L));
-    assertThat(merged.getHistogram().getMaxValue(), is(13.0));
-    assertThat(merged.getHistogram().getMinValue(), is(10.0));
+    assertThat(merged.getHistogram().getMaxValue(), is(13.0f));
+    assertThat(merged.getHistogram().getMinValue(), is(10.0f));
 
     // test serialization with merged object
     val mergedMsg = merged.toProtobuf().build();
@@ -105,7 +105,7 @@ public class NumberTrackerTest {
     assertThat(roundtrip.getDoubles().getCount(), is(0L));
     assertThat(roundtrip.getLongs().getCount(), is(3L));
     assertThat(roundtrip.getHistogram().getN(), is(3L));
-    assertThat(roundtrip.getHistogram().getMaxValue(), is(13.0));
-    assertThat(roundtrip.getHistogram().getMinValue(), is(10.0));
+    assertThat(roundtrip.getHistogram().getMaxValue(), is(13.0f));
+    assertThat(roundtrip.getHistogram().getMinValue(), is(10.0f));
   }
 }
