@@ -8,4 +8,4 @@
  */
 
 rootProject.name = "whylogs-java"
-include("core", "internal-use", "firehose", "spark")
+include("core", "internal-use", "firehose", "spark", "publishing")
