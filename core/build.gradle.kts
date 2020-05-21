@@ -1,14 +1,9 @@
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import com.google.protobuf.gradle.*
-import groovy.util.Node
-import groovy.util.NodeList
-
 
 buildscript {
     dependencies {
         classpath("com.amazonaws:aws-java-sdk-core:1.11.766")
-        classpath("com.github.jengelman.gradle.plugins:shadow:5.2.0")
         classpath("com.google.protobuf:protobuf-gradle-plugin:0.8.12")
     }
 }
@@ -17,13 +12,11 @@ plugins {
     `java-library`
     `maven-publish`
     idea
-    id("com.github.johnrengelman.shadow") version ("5.2.0")
     id("com.google.protobuf") version ("0.8.12")
 }
 
 group = "com.whylabs.logging.core"
-version = "0.1.2-alpha-${project.properties.getOrDefault("versionType", "SNAPSHOT")}"
-
+version = "0.2.0-alpha-${project.properties.getOrDefault("versionType", "SNAPSHOT")}"
 
 spotless {
     java {
@@ -34,9 +27,8 @@ spotless {
 dependencies {
     api("org.slf4j:slf4j-api:1.7.27")
     api("com.google.protobuf:protobuf-java:3.11.4")
-
-    implementation("org.apache.datasketches:datasketches-java:1.3.0-incubating")
-    implementation("com.google.guava:guava:29.0-jre")
+    api("org.apache.datasketches:datasketches-java:1.3.0-incubating")
+    api("com.google.guava:guava:29.0-jre")
 
     // lombok support
     compileOnly("org.projectlombok:lombok:1.18.12")
@@ -92,27 +84,12 @@ protobuf {
     }
 }
 
-val shadowJar: ShadowJar by tasks
-shadowJar.apply {
-    archiveClassifier.set("bundle")
-    exclude("*.properties")
-    exclude("META-INF/*")
-    dependencies {
-        exclude(dependency("org.slf4j:slf4j-api"))
-        exclude(dependency("javax.annotation:javax.annotation-api"))
-    }
-    relocate("org.apache.datasketches", "zzz.com.whylabs.org.apache.datasketches")
-    relocate("com.google", "zzz.com.whylabs.com.google")
-    relocate("org.checkerframework", "zzz.com.whylabs.org.checkerframework")
-}
-
 publishing {
     publications {
         create<MavenPublication>("maven") {
             groupId = "com.whylabs"
             artifactId = "whylogs-java"
             version = version
-            artifact(shadowJar)
             from(components["java"])
             pom {
                 name.set("WhyLogs")
@@ -133,27 +110,6 @@ publishing {
                 }
                 scm {
                     url.set("http://whylabs.ai/")
-                }
-
-                // rewrite XML dependencies blob to only include SLF4J
-                withXml {
-                    val dependencies =
-                        (asNode()["dependencies"] as NodeList)[0] as Node
-                    val childNodes = dependencies.children().filterIsInstance<Node>()
-                        .filter { (it.name() as groovy.xml.QName).qualifiedName == "dependency" }
-
-                    // remove dependencies that are not slf4j
-                    val dependenciesToBeRemoved = childNodes.filterNot {
-                        val node =
-                            (it.get("groupId") as NodeList)[0] as Node
-                        val groupId = (node.value() as NodeList)[0] as String
-
-                        groupId.startsWith("org.slf4j")
-                    }
-
-                    dependenciesToBeRemoved.forEach {
-                        dependencies.remove(it)
-                    }
                 }
             }
         }
