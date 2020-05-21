@@ -13,13 +13,12 @@ import com.whylabs.logging.core.statistics.datatypes.StringTracker;
 import java.util.ArrayList;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import lombok.val;
 import org.apache.datasketches.frequencies.ErrorType;
 import org.apache.datasketches.frequencies.ItemsSketch;
 import org.apache.datasketches.frequencies.ItemsSketch.Row;
-import org.apache.datasketches.quantiles.UpdateDoublesSketch;
+import org.apache.datasketches.kll.KllFloatsSketch;
 import org.apache.datasketches.theta.UpdateSketch;
 
 public class SummaryConverters {
@@ -123,10 +122,10 @@ public class SummaryConverters {
     return FrequentItem.newBuilder().setValue(row.getItem()).setEstimate(row.getEstimate()).build();
   }
 
-  public static HistogramSummary fromUpdateDoublesSketch(UpdateDoublesSketch sketch) {
+  public static HistogramSummary fromUpdateDoublesSketch(KllFloatsSketch sketch) {
     val n = sketch.getN();
-    double start = sketch.getMinValue();
-    double end = sketch.getMaxValue();
+    float start = sketch.getMinValue();
+    float end = sketch.getMaxValue();
 
     val builder = HistogramSummary.newBuilder().setStart(start).setEnd(end);
 
@@ -141,17 +140,15 @@ public class SummaryConverters {
     }
 
     int numberOfBuckets = (int) Math.min(Math.ceil(n / 4.0), 100);
-    val width = (end - start) / (numberOfBuckets * 1.0);
+    val width = (end - start) / (numberOfBuckets * 1.0f);
     builder.setWidth(width);
 
     // calculate histograms from PMF
-    double[] splitPoints =
-        IntStream.range(0, numberOfBuckets)
-            .boxed()
-            .map(idx -> start + idx * width)
-            .mapToDouble(Double::doubleValue)
-            .toArray();
-    double[] pmf = sketch.getPMF(splitPoints);
+    val splitPoints = new float[numberOfBuckets];
+    for (int i = 0; i < numberOfBuckets; i++) {
+      splitPoints[i] = start + i * width;
+    }
+    val pmf = sketch.getPMF(splitPoints);
     int len = pmf.length - 1;
     for (int i = 0; i < len; i++) {
       builder.addCounts(Math.round(pmf[i] * sketch.getN()));
