@@ -11,7 +11,7 @@ java {
 }
 
 group = "com.whylabs.internal"
-version = "1.0"
+version = rootProject.version
 
 spotless {
     java {

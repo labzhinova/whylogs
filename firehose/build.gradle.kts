@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.whylabs.logging.firehose"
-version = "0.1-alpha"
+version = rootProject.version
 
 spotless {
     java {
