@@ -15,8 +15,8 @@ plugins {
     id("com.google.protobuf") version ("0.8.12")
 }
 
-group = "com.whylabs.logging.core"
-version = "0.2.0-alpha-${project.properties.getOrDefault("versionType", "SNAPSHOT")}"
+group = "com.whylabs"
+version = rootProject.version
 
 spotless {
     java {

@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.whylabs"
-version = "0.1-alpha"
+version = "0.2.0-alpha-${project.properties.getOrDefault("versionType", "SNAPSHOT")}"
 
 if (rootProject.hasProperty("isGitLabCi")) {
     println("Running in GitLab. Skip setting hooks")
