@@ -3,6 +3,7 @@ from datasketches import frequent_strings_sketch, update_theta_sketch, \
     theta_sketch
 from whylabs.logs.core.data import StringsMessage, StringsSummary
 from whylabs.logs.core.summaryconverters import from_sketch, from_string_sketch
+from whylabs.logs.util import dsketch
 
 MAX_ITEMS_SIZE = 32
 MAX_SUMMARY_ITEMS = 100
@@ -24,7 +25,7 @@ class StringTracker:
     def __init__(self,
                  count: int=None,
                  items: frequent_strings_sketch=None,
-                 theta_sketch:update_theta_sketch=None):
+                 theta_sketch: update_theta_sketch=None):
         if count is None:
             count = 0
         if items is None:
@@ -73,8 +74,7 @@ class StringTracker:
         """
         return StringTracker(
             count=message.count,
-            items=frequent_strings_sketch.deserialize(
-                message.items),
+            items=dsketch.deserialize_frequent_strings_sketch(message.items),
             theta_sketch=theta_sketch.deserialize(message.theta)
         )
 
