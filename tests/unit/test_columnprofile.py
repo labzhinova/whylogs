@@ -54,6 +54,20 @@ def test_summary():
             "max": 3.0,
             "mean": 2.0,
             "stddev": 1.0,
+            "histogram": {
+                "start": 1.0,
+                "end": 3.0000003,
+                "counts": [
+                    "3"
+                ],
+                "max": 3.0,
+                "min": 1.0,
+                "bins": [
+                    1.0,
+                    3.0000003
+                ],
+                "n": "3"
+            },
             "uniqueCount": {
                 "estimate": 3.0,
                 "upper": 3.0,
