@@ -5,9 +5,12 @@ TODO:
     * Date parsing compatible with EasyDateTimeParser (Java)
 
 """
-from whylabs.logs.util import varint, protobuf
+from whylabs.logs.core.datasetprofile import write_flat_summaries
+from whylabs.logs.util import protobuf
+from logging import getLogger
 CSV_READER_BATCH_SIZE = int(1e4)
 OUTPUT_DATE_FORMAT = "%Y/%m/%d"
+LOGGER = 'whylabs.logs.profiler'
 
 
 def write_protobuf(vals: list, fname):
@@ -17,7 +20,7 @@ def write_protobuf(vals: list, fname):
     `vals` must be iterable
     """
     serialized = [x.to_protobuf() for x in vals]
-    print("Writing to protobuf binary file: {}".format(fname))
+    getLogger(LOGGER).info("Writing to protobuf binary file: {}".format(fname))
     protobuf.write_multi_msg(serialized, fname)
 
 
@@ -56,7 +59,6 @@ def csv_reader(f, date_format: str=None, dropna=False, infer_dtypes=False,
     **kwargs : passed to `pandas.read_csv`
     """
     import pandas as pd
-    # NOTE TO SELF:
     date_parser = None
     if date_format is not None:
         date_parser = lambda x: pd.datetime.strptime(x, date_format)
@@ -76,10 +78,24 @@ def csv_reader(f, date_format: str=None, dropna=False, infer_dtypes=False,
 
 
 def run(input_path, datetime: str=None, delivery_stream=None, fmt=None,
-        limit=-1, output_path=None, region=None, separator=None,
-        overwrite=False, dropna=False, infer_dtypes=False):
+        limit=-1, output_prefix=None, region=None, separator=None,
+        dropna=False, infer_dtypes=False):
     """
     Run the profiler on CSV data
+
+    Output Notes
+    ------------
+    <output_prefix>_<name>_summary.csv
+        Dataset profile.  Contains scalar statistics per column
+    <output_prefix>_<name>_histogram.json
+        Histograms for each column for dataset `name`
+    <output_prefix>_<name>_strings.json
+        Frequent strings
+    <output_prefix>.json
+        DatasetSummaries, nested JSON summaries of dataset statistics
+    <output_prefix>.bin
+        Binary protobuf output of DatasetProfile
+
 
     Parameters
     ----------
@@ -95,15 +111,14 @@ def run(input_path, datetime: str=None, delivery_stream=None, fmt=None,
         If not specified, the format will be attempt to be inferred.
     limit : int
         Limit the number of entries to processes
-    output_path : str
-        Specify the output path.  By default, the program will write to
-        a file in the same input folder using the CSV file as a basename
+    output_prefix : str
+        Specify a prefix for the output files.  By default, this will be
+        derived from the input path to generate files in the input directory.
+        Can include folders
     region : str
         [IGNORED] AWS region name for Firehose
     separator : str
         Record separator.  Default = ','
-    overwrite : bool
-        Overwrite existing output files
     dropna : bool
         Drop null values when reading
     infer_dtypes : bool
@@ -116,6 +131,7 @@ def run(input_path, datetime: str=None, delivery_stream=None, fmt=None,
     from google.protobuf.json_format import MessageToJson
     from datetime import datetime
     import os
+    logger = getLogger(LOGGER)
 
     # Parse arguments
     if separator is None:
@@ -127,7 +143,7 @@ def run(input_path, datetime: str=None, delivery_stream=None, fmt=None,
     nrows = None
     if limit > 0:
         nrows = limit
-    if output_path is None:
+    if output_prefix is None:
         import random
         import time
         parent_folder = os.path.dirname(os.path.realpath(input_path))
@@ -136,15 +152,11 @@ def run(input_path, datetime: str=None, delivery_stream=None, fmt=None,
         output_base = "{}.{}-{}-{}".format(
             basename, epoch_minutes, random.randint(100000, 999999),
             random.randint(100000, 999999))
-        output_path = os.path.join(parent_folder, output_base + '.json')
+        output_prefix = os.path.join(parent_folder, output_base)
 
-    output_base = output_path
-    if output_base.endswith('.json'):
-        output_base = output_base[0:-len('.json')]
+    output_base = output_prefix
     binary_output_path = output_base + '.bin'
-    for fname in (output_path, binary_output_path):
-        if not overwrite and os.path.exists(fname):
-            raise ValueError("Output file {} exists".format(fname))
+    json_output_path = output_base + '.json'
 
     # Process records
     reader = csv_reader(input_path, fmt, parse_dates=parse_dates,
@@ -162,15 +174,18 @@ def run(input_path, datetime: str=None, delivery_stream=None, fmt=None,
             profiles[dt_str] = ds
         ds.track(record)
 
-    print("Finished collecting statistics")
+    logger.info("Finished collecting statistics")
 
     # Build summaries for the JSON output
     summaries = DatasetSummaries(
         profiles={k: v.to_summary() for k, v in profiles.items()}
     )
-    with open(output_path, 'wt') as fp:
-        print("Writing JSON summaries to: {}".format(output_path))
+    with open(json_output_path, 'wt') as fp:
+        logger.info("Writing JSON summaries to: {}".format(json_output_path))
         fp.write(MessageToJson(summaries))
+
+    # Generate flat summary outputs
+    fnames = write_flat_summaries(summaries, output_base, dataframe_fmt='csv')
 
     # Write the protobuf binary file
     write_protobuf(profiles.values(), binary_output_path)
@@ -179,4 +194,6 @@ def run(input_path, datetime: str=None, delivery_stream=None, fmt=None,
 
 if __name__ == '__main__':
     import argh
+    from whylabs.logs import display_logging
+    display_logging('DEBUG')
     argh.dispatch_command(run)

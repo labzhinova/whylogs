@@ -2,6 +2,7 @@
 """
 from whylabs.logs.util import varint
 import google.protobuf.message
+from google.protobuf.pyext._message import MessageMapContainer
 
 
 def _varint_delim_reader(fp):
@@ -95,3 +96,46 @@ def write_multi_msg(msgs: list, f):
     else:
         # Assume we have an already open file
         _write_multi_msg(msgs, f)
+
+
+def repr_message(x: google.protobuf.message.Message, indent=2, display=True):
+    """
+    Print or generate string preview of a protobuf message.  This is mainly
+    to get a preview of the attribute names and structure of a protobuf
+    message class.
+
+    Parameters
+    ----------
+    x : google.protobuf.message.Message
+        Message to preview
+    indent : int
+        Indentation
+    display : bool
+        If True, print the message and return `None`.  Else, return a string.
+
+    Returns
+    -------
+    msg : str, None
+        If `display == False`, return the message, else return None.
+    """
+    return _repr_message(x, indent=indent, display=display)
+
+
+def _repr_message(x, level=0, msg='', display=True, indent=2):
+    from uuid import uuid4
+
+    if hasattr(x, 'DESCRIPTOR'):
+        field_names = sorted([f.name for f in x.DESCRIPTOR.fields])
+        for f in field_names:
+            msg = msg + ' ' * level + str(f) + '\n'
+            v = getattr(x, f, None)
+            msg = _repr_message(v, level + indent, msg)
+    elif isinstance(x, (MessageMapContainer,)):
+        test_val = x.get_or_create(str(uuid4()))
+        msg = _repr_message(test_val, level + indent, msg)
+    else:
+        msg = msg[0:-1] + ': ' + str(x)[0:100] + '\n'
+    if display and level == 0:
+        print(msg)
+    else:
+        return msg
