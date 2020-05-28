@@ -64,14 +64,21 @@ class DatasetProfile:
         Timestamp of the dataset
     columns : dict
         Dictionary lookup of `ColumnProfile`s
+    tags : list-like
+        A list (or tuple, or iterable) of dataset tags
     """
     def __init__(self, name: str, timestamp: datetime.datetime,
-                 columns: dict=None):
-        self.name = name
-        self.timestamp = timestamp
+                 columns: dict=None, tags=None):
+        # Default values
         if columns is None:
             columns = {}
+        if tags is None:
+            tags = []
+        # Store attributes
+        self.name = name
+        self.timestamp = timestamp
         self.columns = columns
+        self.tags = tuple(sorted([tag for tag in tags]))
 
     @property
     def timestamp_ms(self):
@@ -124,7 +131,8 @@ class DatasetProfile:
         return DatasetSummary(
             name=self.name,
             timestamp=self.timestamp_ms,
-            columns=column_summaries
+            columns=column_summaries,
+            tags=self.tags,
         )
 
     def flat_summary(self):
@@ -163,6 +171,7 @@ class DatasetProfile:
                 name=self.name,
                 timestamp=self.timestamp_ms,
                 marker=self.marker,
+                tags=self.tags,
             )
         )
 
@@ -172,8 +181,12 @@ class DatasetProfile:
 
     def validate(self):
         """Sanity check for this object.  Raises an Exception if invalid"""
-        for attr in ('name', 'timestamp', 'columns'):
+        for attr in ('name', 'timestamp', 'columns', 'tags'):
             assert getattr(self, attr) is not None
+        tags = self.tags
+        assert all(isinstance(tag, str) for tag in self.tags)
+        if not all(tags[i] <= tags[i+1] for i in range(len(tags) - 1)):
+            raise ValueError("Tags must be sorted")
 
     def merge(self, other):
         """
@@ -193,6 +206,7 @@ class DatasetProfile:
 
         assert self.name == other.name
         assert self.timestamp == other.timestamp
+        assert self.tags == other.tags
 
         columns_set = set(list(self.columns.keys()) + list(other.columns.keys()))
         columns = {}
@@ -204,7 +218,8 @@ class DatasetProfile:
         return DatasetProfile(
             self.name,
             self.timestamp,
-            columns
+            columns,
+            tags=self.tags
         )
 
     def to_protobuf(self):
@@ -219,6 +234,7 @@ class DatasetProfile:
             name=self.name,
             timestamp=self.timestamp_ms,
             columns={k: v.to_protobuf() for k, v in self.columns.items()},
+            tags=self.tags,
         )
 
     @staticmethod
@@ -237,6 +253,7 @@ class DatasetProfile:
             dt,
             columns={k: ColumnProfile.from_protobuf(v)
                      for k, v in message.columns.items()},
+            tags=message.tags,
         )
 
 
