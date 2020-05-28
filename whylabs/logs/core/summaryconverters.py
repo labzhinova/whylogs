@@ -10,7 +10,7 @@ HIST_AVG_NUMBER_PER_BUCKET = 4.0
 
 def from_sketch(sketch: update_theta_sketch, num_std_devs: float=1):
     """
-    Generate a protobuf summary message from a theta sketch
+    Generate a protobuf summary message from a datasketches theta sketch
 
     Parameters
     ----------

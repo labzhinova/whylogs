@@ -38,6 +38,21 @@ class CountersTracker:
         """
         self.null_count += 1
 
+    def merge(self, other):
+        """
+        Merge another counter tracker with this one
+
+        Returns
+        -------
+        new_tracker : CountersTracker
+            The merged tracker
+        """
+        return CountersTracker(
+            count=self.count + other.count,
+            true_count=self.true_count + other.true_count,
+            null_count=self.null_count + other.null_count,
+        )
+
     def to_protobuf(self):
         """
         Return the object serialized as a protobuf message

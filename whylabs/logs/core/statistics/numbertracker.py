@@ -5,8 +5,8 @@ TODO:
 import datasketches
 
 from whylabs.logs.core.data import NumberSummary
-from whylabs.logs.core.summaryconverters import from_sketch, \
-    from_kll_floats_sketch
+from whylabs.logs.core.summaryconverters import from_kll_floats_sketch
+from whylabs.logs.core.statistics.thetasketch import ThetaSketch
 from whylabs.logs.core.statistics.datatypes import VarianceTracker, \
     IntTracker, FloatTracker
 from whylabs.logs.core.data import NumbersMessage
@@ -37,14 +37,14 @@ class NumberTracker:
         See above
     ints
         See above
-    theta_sketch : `datasketches.update_theta_sketch`
+    theta_sketch : `whylabs.logs.core.statistics.thetasketch.ThetaSketch`
         Sketch which tracks approximate cardinality
     """
     def __init__(self,
                  variance: VarianceTracker=None,
                  floats: FloatTracker=None,
                  ints: IntTracker=None,
-                 theta_sketch: datasketches.update_theta_sketch=None,
+                 theta_sketch: ThetaSketch=None,
                  histogram: datasketches.kll_floats_sketch=None,
                  ):
         # Our own trackers
@@ -55,7 +55,7 @@ class NumberTracker:
         if ints is None:
             ints = IntTracker()
         if theta_sketch is None:
-            theta_sketch = datasketches.update_theta_sketch()
+            theta_sketch = ThetaSketch()
         if histogram is None:
             histogram = datasketches.kll_floats_sketch(DEFAULT_HIST_K)
         self.variance = variance
@@ -63,6 +63,9 @@ class NumberTracker:
         self.ints = ints
         self.theta_sketch = theta_sketch
         self.histogram = histogram
+        # TEST DEBUG
+        assert isinstance(self.theta_sketch, ThetaSketch)
+        # END DEBUG
 
     def track(self, number):
         """
@@ -90,13 +93,28 @@ class NumberTracker:
             self.ints.set_defaults()
             self.floats.update(f_value)
 
+    def merge(self, other):
+        # Make a copy of the histogram
+        hist_copy = datasketches.kll_floats_sketch.deserialize(
+            self.histogram.serialize())
+        hist_copy.merge(other.histogram)
+
+        theta_sketch = self.theta_sketch.merge(other.theta_sketch)
+        return NumberTracker(
+            variance=self.variance.merge(other.variance),
+            floats=self.floats.merge(other.floats),
+            ints=self.ints.merge(other.ints),
+            theta_sketch=theta_sketch,
+            histogram=hist_copy
+        )
+
     def to_protobuf(self):
         """
         Return the object serialized as a protobuf message
         """
         opts = dict(
             variance=self.variance.to_protobuf(),
-            theta=self.theta_sketch.serialize(),
+            compact_theta=self.theta_sketch.serialize(),
             histogram=self.histogram.serialize(),
         )
         if self.floats.count > 0:
@@ -115,9 +133,15 @@ class NumberTracker:
         -------
         number_tracker : NumberTracker
         """
+        theta = None
+        if message.theta is not None and len(message.theta) > 0:
+            theta = ThetaSketch.deserialize(message.theta)
+        elif message.compact_theta is not None \
+                and len(message.compact_theta) > 0:
+            theta = ThetaSketch.deserialize(message.compact_theta)
+
         opts = dict(
-            theta_sketch = datasketches.update_theta_sketch.deserialize(
-                message.theta),
+            theta_sketch=theta,
             variance=VarianceTracker.from_protobuf(message.variance),
             histogram=dsketch.deserialize_kll_floats_sketch(message.histogram),
         )
@@ -159,7 +183,7 @@ def from_number_tracker(number_tracker: NumberTracker):
         min = float(number_tracker.ints.min)
         max = float(number_tracker.ints.max)
 
-    unique_count = from_sketch(number_tracker.theta_sketch)
+    unique_count = number_tracker.theta_sketch.to_summary()
     histogram = from_kll_floats_sketch(number_tracker.histogram)
 
     return NumberSummary(

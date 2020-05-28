@@ -27,6 +27,7 @@ class IntTracker:
     def __init__(self, min: int=None, max: int=None, sum: int=None,
                  count: int=None):
         kwargs = locals()
+        kwargs.pop('self')
         opts = {}
         opts.update(self.DEFAULTS)
         for k, v in kwargs.items():
@@ -61,6 +62,28 @@ class IntTracker:
             self.min = value
         self.count += 1
         self.sum += value
+
+    def merge(self, other):
+        """
+        Merge values of another IntTracker with this one.
+
+        Parameters
+        ----------
+        other : IntTracker
+            Other tracker
+
+        Returns
+        -------
+        new : IntTracker
+            New, merged tracker
+        """
+        x = IntTracker(self.min, self.max, self.sum, self.count)
+        x.min = min(x.min, other.min)
+        x.max = max(x.max, other.max)
+        x.sum += other.sum
+        x.count += other.count
+        return x
+
 
     def to_protobuf(self):
         """

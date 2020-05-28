@@ -18,7 +18,7 @@ def test_tracking():
     assert [('one', 3, 3, 3)] == x.items.get_frequent_items(
         datasketches.frequent_items_error_type.NO_FALSE_NEGATIVES, 2)
 
-    assert x.theta_sketch.get_estimate() == float(n_unique)
+    assert x.theta_sketch.get_result().get_estimate() == float(n_unique)
     assert x.count == count
 
 
@@ -30,7 +30,8 @@ def test_protobuf():
     x2 = StringTracker.from_protobuf(x.to_protobuf())
     assert x.count == x2.count
     assert x.items.get_total_weight() == x2.items.get_total_weight()
-    assert x.theta_sketch.get_estimate() == x2.theta_sketch.get_estimate()
+    assert x.theta_sketch.get_result().get_estimate() \
+           == x2.theta_sketch.get_result().get_estimate()
 
 
 def test_summary():

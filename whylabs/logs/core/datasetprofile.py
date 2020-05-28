@@ -118,6 +118,7 @@ class DatasetProfile:
         summary : DatasetSummary
             Protobuf summary message.
         """
+        self.validate()
         column_summaries = {name: colprof.to_summary()
                             for name, colprof in self.columns.items()}
         return DatasetSummary(
@@ -145,6 +146,7 @@ class DatasetProfile:
         return flatten_summary(summary)
 
     def _column_message_iterator(self):
+        self.validate()
         for col in self.columns.items():
             yield col.to_protobuf()
 
@@ -167,6 +169,43 @@ class DatasetProfile:
         chunked_columns = self._column_message_iterator()
         for msg in columns_chunk_iterator(chunked_columns, marker):
             yield MessageSegment(columns=msg)
+
+    def validate(self):
+        """Sanity check for this object.  Raises an Exception if invalid"""
+        for attr in ('name', 'timestamp', 'columns'):
+            assert getattr(self, attr) is not None
+
+    def merge(self, other):
+        """
+        Merge this profile with another.
+
+        Parameters
+        ----------
+        other : DatasetProfile
+
+        Returns
+        -------
+        merged : DatasetProfile
+            New, merged DatasetProfile
+        """
+        self.validate()
+        other.validate()
+
+        assert self.name == other.name
+        assert self.timestamp == other.timestamp
+
+        columns_set = set(list(self.columns.keys()) + list(other.columns.keys()))
+        columns = {}
+        for col_name in columns_set:
+            empty_column = ColumnProfile(col_name)
+            this_column = self.columns.get(col_name, empty_column)
+            other_column = other.columns.get(col_name, empty_column)
+            columns[col_name] = this_column.merge(other_column)
+        return DatasetProfile(
+            self.name,
+            self.timestamp,
+            columns
+        )
 
     def to_protobuf(self):
         """
