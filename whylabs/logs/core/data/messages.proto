@@ -37,6 +37,7 @@ message NumbersMessage {
   // sketches
   bytes histogram = 4;
   bytes theta = 5;
+  bytes compact_theta = 6;
 }
 
 message StringsMessage {
@@ -44,6 +45,7 @@ message StringsMessage {
 
   // sketches
   bytes theta = 2;
+  bytes compact_theta = 4;
   bytes items = 3;
 }
 

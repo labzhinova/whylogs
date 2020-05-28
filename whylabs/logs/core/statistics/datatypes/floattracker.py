@@ -70,6 +70,16 @@ class FloatTracker:
         self.count += 1
         self.sum += value
 
+    def merge(self, other):
+        this_copy = FloatTracker(self.min, self.max, self.sum, self.count)
+        if other.min < this_copy.min:
+            this_copy.min = other.min
+        if other.max > this_copy.max:
+            this_copy.max = other.max
+        this_copy.sum += other.sum
+        this_copy.count += other.count
+        return this_copy
+
     def to_protobuf(self):
         """
         Return the object serialized as a protobuf message

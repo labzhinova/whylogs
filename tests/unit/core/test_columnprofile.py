@@ -76,3 +76,18 @@ def test_summary():
         }
     }
     assert summary_dict == true_val
+
+
+def test_merge():
+    col = ColumnProfile("test")
+    vals = [1, 1.0, "string", True, False, None]
+    for v in vals:
+        col.track(v)
+
+    merged = col.merge(col)
+    assert merged.counters.count == 12
+    assert merged.counters.null_count == 2
+    assert merged.counters.true_count == 4
+    assert merged.number_tracker.ints.count == 0
+    assert merged.number_tracker.floats.count == 4
+    assert merged.string_tracker.count == 2

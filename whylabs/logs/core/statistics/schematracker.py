@@ -2,6 +2,7 @@
 """
 from whylabs.logs.core.data import InferredType, SchemaMessage, SchemaSummary
 Type = InferredType.Type
+import copy
 
 
 class SchemaTracker:
@@ -92,6 +93,35 @@ class SchemaTracker:
 
         ratio = float(count)/total_count
         return InferredType(type=item_type, ratio=ratio)
+
+    def merge(self, other):
+        """
+        Merge another schema tracker with this and return a new one.
+        Does not alter this object.
+
+        Parameters
+        ----------
+        other : SchemaTracker
+
+        Returns
+        -------
+        merged : SchemaTracker
+            Merged tracker
+        """
+        this_copy = self.copy()
+        all_types = Type.values()
+        for t in all_types:
+            if (t in self.type_counts) or (t in other.type_counts):
+                this_copy.type_counts[t] = this_copy.type_counts.get(t, 0) \
+                        + other.type_counts.get(t, 0)
+        return this_copy
+
+    def copy(self):
+        """
+        Return a copy of this tracker
+        """
+        type_counts = copy.copy(self.type_counts)
+        return SchemaTracker(type_counts)
 
     def to_protobuf(self):
         """

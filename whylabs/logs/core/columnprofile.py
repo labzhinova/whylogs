@@ -108,6 +108,28 @@ class ColumnProfile:
                     opts['number_summary'] = numbers_summary
         return ColumnSummary(**opts)
 
+    def merge(self, other):
+        """
+        Merge this columnprofile with another.
+
+        Parameters
+        ----------
+        other : ColumnProfile
+
+        Returns
+        -------
+        merged : ColumnProfile
+            A new, merged column profile.
+        """
+        assert self.column_name == other.column_name
+        return ColumnProfile(
+            self.column_name,
+            number_tracker=self.number_tracker.merge(other.number_tracker),
+            string_tracker=self.string_tracker.merge(other.string_tracker),
+            schema_tracker=self.schema_tracker.merge(other.schema_tracker),
+            counters=self.counters.merge(other.counters),
+        )
+
     def to_protobuf(self):
         """
         Return the object serialized as a protobuf message

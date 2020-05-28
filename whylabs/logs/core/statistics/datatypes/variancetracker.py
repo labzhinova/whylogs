@@ -61,25 +61,44 @@ class VarianceTracker:
 
         See:
         https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm  # noqa
+
+        Parameters
+        ----------
+        other : VarianceTracker
+            Other variance tracker
+
+        Returns
+        -------
+        merged : VarianceTracker
+            A new variance tracker from the merged statistics
         """
         if other.count == 0:
-            return
+            return self.copy()
 
         if self.count == 0:
-            self.count = other.count
-            self.sum = other.sum
-            self.mean = other.mean
-            return
+            return other.copy()
 
-        delta = self.mean = other.mean
-        total_count = self.count = other.count
+        delta = self.mean - other.mean
+        total_count = self.count + other.count
         this_ratio = self.count / total_count
         other_ratio = 1.0 - this_ratio
-        # Update self
-        self.sum += other.sum + \
-                    (delta**2) * self.count * other.count/total_count
-        self.mean = self.mean * this_ratio + other.mean * other_ratio
-        self.count += other.count
+        # Create new tracker
+        this_copy = self.copy()
+        this_copy.sum += other.sum + \
+                    (delta**2) * this_copy.count * other.count/total_count
+        this_copy.mean = this_copy.mean * this_ratio + other.mean * other_ratio
+        this_copy.count += other.count
+        return this_copy
+
+    def copy(self):
+        """
+        Return a copy of this tracker
+        """
+        return VarianceTracker(
+            count=self.count,
+            sum=self.sum,
+            mean=self.mean
+        )
 
     def to_protobuf(self):
         """

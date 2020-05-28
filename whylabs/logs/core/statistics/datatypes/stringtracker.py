@@ -1,8 +1,8 @@
 # import datasketches
-from datasketches import frequent_strings_sketch, update_theta_sketch, \
-    theta_sketch
+from datasketches import frequent_strings_sketch
+from whylabs.logs.core.statistics.thetasketch import ThetaSketch
 from whylabs.logs.core.data import StringsMessage, StringsSummary
-from whylabs.logs.core.summaryconverters import from_sketch, from_string_sketch
+from whylabs.logs.core.summaryconverters import from_string_sketch
 from whylabs.logs.util import dsketch
 
 MAX_ITEMS_SIZE = 32
@@ -25,13 +25,13 @@ class StringTracker:
     def __init__(self,
                  count: int=None,
                  items: frequent_strings_sketch=None,
-                 theta_sketch: update_theta_sketch=None):
+                 theta_sketch: ThetaSketch=None):
         if count is None:
             count = 0
         if items is None:
             items = frequent_strings_sketch(MAX_ITEMS_SIZE)
         if theta_sketch is None:
-            theta_sketch = update_theta_sketch()
+            theta_sketch = ThetaSketch()
         self.count = count
         self.items = items
         self.theta_sketch = theta_sketch
@@ -49,6 +49,28 @@ class StringTracker:
         self.theta_sketch.update(value)
         self.items.update(value)
 
+    def merge(self, other):
+        """
+        Merge the values of this string tracker with another
+
+        Parameters
+        ----------
+        other : StringTracker
+            The other StringTracker
+
+        Returns
+        -------
+        new : StringTracker
+            Merged values
+        """
+        items_copy = frequent_strings_sketch.deserialize(
+            self.items.serialize())
+        items_copy.merge(other.items)
+
+        new_theta = self.theta_sketch.merge(other.theta_sketch)
+        count = self.count + other.count
+        return StringTracker(count, items_copy, new_theta)
+
     def to_protobuf(self):
         """
         Return the object serialized as a protobuf message
@@ -60,7 +82,7 @@ class StringTracker:
         return StringsMessage(
             count=self.count,
             items=self.items.serialize(),
-            theta=self.theta_sketch.serialize(),
+            compact_theta=self.theta_sketch.serialize(),
         )
 
     @staticmethod
@@ -72,10 +94,16 @@ class StringTracker:
         -------
         string_tracker : StringTracker
         """
+        theta = None
+        if message.theta is not None and len(message.theta) > 0:
+            theta = ThetaSketch.deserialize(message.theta)
+        elif message.compact_theta is not None and len(message.compact_theta) > 0:
+            theta = ThetaSketch.deserialize(message.compact_theta)
+
         return StringTracker(
             count=message.count,
             items=dsketch.deserialize_frequent_strings_sketch(message.items),
-            theta_sketch=theta_sketch.deserialize(message.theta)
+            theta_sketch=theta
         )
 
     def to_summary(self):
@@ -89,7 +117,7 @@ class StringTracker:
         """
         if self.count == 0:
             return None
-        unique_count = from_sketch(self.theta_sketch)
+        unique_count = self.theta_sketch.to_summary()
         opts = dict(
             unique_count=unique_count,
         )
