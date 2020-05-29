@@ -11,6 +11,7 @@ import com.amazonaws.services.kinesisfirehose.model.Record;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.whylabs.logging.core.format.DatasetMetadataSegment;
+import com.whylabs.logging.core.format.DatasetProperties;
 import com.whylabs.logging.core.format.MessageSegment;
 import java.nio.ByteBuffer;
 import java.util.Collections;
@@ -44,13 +45,14 @@ public class FirehoseRecordGrouperTest {
     // our configuration
     val maxChunkLen = 4_000_000;
     val noOfMessages = 99;
-    val nameLen = 9_00_000; // 900kb for each message
+    val sessionIdLen = 9_00_000; // 900kb for each message
 
+    val props =
+        DatasetProperties.newBuilder()
+            .setSessionId(RandomStringUtils.randomAlphabetic(sessionIdLen));
     val messageSegmentBuilder =
         MessageSegment.newBuilder()
-            .setMetadata(
-                DatasetMetadataSegment.newBuilder()
-                    .setName(RandomStringUtils.randomAlphabetic(nameLen)));
+            .setMetadata(DatasetMetadataSegment.newBuilder().setProperties(props));
     val baseMessageSize = messageSegmentBuilder.build().getSerializedSize();
     val maxMessagesPerChunk = maxChunkLen / baseMessageSize;
 

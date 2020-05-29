@@ -2,6 +2,7 @@ package org.apache.spark.whylabs.logs
 
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneOffset}
+import java.util.Collections
 
 import com.whylabs.logging.core.DatasetProfile
 import org.apache.spark.sql.catalyst.ScalaReflection
@@ -26,14 +27,15 @@ object InstantDateTimeFormatter {
  * A dataset aggregator. It aggregates [[Row]] into DatasetProfile objects
  * underneath the hood.
  *
- * @param datasetName the name of the dataset
- * @param tsEpochMillis   the epoch time in Millis
+ * @param datasetName         the name of the dataset
+ * @param sessionTimeInMillis the session time for the profile
  */
 case class DatasetProfileAggregator(datasetName: String,
-                                    tsEpochMillis: Long,
+                                    sessionTimeInMillis: Long,
                                     timeColumn: String = null,
                                     groupByColumns: Seq[String] = Seq())
   extends Aggregator[Row, DatasetProfile, ScalaDatasetProfile] with Serializable {
+
   private val allGroupByColumns = (groupByColumns ++ Option(timeColumn).toSeq).toSet
 
   override def zero: DatasetProfile = new DatasetProfile("", Instant.ofEpochMilli(0))
@@ -41,35 +43,42 @@ case class DatasetProfileAggregator(datasetName: String,
   override def reduce(profile: DatasetProfile, row: Row): DatasetProfile = {
     val schema = row.schema
 
-    val timeStamp = if (timeColumn != null) {
-      // extract timestamp from the data
-      row.getTimestamp(schema.fieldIndex(timeColumn)).toInstant
-    } else {
-      // use the aggregator timestamp
-      Instant.ofEpochMilli(tsEpochMillis)
-    }
-
-    val timestampStr = InstantDateTimeFormatter.format(timeStamp)
-    val sortedTags = (groupByColumns
+    val dataTimestamp = Option(timeColumn)
       .map(schema.fieldIndex)
-      .map(row.get)
-      .map(_.toString) :+ timestampStr
+      .map(row.getTimestamp)
+      .map(_.toInstant)
+
+    val dataTimestampString = dataTimestamp.map(InstantDateTimeFormatter.format)
+
+    val sortedTags = (getTagsFromRow(row) ++ dataTimestampString.toSeq
       ).sorted
-    val timedProfile = if (profile.getTimestamp.toEpochMilli == 0 && timeStamp.toEpochMilli > 0) {
-      // we have an empty profile
-      new DatasetProfile("", timeStamp, sortedTags.asJava)
-    } else {
-      // profile already saw data. Make sure the timestamp matches
-      if (timeStamp != profile.getTimestamp) {
-        throw new IllegalStateException(s"Mismatched timestamp. Previously seen ts: [${profile.getTimestamp}]. Current timestamp: $timeStamp")
-      }
 
-      // ensure tags match
-      if (profile.getTags != sortedTags.asJava) {
-        throw new IllegalStateException(s"Mismatched grouping columns. Previously seen values: ${profile.getTags}. Current values: ${sortedTags.asJava}")
-      }
+    val timedProfile: DatasetProfile = dataTimestamp match {
+      case None if isProfileEmpty(profile) =>
+        // we have an empty profile
+        new DatasetProfile("",
+          Instant.ofEpochMilli(sessionTimeInMillis),
+          null,
+          sortedTags.asJava,
+          Collections.emptyMap())
+      case Some(ts) if isProfileEmpty(profile) =>
+        // create a new profile to replace the empty profile
+        new DatasetProfile("",
+          Instant.ofEpochMilli(sessionTimeInMillis),
+          ts,
+          sortedTags.asJava,
+          Collections.emptyMap())
+      case Some(ts) if ts != profile.getDataTimestamp =>
+        throw new IllegalStateException(s"Mismatched session timestamp. " +
+          s"Previously seen ts: [${profile.getDataTimestamp}]. Current session timestamp: $ts")
+      case _ =>
+        // ensure tags match
+        if (profile.getTags != sortedTags.asJava) {
+          throw new IllegalStateException(s"Mismatched grouping columns. " +
+            s"Previously seen values: ${profile.getTags}. Current values: ${sortedTags.asJava}")
+        }
 
-      profile
+        profile
     }
 
     // TODO: we have the schema here. Support schema?
@@ -82,6 +91,18 @@ case class DatasetProfileAggregator(datasetName: String,
     timedProfile
   }
 
+  private def isProfileEmpty(profile: DatasetProfile) = {
+    profile.getDataTimestamp == null && profile.getColumns.isEmpty
+  }
+
+  private def getTagsFromRow(row: Row): Seq[String] = {
+    val schema = row.schema
+    groupByColumns
+      .map(schema.fieldIndex)
+      .map(row.get)
+      .map(_.toString)
+  }
+
   override def merge(profile1: DatasetProfile, profile2: DatasetProfile): DatasetProfile = {
     if (profile1.getColumns.isEmpty) return profile2
     if (profile2.getColumns.isEmpty) return profile1
@@ -91,7 +112,8 @@ case class DatasetProfileAggregator(datasetName: String,
   override def finish(reduction: DatasetProfile): ScalaDatasetProfile = {
     val finalProfile = new DatasetProfile(
       datasetName,
-      reduction.getTimestamp,
+      reduction.getSessionTimestamp,
+      reduction.getDataTimestamp,
       reduction.getTags,
       reduction.getColumns
     )

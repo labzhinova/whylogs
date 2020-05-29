@@ -78,12 +78,12 @@ message ColumnSummary {
   }
 }
 
-
 message DatasetSummary {
   string name = 1;
-  int64 timestamp = 2;
-  map<string, ColumnSummary> columns = 3;
-  repeated string tags = 4;
+  int64 dataTimestamp = 2;
+  int64 sessionTimestamp = 3;
+  map<string, ColumnSummary> columns = 4;
+  repeated string tags = 5;
 }
 
 message DatasetSummaries {

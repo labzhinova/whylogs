@@ -62,11 +62,21 @@ message ColumnMessage {
   InferredType inferred_type = 6;
 }
 
+message DatasetProperties {
+  uint32 schema_major_version = 1;
+  uint32 schema_minor_version = 2;
+
+  string session_id = 3;
+  int64 session_timestamp = 4;
+  int64 data_timestamp = 5;
+  repeated string tags = 6;
+  map<string, string> metadata = 7;
+  // TODO: store other configuration here
+}
+
 message DatasetProfileMessage {
-  string name = 1;
-  int64 timestamp = 2;
-  map<string, ColumnMessage> columns = 3;
-  repeated string tags = 4;
+  DatasetProperties properties = 1;
+  map<string, ColumnMessage> columns = 2;
 }
 
 /**
@@ -82,17 +92,15 @@ message ColumnsChunkSegment {
 
 message DatasetMetadataSegment {
   string marker = 1;
-  string name = 2;
-  int64 timestamp = 3;
-  repeated string tags = 4;
-  // TODO: store other configuration here
+  DatasetProperties properties = 2;
 }
 
 // A segment of a dataset profile. This can be used to composed the
 // original object back
 message MessageSegment {
+  string marker = 1;
   oneof item {
-    DatasetMetadataSegment metadata = 1;
-    ColumnsChunkSegment columns = 2;
+    DatasetMetadataSegment metadata = 2;
+    ColumnsChunkSegment columns = 3;
   }
 }

@@ -16,7 +16,7 @@ public class ProtobufHelper {
         summary.getTagsList().asByteStringList().stream()
             .map(ByteString::toStringUtf8)
             .collect(Collectors.joining(","));
-    val timestamp = Instant.ofEpochMilli(summary.getTimestamp()).toString();
+    val timestamp = Instant.ofEpochMilli(summary.getSessionTimestamp()).toString();
     val columns = summary.getColumnsMap().keySet();
 
     return String.format(

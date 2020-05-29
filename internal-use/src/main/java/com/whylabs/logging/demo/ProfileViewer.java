@@ -83,7 +83,9 @@ public class ProfileViewer implements Runnable {
 
         val ds = DatasetProfile.fromProtobuf(message);
         final String timestamp =
-            ds.getTimestamp().atZone(ZoneOffset.UTC).format(DateTimeFormatter.ISO_LOCAL_DATE);
+            ds.getSessionTimestamp()
+                .atZone(ZoneOffset.UTC)
+                .format(DateTimeFormatter.ISO_LOCAL_DATE);
 
         profileSummariesBuilder.putProfiles(timestamp, ds.toSummary());
       }

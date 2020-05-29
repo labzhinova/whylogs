@@ -19,9 +19,9 @@ class ScalaDatasetProfileTest extends AnyFunSuite with SharedSparkContext {
 
     val endsWithZeros = profileDs.repartition(32)
       .filter(ds => {
-        ds.value.getName.endsWith("0")
+        ds.value.getSessionId.endsWith("0")
       })
-      .map(ds => ds.value.getName)
+      .map(ds => ds.value.getSessionId)
       .count()
     assert(endsWithZeros == 10)
   }
