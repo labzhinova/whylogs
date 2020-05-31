@@ -10,6 +10,7 @@
 rootProject.name = "whylogs"
 
 include(
+        ":proto",
         ":whylogs-java:core",
         ":whylogs-java:internal-use",
         ":whylogs-java:firehose",
