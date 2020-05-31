@@ -26,8 +26,8 @@ application {
 
 
 dependencies {
-    implementation(project(":core"))
-    implementation(project(":firehose"))
+    implementation(project(":whylogs-java:core"))
+    implementation(project(":whylogs-java:firehose"))
 
     implementation("org.slf4j:slf4j-api:1.7.27")
     implementation("org.apache.logging.log4j:log4j-core:2.13.2")

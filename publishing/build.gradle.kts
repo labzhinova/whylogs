@@ -25,11 +25,11 @@ group = "com.whylabs"
 version = versionString
 
 dependencies {
-    implementation(project(":core"))
+    implementation(project(":whylogs-java:core"))
 
     // we only depends on the output of the whylogs-spark components
     // we don't want to pull in Spark dependencies here
-    implementation(project(":spark", "jar"))
+    implementation(project(":whylogs-java:spark", "jar"))
 }
 
 // Do not build the jar for this package
