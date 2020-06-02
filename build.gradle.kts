@@ -1,6 +1,6 @@
 plugins {
     `java-library`
-
+    idea
     id("com.diffplug.gradle.spotless") version ("3.28.1") apply false
 }
 
@@ -17,6 +17,10 @@ if (rootProject.hasProperty("isGitLabCi")) {
 }
 
 allprojects {
+    version = version
+    group = group
+
+    apply(plugin = "idea")
     apply(plugin = "java")
     repositories {
         mavenCentral()
@@ -29,19 +33,5 @@ allprojects {
 }
 
 subprojects {
-    version = "1.0"
     apply(plugin = "com.diffplug.gradle.spotless")
 }
-//
-//project(":whylogs-java:core") {
-//    dependencies {
-//        implementation(project(":proto"))
-//    }
-//}
-
-//project(":whylogs-java:firehose") {
-//    dependencies {
-//        implementation(project(":proto"))
-//    }
-//}
-//
