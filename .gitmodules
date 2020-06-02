@@ -4,8 +4,3 @@
 	url = git@gitlab.com:whylabs/whylogs-java.git
 	branch = dev/singlepackage
 
-
-[submodule "whylogs-python"]
-	path = whylogs-python
-	url = git@gitlab.com:whylabs/whylogs-python.git
-	branch = dev/singlepackage
