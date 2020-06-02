@@ -116,3 +116,7 @@ fabric.properties
 # Ignore Gradle build output directory
 build
 
+
+# Ignore virtual env
+venv
+
