@@ -1,17 +1,17 @@
 import com.google.protobuf.gradle.*
 
+
 buildscript {
     dependencies {
         classpath("com.google.protobuf:protobuf-gradle-plugin:0.8.12")
     }
 }
 
-apply(plugin = "com.google.protobuf")
-
 plugins {
     `java-library`
-    idea
 }
+
+apply(plugin = "com.google.protobuf")
 
 group = "com.whylabs"
 version = rootProject.version
@@ -29,6 +29,7 @@ dependencies {
 }
 
 
+val generatedDir = "$projectDir/generated"
 protobuf {
     protoc {
         // The artifact spec for the Protobuf Compiler
@@ -42,13 +43,13 @@ protobuf {
             artifact = "io.grpc:protoc-gen-grpc-java:1.15.1"
         }
     }
+    generatedFilesBaseDir = generatedDir
 
     generateProtoTasks {
 
         all().forEach { task ->
             run {
                 task.builtins.create("python") {
-//                    outputSubDir = "$projectDir/python"
                 }
             }
         }

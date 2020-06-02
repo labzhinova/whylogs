@@ -56,6 +56,12 @@ message HistogramSummary {
   double end = 2;
   double width = 3;
   repeated int64 counts = 4;
+
+  double max = 5;
+  double min = 6;
+  repeated double bins = 7;
+  int64 n = 8;
+
 }
 
 message NumberSummary {
