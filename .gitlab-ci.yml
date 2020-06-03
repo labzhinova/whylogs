@@ -1,5 +1,5 @@
 # TODO: build this image automatically
-image: "andifire/openjdk8-python37:0.1"
+image: "andifire/openjdk8-python37:0.3"
 
 stages:
   - build
