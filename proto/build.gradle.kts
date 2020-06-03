@@ -31,10 +31,6 @@ dependencies {
 
 val generatedDir = "$projectDir/generated"
 protobuf {
-    protoc {
-        // The artifact spec for the Protobuf Compiler
-        artifact = "com.google.protobuf:protoc:3.12.2"
-    }
     plugins {
         // Optional: an artifact spec for a protoc plugin, with "grpc" as
         // the identifier, which can be referred to in the "plugins"
