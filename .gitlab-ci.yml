@@ -1,5 +1,5 @@
 # TODO: stop using this semi-random image
-image: "adbourne/docker-java-maven-protobuf:v3.5-8-3.5.0"
+image: "andifire/openjdk8-python37:latest"
 
 stages:
   - build
