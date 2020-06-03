@@ -1,4 +1,3 @@
-
 [submodule "whylogs-java"]
 	path = whylogs-java
 	url = git@gitlab.com:whylabs/whylogs-java.git
