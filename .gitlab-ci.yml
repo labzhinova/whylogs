@@ -1,5 +1,5 @@
-# TODO: stop using this semi-random image
-image: "andifire/openjdk8-python37:latest"
+# TODO: build this image automatically
+image: "andifire/openjdk8-python37:0.1"
 
 stages:
   - build
