@@ -6,7 +6,8 @@ stages:
   - test
 
 variables:
-  GRADLE_USER_HOME: $CI_PROJECT_DIR/.gradle
+  GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
 cache:
   key: $CI_PROJECT_NAME
@@ -16,11 +17,16 @@ cache:
     - build/
     - mobile/build/
     - wear/build/
+    - .cache/pip
+    - venv/
 
 before_script:
-  - export GRADLE_USER_HOME=`pwd`/.gradle
+  - python -V # Print out python version for debugging
+  - pip install virtualenv
+  - virtualenv venv
+  - source venv/bin/activate
 
-# TODO: set a share cache path
+  build:local
 build:
   stage: build
   script:
