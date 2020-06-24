@@ -1,15 +1,11 @@
 # TODO: build this image automatically
 image: "andifire/openjdk8-python37:0.3"
-
 stages:
   - build
   - test
-  - docker
-
 variables:
   GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-
 cache:
   key: $CI_PROJECT_NAME
   paths:
@@ -20,34 +16,15 @@ cache:
     - wear/build/
     - .cache/pip
     - venv/
-
 before_script:
   - python -V # Print out python version for debugging
   - pip install virtualenv
   - virtualenv venv
   - source venv/bin/activate
-
 build:
   stage: build
   script:
     - ./gradlew --build-cache assemble -PisGitLabCi=true
-
 test:
   stage: test
   script: ./gradlew check -PisGitLabCi=true
-
-build-python-docker:
-  stage: docker
-  image: docker:19.03.11
-  services:
-    - docker:19.03.11-dind
-  variables:
-    # Use TLS https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#tls-enabled
-    DOCKER_HOST: tcp://docker:2376
-    DOCKER_TLS_CERTDIR: "/certs"
-  script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker pull $CI_REGISTRY_IMAGE:python-$CI_COMMIT_REF_SLUG-latest || true
-    - docker build --cache-from $CI_REGISTRY_IMAGE:python-$CI_COMMIT_REF_SLUG-latest --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA --tag $CI_REGISTRY_IMAGE:python-$CI_COMMIT_REF_SLUG-latest whylogs-python/
-    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-    - docker push $CI_REGISTRY_IMAGE:python-$CI_COMMIT_REF_SLUG-latest
