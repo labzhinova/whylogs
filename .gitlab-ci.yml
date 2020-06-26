@@ -1,4 +1,3 @@
-# TODO: build this image automatically
 image: "registry.gitlab.com/whylabs/docker-images:13ae56985c0aa07aa07022c5771072dac8750dff"
 stages:
   - build
