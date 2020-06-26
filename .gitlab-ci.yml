@@ -1,5 +1,5 @@
 # TODO: build this image automatically
-image: "andifire/openjdk8-python37:0.3"
+image: "registry.gitlab.com/whylabs/docker-images:13ae56985c0aa07aa07022c5771072dac8750dff"
 stages:
   - build
   - test
@@ -21,6 +21,7 @@ before_script:
   - pip install virtualenv
   - virtualenv venv
   - source venv/bin/activate
+  - aws codeartifact login --region us-west-2 --tool pip --repository python-dev --domain dev --domain-owner 207285235248
 build:
   stage: build
   script:
