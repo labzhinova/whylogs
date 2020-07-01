@@ -2,9 +2,12 @@ image: "registry.gitlab.com/whylabs/docker-images:13ae56985c0aa07aa07022c5771072
 stages:
   - build
   - test
+  - publish
+
 variables:
   GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
 cache:
   key: $CI_PROJECT_NAME
   paths:
@@ -15,16 +18,28 @@ cache:
     - wear/build/
     - .cache/pip
     - venv/
+
 before_script:
   - python -V # Print out python version for debugging
   - pip install virtualenv
   - virtualenv venv
   - source venv/bin/activate
   - aws codeartifact login --region us-west-2 --tool pip --repository python-dev --domain dev --domain-owner 207285235248
+
 build:
   stage: build
   script:
     - ./gradlew --build-cache assemble -PisGitLabCi=true
+
 test:
   stage: test
   script: ./gradlew check -PisGitLabCi=true
+
+publish-python:
+  stage: publish
+  script:
+    - ./gradlew publish-python
+  only:
+    refs:
+      - master
+      - release
