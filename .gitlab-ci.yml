@@ -41,3 +41,7 @@ publish-python:
     - cd whylogs-whypthon && pip install twine
     - aws codeartifact login --region us-west-2 --tool twine --repository python-dev --domain dev --domain-owner 207285235248
     - ./gradlew publish-python
+  only:
+    refs:
+      - master
+      - release
