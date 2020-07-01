@@ -1,33 +1,19 @@
 package com.whylabs.logging.core;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Ordering;
-import com.google.common.collect.Sets;
+import com.google.common.collect.*;
 import com.google.protobuf.ByteString;
-import com.whylabs.logging.core.data.ColumnSummary;
-import com.whylabs.logging.core.data.DatasetSummary;
-import com.whylabs.logging.core.format.ColumnMessage;
-import com.whylabs.logging.core.format.ColumnsChunkSegment;
-import com.whylabs.logging.core.format.DatasetMetadataSegment;
-import com.whylabs.logging.core.format.DatasetProfileMessage;
-import com.whylabs.logging.core.format.DatasetProperties;
-import com.whylabs.logging.core.format.DatasetProperties.Builder;
-import com.whylabs.logging.core.format.MessageSegment;
 import com.whylabs.logging.core.iterator.ColumnsChunkSegmentIterator;
+import com.whylabs.logging.core.message.*;
+import com.whylabs.logging.core.message.ColumnSummary;
+import com.whylabs.logging.core.message.DatasetProperties.Builder;
+import com.whylabs.logging.core.message.DatasetSummary;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -69,8 +55,8 @@ public class DatasetProfile implements Serializable {
     this.dataTimestamp = dataTimestamp;
     this.columns = new ConcurrentHashMap<>();
     this.tags = ImmutableList.sortedCopyOf(Sets.newHashSet(tags));
-    this.columns = new ConcurrentHashMap<>(columns);
     this.metadata = new ConcurrentHashMap<>();
+    this.columns = new ConcurrentHashMap<>(columns);
   }
 
   /**
@@ -129,21 +115,16 @@ public class DatasetProfile implements Serializable {
   public DatasetSummary toSummary() {
     validate();
 
-    val intpColumns =
+    val summaryColumns =
         columns.values().stream()
             .map(Pair::fromColumn)
             .collect(Collectors.toMap(Pair::getName, Pair::getStatistics));
 
     val summary =
         DatasetSummary.newBuilder()
-            .setName(sessionId)
-            .setSessionTimestamp(sessionTimestamp.toEpochMilli())
-            .putAllColumns(intpColumns)
-            .addAllTags(tags);
+            .setProperties(toDatasetProperties())
+            .putAllColumns(summaryColumns);
 
-    if (dataTimestamp != null) {
-      summary.setDataTimestamp(dataTimestamp.toEpochMilli());
-    }
     return summary.build();
   }
 

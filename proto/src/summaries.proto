@@ -2,30 +2,12 @@ syntax = "proto3";
 
 import "google/protobuf/wrappers.proto";
 
-option java_package = "com.whylabs.logging.core.data";
+import "messages.proto";
+
+option java_package = "com.whylabs.logging.core.message";
 option java_outer_classname = "Summaries";
 option java_multiple_files = true;
 
-message Counters {
-  int64 count = 1;
-
-  google.protobuf.Int64Value true_count = 2;
-  google.protobuf.Int64Value null_count = 3;
-}
-
-message InferredType {
-  enum Type {
-    UNKNOWN = 0;
-    NULL = 1;
-    FRACTIONAL = 2;
-    INTEGRAL = 3;
-    BOOLEAN = 4;
-    STRING = 5;
-  }
-
-  Type type = 1;
-  double ratio = 2;
-}
 
 message UniqueCountSummary {
   double estimate = 1;
@@ -85,11 +67,8 @@ message ColumnSummary {
 }
 
 message DatasetSummary {
-  string name = 1;
-  int64 dataTimestamp = 2;
-  int64 sessionTimestamp = 3;
-  map<string, ColumnSummary> columns = 4;
-  repeated string tags = 5;
+  DatasetProperties properties = 1;
+  map<string, ColumnSummary> columns = 2;
 }
 
 message DatasetSummaries {

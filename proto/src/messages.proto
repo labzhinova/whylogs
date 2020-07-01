@@ -1,13 +1,31 @@
 syntax = "proto3";
 
-package whylabs.logs.proto;
-
 import "google/protobuf/wrappers.proto";
-import "summaries.proto";
 
-option java_package = "com.whylabs.logging.core.format";
+option java_package = "com.whylabs.logging.core.message";
 option java_outer_classname = "Messages";
 option java_multiple_files = true;
+
+message Counters {
+  int64 count = 1;
+
+  google.protobuf.Int64Value true_count = 2;
+  google.protobuf.Int64Value null_count = 3;
+}
+
+message InferredType {
+  enum Type {
+    UNKNOWN = 0;
+    NULL = 1;
+    FRACTIONAL = 2;
+    INTEGRAL = 3;
+    BOOLEAN = 4;
+    STRING = 5;
+  }
+
+  Type type = 1;
+  double ratio = 2;
+}
 
 message DoublesMessage {
   int64 count = 1;

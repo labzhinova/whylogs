@@ -4,8 +4,8 @@ import com.google.common.collect.Iterators;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.protobuf.util.JsonFormat;
 import com.whylabs.logging.core.DatasetProfile;
-import com.whylabs.logging.core.data.DatasetSummaries;
 import com.whylabs.logging.core.datetime.EasyDateTimeParser;
+import com.whylabs.logging.core.message.DatasetSummaries;
 import com.whylabs.logging.demo.utils.BoundedExecutor;
 import com.whylabs.logging.demo.utils.RandomWordGenerator;
 import com.whylabs.logging.firehose.FirehosePublisher;
@@ -226,8 +226,6 @@ public class Profiler implements Runnable {
 
         profiles.values().forEach(publisher::putProfile);
       }
-      LOG.info("Finished writing to file. Enter anything to exit");
-      SCANNER.nextLine();
       LOG.info("Output path: {}", output.getAbsolutePath());
       LOG.info("SUCCESS");
     } catch (Exception e) {
