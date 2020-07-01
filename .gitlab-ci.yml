@@ -39,7 +39,3 @@ publish-python:
   stage: publish
   script:
     - ./gradlew publish-python
-  only:
-    refs:
-      - master
-      - release
