@@ -35,7 +35,17 @@ test:
   stage: test
   script: ./gradlew check -PisGitLabCi=true
 
-publish-python:
+publish-on-tag:
+  stage: publish
+  script:
+    - cd whylogs-whypthon && pip install twine
+    - aws codeartifact login --region us-west-2 --tool twine --repository python-dev --domain dev --domain-owner 207285235248
+    - ./gradlew publish-python
+  rules:
+    - if: $CI_COMMIT_TAG
+    - if: '$CI_COMMIT_BRANCH == "master"'
+
+publish-on-release:
   stage: publish
   script:
     - cd whylogs-whypthon && pip install twine
@@ -43,5 +53,4 @@ publish-python:
     - ./gradlew publish-python
   only:
     refs:
-      - master
       - release
