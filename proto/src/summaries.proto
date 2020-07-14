@@ -23,6 +23,21 @@ message FrequentStringsSummary {
   repeated FrequentItem items = 1;
 }
 
+message FrequentNumbersSummary {
+  message FrequentDoubleItem {
+    int64 estimate = 1;
+    double value = 2;
+    int32 rank = 3;
+  }
+  message FrequentLongItem {
+    int64 estimate = 1;
+    int64 value = 2;
+    int32 rank = 3;
+  }
+  repeated FrequentDoubleItem doubles = 1;
+  repeated FrequentLongItem longs = 2;
+}
+
 message StringsSummary {
   UniqueCountSummary unique_count = 1;
   FrequentStringsSummary frequent = 2;
@@ -46,6 +61,11 @@ message HistogramSummary {
 
 }
 
+message QuantileSummary {
+  repeated double quantiles = 1;
+  repeated double quantile_values = 2;
+}
+
 message NumberSummary {
   uint64 count = 1;
   double min = 2;
@@ -55,6 +75,10 @@ message NumberSummary {
 
   HistogramSummary histogram = 6;
   UniqueCountSummary unique_count = 7;
+  QuantileSummary quantiles = 8;
+  FrequentNumbersSummary frequent_numbers = 9;
+
+  bool is_discrete = 10;
 }
 
 message ColumnSummary {

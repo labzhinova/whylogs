@@ -47,6 +47,11 @@ message VarianceMessage {
   double mean = 3;
 }
 
+message FrequentNumbersSketchMessage {
+  bytes sketch = 1;
+  int32 lg_max_k = 2;
+}
+
 message NumbersMessage {
   VarianceMessage variance = 1;
   oneof numbers {
@@ -58,6 +63,7 @@ message NumbersMessage {
   bytes histogram = 4;
   bytes theta = 5;
   bytes compact_theta = 6;
+  FrequentNumbersSketchMessage frequent_numbers = 7;
 }
 
 message StringsMessage {
