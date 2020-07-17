@@ -38,6 +38,14 @@ message FrequentNumbersSummary {
   repeated FrequentLongItem longs = 2;
 }
 
+message FrequentItemsSummary {
+  message FrequentItem {
+    int64 estimate = 1;
+    string json_value = 2;
+  }
+  repeated FrequentItem items = 1;
+}
+
 message StringsSummary {
   UniqueCountSummary unique_count = 1;
   FrequentStringsSummary frequent = 2;
@@ -84,10 +92,10 @@ message NumberSummary {
 message ColumnSummary {
   Counters counters = 1;
   SchemaSummary schema = 2;
-  oneof data {
-    NumberSummary number_summary = 3;
-    StringsSummary string_summary = 4;
-  }
+  NumberSummary number_summary = 3;
+  StringsSummary string_summary = 4;
+  FrequentItemsSummary frequent_items = 5;
+  UniqueCountSummary unique_count = 6;
 }
 
 message DatasetSummary {

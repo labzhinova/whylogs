@@ -52,6 +52,11 @@ message FrequentNumbersSketchMessage {
   int32 lg_max_k = 2;
 }
 
+message FrequentItemsSketchMessage {
+  bytes sketch = 1;
+  int32 lg_max_k = 2;
+}
+
 message NumbersMessage {
   VarianceMessage variance = 1;
   oneof numbers {
@@ -88,6 +93,8 @@ message ColumnMessage {
   NumbersMessage numbers = 4;
   StringsMessage strings = 5;
   InferredType inferred_type = 6;
+  FrequentItemsSketchMessage frequent_items = 7;
+  HllSketchMessage cardinality_tracker = 8;
 }
 
 message DatasetProperties {
@@ -131,4 +138,9 @@ message MessageSegment {
     DatasetMetadataSegment metadata = 2;
     ColumnsChunkSegment columns = 3;
   }
+}
+
+message HllSketchMessage {
+  bytes sketch = 1;
+  int32 lg_k = 2;
 }
