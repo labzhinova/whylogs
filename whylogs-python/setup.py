@@ -48,10 +48,12 @@ OPTIONAL_REQS = [
 ]
 
 REQUIREMENTS = [
+    'click>=click==7.1.2',
     "python-dateutil>=2.8.1",
     'protobuf>=3.12.2',
     'pyyaml>=5.3.1',
     'pandas>1.0',
+    'marshmallow>=3.7.1',
     'numpy>=1.18',
     'datasketches==2.0.0b1'
 ] + OPTIONAL_REQS
@@ -86,6 +88,9 @@ setuptools.setup(
     url='https://gitlab.com/whylabs/whylogs-python',
     package_dir={'': 'src'},
     packages=setuptools.find_packages('src'),
+    entry_points={
+        'console_scripts': ['whylogs=whylabs.logs.cli:main']
+    },
     # classifiers=['TBD'],
     python_requires='>=3.5',  # TODO: Figure out python version compatibility,
     install_requires=REQUIREMENTS,

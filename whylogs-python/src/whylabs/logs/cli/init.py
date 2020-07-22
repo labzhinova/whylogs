@@ -4,23 +4,28 @@ import re
 import sys
 
 import click
-from click import secho as echo
+import typing
 
-INTRO_MESSAGE = """
- __     __     __  __     __  __        __         ______     ______     ______    
-/\ \  _ \ \   /\ \_\ \   /\ \_\ \      /\ \       /\  __ \   /\  ___\   /\  ___\   
-\ \ \/ ".\ \  \ \  __ \  \ \____ \     \ \ \____  \ \ \/\ \  \ \ \__ \  \ \___  \  
- \ \__/".~\_\  \ \_\ \_\  \/\_____\     \ \_____\  \ \_____\  \ \_____\  \/\_____\ 
-  \/_/   \/_/   \/_/\/_/   \/_____/      \/_____/   \/_____/   \/_____/   \/_____/ 
-                                                                                   
-"""
-
-DATASET_NAME_FOMRAT = re.compile(r'^\w+$')
+from whylabs.logs.app.config import SessionConfig, WriterConfig
+from whylabs.logs.app.session import session_from_config
+from whylabs.logs.cli.cli_text import *
+import pandas as pd
 
 
-class DatasetParamType(click.ParamType):
+def echo(message: typing.Union[str, list], **styles):
+    if isinstance(message, list):
+        for msg in message:
+            click.secho(msg, **styles)
+    else:
+        click.secho(message, **styles)
+
+
+NAME_FORMAT = re.compile(r'^(\w|-|_)+$')
+
+
+class NameParamType(click.ParamType):
     def convert(self, value, param, ctx):
-        if DATASET_NAME_FOMRAT.fullmatch(value) is None:
+        if NAME_FORMAT.fullmatch(value) is None:
             raise click.BadParameter('must contain only alphanumeric, underscore and dash characters')
         return value
 
@@ -48,53 +53,58 @@ def init(project_dir):
 
     is_project_dir_empty = len(os.listdir(path=project_dir)) == 0
     if not is_project_dir_empty:
-        echo('WARNING: we will override the content in the non-empty path', fg='yellow')
+        echo(EMPTY_PATH_WARNING, fg='yellow')
 
-    if not click.confirm("Would you like to proceed with the above path?", default=False, show_default=True):
-        echo("Doing nothing. Aborting")
+    if not click.confirm(OVERRIDE_CONFIRM, default=False, show_default=True):
+        echo(DOING_NOTHING_ABORTING)
         sys.exit(0)
+    os.chdir(project_dir)
 
-    echo('Great. We will now generate the default configuration for WhyLogs')
-    echo("We'll need a few details from you before we can proceed")
-    dataset_name = click.prompt('Dataset name (alphanumeric, dash, and underscore characters only)',
-                                type=DatasetParamType())
+    echo(BEGIN_WORKFLOW)
+    project_name = click.prompt(PROJECT_NAME_PROMPT, type=NameParamType())
+    echo(f'Using project name : {project_name}', fg='green')
+    pipeline_name = click.prompt('Pipeline name (leave blank for default pipeline name)', type=NameParamType(),
+                                 default='default-pipeline')
+    echo(f'Using pipeline name: {pipeline_name}', fg='green')
+    output_path = click.prompt('Specify the output path', default='output')
+    echo(f'Using output path: {output_path}')
+    writer = WriterConfig('local', ['all'], output_path)
+    session_config = SessionConfig(project_name, pipeline_name, verbose=False, writers=[writer])
+    config_yml = os.path.join(project_dir, 'whylogs.yml')
+    with open(file=config_yml, mode='w') as f:
+        session_config.to_yaml(f)
+    echo(f'Config YAML file was written to: {config_yml}\n')
 
-    echo(f'Using dataset name: {dataset_name}', fg='green')
-    if click.confirm('Would you like to run an initial profiling job?', default=True):
-        echo("Select data source:")
+    if click.confirm(INITIAL_PROFILING_CONFIRM, default=True):
+        echo(DATA_SOURCE_MESSAGE)
         choices = [
-            'single CSV on the file system',
-            # 'single CSV on S3',
-            # 'multiple CSVs on the file system',
-            # 'multiple CSVs on S3',
+            'CSV on the file system',
         ]
         for i in range(len(choices)):
             echo(f'\t{i + 1}. {choices[i]}')
         choice = click.prompt('', type=click.IntRange(min=1, max=len(choices)))
         assert choice == 1
-        file: io.TextIOWrapper = click.prompt('CSV input path', type=click.File())
-        file.close()
-        full_path = os.path.realpath(file.name)
-        echo(f'Input file: {full_path}')
-        output_path = os.path.join(project_dir, 'profile')
-        if os.path.exists(output_path):
-            if not click.confirm('Profile path already exists. This will override existing data', default=True):
-                echo('Abort profiling')
-                sys.exit(0)
-            else:
-                echo('Previous profile data will be overridden', fg='yellow')
-        echo('WhyLogs can break down the data by time for you')
-        echo('This will enable users to run time-based analysis')
-        datetime_column = click.prompt('What is your datetime column?',
-                                       type=click.STRING,
-                                       default='')
-        datetime_format = ''
-        if not datetime_column:
-            echo('Skip date time handling')
+        profile_csv(project_dir, session_config)
+        echo(f'You should find the output under: {os.path.join(project_dir, "output")}')
+        echo(DONE)
+    else:
+        echo(DONE)
+
+
+def profile_csv(project_dir, session_config):
+    file: io.TextIOWrapper = click.prompt('CSV input path', type=click.File())
+    file.close()
+    full_input = os.path.realpath(file.name)
+    echo(f'Input file: {full_input}')
+    output_path = os.path.join(project_dir, 'whylogs')
+    if os.path.exists(output_path):
+        if not click.confirm(PROFILE_OVERRIDE_CONFIRM, default=True):
+            echo('Abort profiling')
+            sys.exit(0)
         else:
-            datetime_format = click.prompt('What is the format of the column? Leave blank to use datetimeutil to parse',
-                                           default='')
-        if datetime_format:
-            echo(f'Date time format used: {datetime_format}')
-        echo('Run profiling')
-        echo('Successful. You can find the result under "profile" path')
+            echo(DATA_WILL_BE_OVERRIDDEN, fg='yellow')
+    echo(RUN_PROFILING)
+    session = session_from_config(session_config)
+    df = pd.read_csv(full_input)
+    session.log_dataframe(df)
+    session.close()
