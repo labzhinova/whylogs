@@ -48,15 +48,15 @@ OPTIONAL_REQS = [
 ]
 
 REQUIREMENTS = [
-    'click>=click==7.1.2',
-    "python-dateutil>=2.8.1",
-    'protobuf>=3.12.2',
-    'pyyaml>=5.3.1',
-    'pandas>1.0',
-    'marshmallow>=3.7.1',
-    'numpy>=1.18',
-    'datasketches==2.0.0b1'
-] + OPTIONAL_REQS
+                   'click>=click==7.1.2',
+                   "python-dateutil>=2.8.1",
+                   'protobuf>=3.12.2',
+                   'pyyaml>=5.3.1',
+                   'pandas>1.0',
+                   'marshmallow>=3.7.1',
+                   'numpy>=1.18',
+                   'whylabs-datasketches>=2.0.0b6'
+               ] + OPTIONAL_REQS
 DEV_EXTRA_REQUIREMENTS = [
     'ipython',
     'argh>=0.26',
@@ -78,21 +78,35 @@ with open('README.md', 'rt') as f:
     long_description = f.read()
 
 setuptools.setup(
-    name='whylogs-python',
+    name='whylogs',
     version=version,
     author='WhyLabs, Inc',
     author_email='info@whylabs.ai',
-    description='WhyLogs data monitoring library',
+    description='WhyLogs data profiling library',
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://gitlab.com/whylabs/whylogs-python',
     package_dir={'': 'src'},
+    include_package_data=True,
     packages=setuptools.find_packages('src'),
     entry_points={
         'console_scripts': ['whylogs=whylabs.logs.cli:main']
     },
-    # classifiers=['TBD'],
-    python_requires='>=3.5',  # TODO: Figure out python version compatibility,
+    classifiers=[
+        "Development Status :: 2 - Pre-Alpha",
+        "Environment :: Console",
+        "Operating System :: OS Independent",
+        "Intended Audience :: Science/Research",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Cython",
+        "Topic :: Scientific/Engineering",
+    ],
+    python_requires='>=3.5',
     install_requires=REQUIREMENTS,
     extras_require={'dev': DEV_EXTRA_REQUIREMENTS},
     tests_require=['pytest'],
