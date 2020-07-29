@@ -21,6 +21,11 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 8
+    - name: Install Protoc
+      uses: arduino/setup-protoc@master
     - name: Build Python
+      env:
+        AWS_ACCESS_KEY_ID: foo
+        AWS_SECRET_ACCESS_KEY: bar
       run: |
         ./gradlew :whylogs-python:build build
