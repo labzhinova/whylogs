@@ -23,4 +23,4 @@ jobs:
         java-version: 8
     - name: Build Python
       run: |
-        /gradlew :whylogs-python:build build
+        ./gradlew :whylogs-python:build build
