@@ -45,3 +45,5 @@ jobs:
     - name: Test Python
       run: |
         ./gradlew :whylogs-python:test-python -PisGitLabCi=true
+    - name: Build and Test Java
+      run: ./gradlew build
